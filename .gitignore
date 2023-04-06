@@ -1,0 +1,12 @@
+*~
+CMakeFiles/*
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+libbase.a
+libbase_test
+subprocess_test_failure
+subprocess_test_hang
+subprocess_test_sigpipe
+subprocess_test_success
+
