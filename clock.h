@@ -1,6 +1,6 @@
 /* ========================================================================= */
 /**
- * @file time.h
+ * @file clock.h
  * Methods for retrieving system time, respectively clock counter.
  *
  * @license
@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_TIME_H__
-#define __BS_TIME_H__
+#ifndef __BS_CLOCK_H__
+#define __BS_CLOCK_H__
 
 #include "test.h"
 
@@ -36,11 +36,11 @@ uint64_t bs_usec(void);
 uint64_t bs_mono_nsec(void);
 
 /** Unit tests. */
-extern const bs_test_case_t   bs_time_test_cases[];
+extern const bs_test_case_t   bs_clock_test_cases[];
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_TIME_H__ */
-/* == End of time.h ======================================================== */
+#endif /* __BS_CLOCK_H__ */
+/* == End of clock.h ======================================================= */

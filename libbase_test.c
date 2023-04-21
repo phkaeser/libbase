@@ -25,13 +25,13 @@ const bs_test_set_t           libbase_tests[] = {
     { 1, "bs_atomic", bs_atomic_test_cases },
     { 1, "bs_arg", bs_arg_test_cases },
     { 1, "bs_avltree", bs_avltree_test_cases },
+    { 1, "bs_clock", bs_clock_test_cases },
     { 1, "bs_dequeue", bs_dequeue_test_cases },
     { 1, "bs_dllist", bs_dllist_test_cases },
     { 1, "bs_log", bs_log_test_cases },
     { 1, "bs_subprocess", bs_subprocess_test_cases },
     { 1, "bs_strconvert", bs_strconvert_test_cases },
     { 1, "bs_test", bs_test_test_cases },
-    { 1, "bs_time", bs_time_test_cases },
     { 0, NULL, NULL }
 };
 

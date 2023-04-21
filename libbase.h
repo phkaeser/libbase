@@ -25,6 +25,7 @@
 #include "atomic.h"
 #include "avltree.h"
 #include "c2x_compat.h"
+#include "clock.h"
 #include "def.h"
 #include "dequeue.h"
 #include "dllist.h"
@@ -35,7 +36,6 @@
 #include "sock.h"
 #include "strconvert.h"
 #include "thread.h"
-#include "time.h"
 #include "vector.h"
 
 #include "test.h"

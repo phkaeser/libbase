@@ -13,39 +13,70 @@
 # limitations under the License.
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
-PROJECT(libbase)
+PROJECT(libbase VERSION 1.0 DESCRIPTION "A small standard library for C")
 
 # Configuration. Remove CMakeCache.txt to rerun...
-OPTION(libbase_config_DEBUG "Include debugging information" ON)
-OPTION(libbase_config_OPTIM "Optimizations" OFF)
+OPTION(config_DEBUG "Include debugging information" ON)
+OPTION(config_OPTIM "Optimizations" OFF)
 
-IF (libbase_config_DEBUG)
-  ADD_DEFINITIONS(-DDEBUG)
-ENDIF (libbase_config_DEBUG)
+IF(config_DEBUG)
+  ADD_COMPILE_OPTIONS(-DDEBUG)
+ENDIF(config_DEBUG)
 
-# Toplevel gcc specific options
-IF (CMAKE_COMPILER_IS_GNUCXX)
-  IF (libbase_config_DEBUG)
-    ADD_DEFINITIONS(-ggdb)
-  ENDIF (libbase_config_DEBUG)
+# Configuration. Remove CMakeCache.txt to re-generate.
+OPTION(config_DEBUG "Enable Debug mode" ON)
+OPTION(config_OPTIM "Optimize" OFF)
 
-  IF (libbase_config_OPTIM)
-    ADD_DEFINITIONS(-O2)
-  ELSE (libbase_config_OPTIM)
-    ADD_DEFINITIONS(-O0)
-  ENDIF (libbase_config_OPTIM)
+# Toplevel compile options, for GCC.
+IF(CMAKE_COMPILER_IS_GNUCXX)
+  IF(config_DEBUG)
+    ADD_COMPILE_OPTIONS(-O2)
+  ENDIF(config_DEBUG)
 
-  ADD_DEFINITIONS(-std=c11 -Wall -Wextra -Werror)
-ENDIF (CMAKE_COMPILER_IS_GNUCXX)
+  IF(config_OPTIM)
+    ADD_COMPILE_OPTIONS(-O2)
+  ELSE(config_OPTIM)
+    ADD_COMPILE_OPTIONS(-O0)
+  ENDIF(config_OPTIM)
+  ADD_COMPILE_OPTIONS(-std=c11 -Wall -Wextra -Werror)
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 FIND_PACKAGE(Curses REQUIRED)
 
-ADD_LIBRARY(
+SET(PUBLIC_HEADER_FILES
+  arg.h
+  assert.h
+  atomic.h
+  avltree.h
+  c2x_compat.h
+  clock.h
+  def.h
+  dequeue.h
+  dllist.h
+  file.h
+  libbase.h
+  log.h
+  log_wrappers.h
+  sock.h
+  strconvert.h
+  subprocess.h
+  test.h
+  thread.h
+  vector.h)
+
+ADD_LIBRARY(base)
+SET_TARGET_PROPERTIES(
+  base PROPERTIES
+  VERSION 1.0
+  PUBLIC_HEADER ${PUBLIC_HEADER_FILES})
+TARGET_SOURCES(
   base
+  PRIVATE
   arg.c
   atomic.c
   avltree.c
   c2x_compat.c
+  clock.c
   dequeue.c
   dllist.c
   file.c
@@ -54,9 +85,10 @@ ADD_LIBRARY(
   subprocess.c
   strconvert.c
   test.c
-  thread.c
-  time.c)
+  thread.c)
+
 TARGET_LINK_LIBRARIES(base ${CURSES_CURSES_LIBRARY})
+
 
 ADD_EXECUTABLE(libbase_test libbase_test.c)
 TARGET_LINK_LIBRARIES(libbase_test base)
