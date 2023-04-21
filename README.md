@@ -2,6 +2,18 @@
 
 A small "standard library" for C, used for my personal projects.
 
+### To configure
+
+``` bash
+cmake -S . -B build
+```
+
+### To build
+
+``` bash
+(cd build && make)
+```
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details, and [code of conduct](CODE_OF_CONDUCT.md) for more.
