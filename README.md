@@ -4,14 +4,20 @@ A small "standard library" for C, used for my personal projects.
 
 ### To configure
 
-``` bash
+```bash
 cmake -S . -B build
 ```
 
 ### To build
 
-``` bash
+```bash
 (cd build && make)
+```
+
+### To install
+
+```bash
+make [DESTDIR=/tmp] install
 ```
 
 ## Contributing

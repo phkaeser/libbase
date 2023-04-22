@@ -21,7 +21,7 @@
 #include "def.h"
 #include "log.h"
 #include "sock.h"
-#include "clock.h"
+#include "time.h"
 
 #include <errno.h>
 #include <fcntl.h>

@@ -1,6 +1,6 @@
 /* ========================================================================= */
 /**
- * @file clock.c
+ * @file time.c
  *
  * @license
  * Copyright 2023 Google LLC
@@ -22,7 +22,7 @@
 #define _POSIX_C_SOURCE 199309L
 
 #include "log.h"
-#include "clock.h"
+#include "time.h"
 #include "test.h"
 
 #include <stdio.h>
@@ -63,23 +63,23 @@ uint64_t bs_mono_nsec(void)
 
 /* == Unit tests =========================================================== */
 
-static void bs_clock_test_usec(bs_test_t *test_ptr);
-static void bs_clock_test_nsec(bs_test_t *test_ptr);
+static void bs_time_test_usec(bs_test_t *test_ptr);
+static void bs_time_test_nsec(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_clock_test_cases[] = {
-    { 1, "clock usec", bs_clock_test_usec },
-    { 1, "clock_mono_nsec", bs_clock_test_nsec },
+const bs_test_case_t          bs_time_test_cases[] = {
+    { 1, "time usec", bs_time_test_usec },
+    { 1, "time_mono_nsec", bs_time_test_nsec },
     { 0, NULL, NULL }
 };
 
 /* ------------------------------------------------------------------------- */
-void bs_clock_test_usec(bs_test_t *test_ptr)
+void bs_time_test_usec(bs_test_t *test_ptr)
 {
     BS_TEST_VERIFY_NEQ(test_ptr, 0, bs_usec());
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_clock_test_nsec(bs_test_t *test_ptr)
+void bs_time_test_nsec(bs_test_t *test_ptr)
 {
     uint64_t v1, v2;
     v1 = bs_mono_nsec();
@@ -87,4 +87,4 @@ void bs_clock_test_nsec(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(test_ptr, v1 <= v2);
 }
 
-/* == End of clock.c ========================================================*/
+/* == End of time.c ======================================================== */

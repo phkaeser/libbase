@@ -12,25 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.13)
 PROJECT(libbase VERSION 1.0 DESCRIPTION "A small standard library for C")
+
+# Defaults to /usr/local/lib for installation.
+INCLUDE(GNUInstallDirs)
 
 # Configuration. Remove CMakeCache.txt to rerun...
 OPTION(config_DEBUG "Include debugging information" ON)
 OPTION(config_OPTIM "Optimizations" OFF)
 
-IF(config_DEBUG)
-  ADD_COMPILE_OPTIONS(-DDEBUG)
-ENDIF(config_DEBUG)
-
-# Configuration. Remove CMakeCache.txt to re-generate.
-OPTION(config_DEBUG "Enable Debug mode" ON)
-OPTION(config_OPTIM "Optimize" OFF)
-
 # Toplevel compile options, for GCC.
 IF(CMAKE_COMPILER_IS_GNUCXX)
   IF(config_DEBUG)
-    ADD_COMPILE_OPTIONS(-O2)
+    ADD_COMPILE_OPTIONS(-ggdb -DDEBUG)
   ENDIF(config_DEBUG)
 
   IF(config_OPTIM)
@@ -49,7 +44,6 @@ SET(PUBLIC_HEADER_FILES
   atomic.h
   avltree.h
   c2x_compat.h
-  clock.h
   def.h
   dequeue.h
   dllist.h
@@ -62,21 +56,14 @@ SET(PUBLIC_HEADER_FILES
   subprocess.h
   test.h
   thread.h
+  time.h
   vector.h)
 
-ADD_LIBRARY(base)
-SET_TARGET_PROPERTIES(
-  base PROPERTIES
-  VERSION 1.0
-  PUBLIC_HEADER ${PUBLIC_HEADER_FILES})
-TARGET_SOURCES(
-  base
-  PRIVATE
+SET(SOURCES
   arg.c
   atomic.c
   avltree.c
   c2x_compat.c
-  clock.c
   dequeue.c
   dllist.c
   file.c
@@ -85,15 +72,45 @@ TARGET_SOURCES(
   subprocess.c
   strconvert.c
   test.c
-  thread.c)
+  thread.c
+  time.c)
 
+ADD_LIBRARY(base)
+TARGET_SOURCES(base PRIVATE ${SOURCES})
+TARGET_INCLUDE_DIRECTORIES(base PRIVATE ${CURSES_CURSES_INCLUDE_DIRS})
 TARGET_LINK_LIBRARIES(base ${CURSES_CURSES_LIBRARY})
+SET_TARGET_PROPERTIES(
+  base PROPERTIES
+  VERSION 1.0
+  PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
 
 
-ADD_EXECUTABLE(libbase_test libbase_test.c)
-TARGET_LINK_LIBRARIES(libbase_test base)
+# Create pkg-config file from the template.
+CONFIGURE_FILE(libbase.pc.in libbase.pc @ONLY)
 
-ADD_EXECUTABLE(subprocess_test_hang subprocess_test_hang.c)
-ADD_EXECUTABLE(subprocess_test_failure subprocess_test_failure.c)
-ADD_EXECUTABLE(subprocess_test_sigpipe subprocess_test_sigpipe.c)
-ADD_EXECUTABLE(subprocess_test_success subprocess_test_success.c)
+INSTALL(
+  TARGETS base
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libbase")
+
+INSTALL(
+  FILES ${CMAKE_BINARY_DIR}/libbase.pc
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
+
+
+# Add test target, but only if we're the toplevel project.
+IF(CMAKE_PROJECT_NAME STREQUAL libbase)
+  ADD_EXECUTABLE(libbase_test libbase_test.c)
+  TARGET_LINK_LIBRARIES(libbase_test base)
+
+  ADD_EXECUTABLE(subprocess_test_hang subprocess_test_hang.c)
+  ADD_EXECUTABLE(subprocess_test_failure subprocess_test_failure.c)
+  ADD_EXECUTABLE(subprocess_test_sigpipe subprocess_test_sigpipe.c)
+  ADD_EXECUTABLE(subprocess_test_success subprocess_test_success.c)
+
+  INCLUDE(CTest)
+  IF(BUILD_TESTING)
+    ADD_TEST(NAME libbase_test COMMAND libbase_test)
+  ENDIF()
+ENDIF()
