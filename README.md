@@ -5,7 +5,7 @@ A small "standard library" for C, used for my personal projects.
 ### To configure
 
 ```bash
-cmake -S . -B build
+cmake [-DCMAKE_INSTALL_PREFIX:PATH="${HOME}/.local"] -S . -B build
 ```
 
 ### To build
@@ -17,7 +17,7 @@ cmake -S . -B build
 ### To install
 
 ```bash
-make [DESTDIR=/tmp] install
+make install
 ```
 
 ## Contributing
