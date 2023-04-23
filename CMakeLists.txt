@@ -34,6 +34,7 @@ INCLUDE(GNUInstallDirs)
 # Configuration. Remove CMakeCache.txt to rerun...
 OPTION(config_DEBUG "Include debugging information" ON)
 OPTION(config_OPTIM "Optimizations" OFF)
+OPTION(config_COVERAGE "Build with test coverage" ON)
 
 # Toplevel compile options, for GCC.
 IF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
@@ -140,12 +141,11 @@ ENDIF()
 # Adds 'doc' target, if doxygen is installed.
 FIND_PACKAGE(Doxygen)
 IF(DOXYGEN_FOUND)
-
-  # set input and output files
+  # Set input and output files.
   SET(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
   SET(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-  # request to configure the file
+  # Configure the file.
   CONFIGURE_FILE(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
   MESSAGE(NOTICE "Doxygen available, adding 'doc' target.")
 
@@ -156,7 +156,20 @@ IF(DOXYGEN_FOUND)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen."
     VERBATIM)
-
-ELSE()
+ELSE(DOXYGEN_FOUND)
   MESSAGE(NOTICE "Doxygen not found. Not adding 'doc' target to generate API documentation.")
 ENDIF(DOXYGEN_FOUND)
+
+# Adds 'coverage' target, if configured. Needs 'gcovr'.
+IF(config_COVERAGE)
+  FIND_PROGRAM(GCOVR_FOUND gcovr REQUIRED)
+  IF(NOT GCOVR_FOUND)
+    MESSAGE(FATAL_ERROR "Coverage enabled, but 'govr' not found.")
+  ENDIF()
+  ADD_COMPILE_OPTIONS(--coverage)
+  ADD_LINK_OPTIONS(--coverage)
+
+  MESSAGE(NOTICE "Coverage configured, adding 'coverage' target.")
+  ADD_CUSTOM_TARGET(coverage
+    COMMAND gcovr -r ${CMAKE_CURRENT_SOURCE_DIR} . --exclude _deps --print-summary --html-details --html-title "Unittest coverage" -o coverage.html)
+ENDIF()
