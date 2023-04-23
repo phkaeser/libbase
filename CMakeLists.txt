@@ -136,3 +136,27 @@ IF(CMAKE_PROJECT_NAME STREQUAL libbase)
     ADD_TEST(NAME libbase_test COMMAND libbase_test)
   ENDIF()
 ENDIF()
+
+# Adds 'doc' target, if doxygen is installed.
+FIND_PACKAGE(Doxygen)
+IF(DOXYGEN_FOUND)
+
+  # set input and output files
+  SET(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+  SET(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+  # request to configure the file
+  CONFIGURE_FILE(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+  MESSAGE(NOTICE "Doxygen available, adding 'doc' target.")
+
+  ADD_CUSTOM_TARGET(
+    doc
+    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+    DEPENDS ${DOXYGEN_OUT}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen."
+    VERBATIM)
+
+ELSE()
+  MESSAGE(NOTICE "Doxygen not found. Not adding 'doc' target to generate API documentation.")
+ENDIF(DOXYGEN_FOUND)

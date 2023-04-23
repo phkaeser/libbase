@@ -1,6 +1,6 @@
 /* ========================================================================= */
 /**
- * @file set.c
+ * @file ptr_set.c
  *
  * Interface for a simple stack to store pointers.
  *

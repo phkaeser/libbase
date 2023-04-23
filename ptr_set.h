@@ -1,6 +1,6 @@
 /* ========================================================================= */
 /**
- * @file set.h
+ * @file ptr_set.h
  *
  * Interface for a simple stack to store pointers.
  *
@@ -36,7 +36,8 @@ typedef struct _bs_ptr_set_t bs_ptr_set_t;
 /**
  * Creates the set.
  *
- * @return Pointer to the set, or NULL on error. Must be freed by calling
+ * @return Pointer to the set, or NULL on error
+. Must be freed by calling
  *     @ref bs_ptr_set_destroy.
  */
 bs_ptr_set_t *bs_ptr_set_create(void);
