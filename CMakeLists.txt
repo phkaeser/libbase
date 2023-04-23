@@ -13,7 +13,20 @@
 # limitations under the License.
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.13)
-PROJECT(libbase VERSION 1.0 DESCRIPTION "A small standard library for C")
+PROJECT(libbase VERSION 1.0
+  DESCRIPTION "A small standard library for C"
+  LANGUAGES C)
+
+# Requires out-of-source builds.
+FILE(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOCATION_PATH)
+IF(EXISTS "${LOCATION_PATH}")
+  MESSAGE(
+    FATAL_ERROR
+    "You cannot build into a source directory (containing a CMakeLists.txt file).\n"
+    "Please make a build subdirectory, for example:\n"
+    "cmake -B build\n"
+    "(cd build && make)")
+ENDIF()
 
 # Defaults to /usr/local/lib for installation.
 INCLUDE(GNUInstallDirs)
@@ -23,7 +36,7 @@ OPTION(config_DEBUG "Include debugging information" ON)
 OPTION(config_OPTIM "Optimizations" OFF)
 
 # Toplevel compile options, for GCC.
-IF(CMAKE_COMPILER_IS_GNUCXX)
+IF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
   IF(config_DEBUG)
     ADD_COMPILE_OPTIONS(-ggdb -DDEBUG)
   ENDIF(config_DEBUG)
@@ -33,8 +46,9 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
   ELSE(config_OPTIM)
     ADD_COMPILE_OPTIONS(-O0)
   ENDIF(config_OPTIM)
-  ADD_COMPILE_OPTIONS(-std=c11 -Wall -Wextra -Werror)
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+  ADD_COMPILE_OPTIONS(-Wall -Wextra -Werror)
+ENDIF()
+SET(CMAKE_C_STANDARD 11)
 
 FIND_PACKAGE(Curses REQUIRED)
 
@@ -51,8 +65,11 @@ SET(PUBLIC_HEADER_FILES
   libbase.h
   log.h
   log_wrappers.h
+  ptr_set.h
+  ptr_stack.h
   sock.h
   strconvert.h
+  strutil.h
   subprocess.h
   test.h
   thread.h
@@ -68,22 +85,25 @@ SET(SOURCES
   dllist.c
   file.c
   log.c
+  ptr_set.c
+  ptr_stack.c
   sock.c
-  subprocess.c
   strconvert.c
+  strutil.c
+  subprocess.c
   test.c
   thread.c
   time.c)
 
-ADD_LIBRARY(base)
+ADD_LIBRARY(base STATIC)
 TARGET_SOURCES(base PRIVATE ${SOURCES})
 TARGET_INCLUDE_DIRECTORIES(base PRIVATE ${CURSES_CURSES_INCLUDE_DIRS})
-TARGET_LINK_LIBRARIES(base ${CURSES_CURSES_LIBRARY})
+TARGET_INCLUDE_DIRECTORIES(base PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+TARGET_LINK_LIBRARIES(base PUBLIC ${CURSES_CURSES_LIBRARY})
 SET_TARGET_PROPERTIES(
   base PROPERTIES
   VERSION 1.0
   PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
-
 
 # Create pkg-config file from the template.
 CONFIGURE_FILE(libbase.pc.in libbase.pc @ONLY)
@@ -97,7 +117,6 @@ INSTALL(
   FILES ${CMAKE_BINARY_DIR}/libbase.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
-
 
 # Add test target, but only if we're the toplevel project.
 IF(CMAKE_PROJECT_NAME STREQUAL libbase)

@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-#include "libbase.h"
+#include <libbase/libbase.h>
 
 const bs_test_set_t           libbase_tests[] = {
     { 1, "bs_atomic", bs_atomic_test_cases },
@@ -28,8 +28,11 @@ const bs_test_set_t           libbase_tests[] = {
     { 1, "bs_dequeue", bs_dequeue_test_cases },
     { 1, "bs_dllist", bs_dllist_test_cases },
     { 1, "bs_log", bs_log_test_cases },
+    { 1, "bs_ptr_set", bs_ptr_set_test_cases },
+    { 1, "bs_ptr_stack", bs_ptr_stack_test_cases },
     { 1, "bs_subprocess", bs_subprocess_test_cases },
     { 1, "bs_strconvert", bs_strconvert_test_cases },
+    { 1, "bs_strutil", bs_strutil_test_cases },
     { 1, "bs_test", bs_test_test_cases },
     { 1, "bs_time", bs_time_test_cases },
     { 0, NULL, NULL }

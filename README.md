@@ -17,7 +17,7 @@ cmake [-DCMAKE_INSTALL_PREFIX:PATH="${HOME}/.local"] -S . -B build
 ### To install
 
 ```bash
-make install
+(cd build && make install)
 ```
 
 ## Contributing
