@@ -106,17 +106,20 @@ SET_TARGET_PROPERTIES(
   PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
 
 # Create pkg-config file from the template.
-CONFIGURE_FILE(libbase.pc.in libbase.pc @ONLY)
+CONFIGURE_FILE(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)
 
-INSTALL(
-  TARGETS base
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libbase")
+# Add 'install' target, but only if we're the toplevel project.
+IF(CMAKE_PROJECT_NAME STREQUAL libbase)
+  INSTALL(
+    TARGETS base
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libbase")
 
-INSTALL(
-  FILES ${CMAKE_BINARY_DIR}/libbase.pc
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
+  INSTALL(
+    FILES ${CMAKE_BINARY_DIR}/libbase.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+  )
+ENDIF()
 
 # Add test target, but only if we're the toplevel project.
 IF(CMAKE_PROJECT_NAME STREQUAL libbase)
