@@ -3,7 +3,7 @@
  * @file subprocess_test_hang.c
  * Test executable for subprocess module: Keep looping, does not exit.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+/** A program that will never exit. */
 int main() {
     while (true) {
         poll(NULL, 0, 100);

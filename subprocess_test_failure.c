@@ -3,7 +3,7 @@
  * @file subprocess_test_failure.c
  * Test executable for subprocess module: Exit with failure code.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+/** Returns an error status. */
 int main() {
     return 42;
 }

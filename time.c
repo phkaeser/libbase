@@ -2,7 +2,7 @@
 /**
  * @file time.c
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-// clock_gettime(2) is a POSIX extension, needs this macro.
+/// clock_gettime(2) is a POSIX extension, needs this macro.
 #define _POSIX_C_SOURCE 199309L
 
 #include "log.h"

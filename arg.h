@@ -4,7 +4,7 @@
  * Permits to declare commandline flags, define defaults and a constraints,
  * and provides parsing functions.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

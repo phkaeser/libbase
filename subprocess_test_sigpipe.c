@@ -4,7 +4,7 @@
  * Test executable for subprocess module: Killed by (arbitrarily chosen)
  * SIGPIPE.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 
 #include <signal.h>
 
+/** A test program that raises a signal. */
 int main() {
     raise(SIGPIPE);
 }

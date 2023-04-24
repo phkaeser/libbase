@@ -3,7 +3,7 @@
  * @file strutil.h
  * Utility functions for working with strings in C.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,12 +57,13 @@ size_t bs_strappendf(
     size_t buf_pos,
     const char *fmt_ptr, ...) __ARG_PRINTF__(4, 5);
 
+/** Same as @ref bs_strappendf, with a va_list argument. */
 size_t bs_vstrappendf(
     char *buf,
     size_t buf_size,
     size_t buf_pos,
     const char *fmt_ptr,
-    va_list ap);
+    va_list ap) __ARG_PRINTF__(4, 0);
 
 /** Test cases. */
 extern const bs_test_case_t   bs_strutil_test_cases[];

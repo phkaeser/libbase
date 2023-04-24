@@ -2,7 +2,7 @@
 /**
  * @file subprocess.c
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-// kill(2) is a POSIX extension, and we can't do IPC without it.
+/// kill(2) is a POSIX extension, and we can't do IPC without it.
 #define _POSIX_C_SOURCE 200809L
 
 #include "subprocess.h"
@@ -59,6 +59,7 @@ struct _bs_subprocess_t {
      * Note: argv_ptr[0] points to file_ptr.
      */
     char                      **argv_ptr;
+    /** Environment variables. */
     _env_var_t                 *env_vars_ptr;
 
     /** Will be non-zero when a child process is running. */
@@ -69,13 +70,24 @@ struct _bs_subprocess_t {
     /** Will hold the signal number, if the process was killed by a signal. */
     int                       signal_number;
 
-    /** File descriptors for stdin (write), stdout (read) and stderr (read) */
-    int                       stdin_write, stdout_read, stderr_read;
-    /** Points to the buffer for stdout, respectively stderr. */
-    char                      *stdout_buf_ptr, *stderr_buf_ptr;
-    /** Positions and size of data within stdout, resp. stderr. */
-    size_t                    stdout_pos, stdout_size;
-    size_t                    stderr_pos, stderr_size;
+    /** File descriptor for stdin (write) */
+    int                       stdin_write;
+    /** File descriptor for stdout (read) */
+    int                       stdout_read;
+    /** File descriptor for stderr (read) */
+    int                       stderr_read;
+    /** Points to the buffer for stdout */
+    char                      *stdout_buf_ptr;
+    /** Position within `stdout_buf_ptr`. */
+    size_t                    stdout_pos;
+    /** Size of `stdout_buf_ptr`. */
+    size_t                    stdout_size;
+    /** Points to the buffer for stderr */
+    char                      *stderr_buf_ptr;
+    /** Position within `stderr_buf_ptr`. */
+    size_t                    stderr_pos;
+    /** Size of `stderr_buf_ptr`. */
+    size_t                    stderr_size;
 };
 
 /** Deterministic Finite Automation transition. */
@@ -811,6 +823,7 @@ bool _is_variable_assignment(
 }
 
 /* == Unit tests =========================================================== */
+/** @cond TEST */
 
 static void test_is_variable_assignment(bs_test_t *test_ptr);
 static void test_split_command(bs_test_t *test_ptr);
@@ -1127,4 +1140,5 @@ void test_success_twice(bs_test_t *test_ptr)
     bs_subprocess_destroy(sp_ptr);
 }
 
+/** @endcond */
 /* == End of subprocess.c ================================================== */

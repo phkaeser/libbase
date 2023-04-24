@@ -3,7 +3,7 @@
  * @file thread.h
  * Wrappers around libpthread, to consolidate logging and error handling.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

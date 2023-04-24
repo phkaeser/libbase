@@ -3,7 +3,7 @@
  * @file log_wrappers.h
  * Wraps common methods to conveniently log errors.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

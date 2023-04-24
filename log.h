@@ -3,7 +3,7 @@
  * @file log.h
  * Logging library, to stderr or a log file. Used for verbose error reporting.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

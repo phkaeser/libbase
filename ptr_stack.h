@@ -4,7 +4,7 @@
  *
  * Interface for a simple stack to store pointers.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,9 +31,13 @@
 extern "C" {
 #endif  // __cplusplus
 
+/** State of the pointer stack. */
 typedef struct {
+    /** Number of elements contained. Required for re-sizing. */
     size_t                    size;
+    /** Current position within the stack. */
     size_t                    pos;
+    /** Points to data array, holds @ref size elements of `void*`. */
     void                      **data_ptr;
 } bs_ptr_stack_t;
 
@@ -41,7 +45,7 @@ typedef struct {
  * Creates a pointer stack.
  *
  * @return Pointer to the stack, or NULL on error. Must be destroyed by calling
- *     @ref bs_btr_stack_destroy.
+ *     @ref bs_ptr_stack_destroy.
  */
 bs_ptr_stack_t *bs_ptr_stack_create(void);
 
@@ -73,6 +77,7 @@ void bs_ptr_stack_fini(bs_ptr_stack_t *ptr_stack_ptr);
 /**
  * Pushes `elem_ptr` to the stack.
  *
+ * @param ptr_stack_ptr
  * @param elem_ptr            Pointer to the element to be pushed. Must not be
  *                            NULL.
  *

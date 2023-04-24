@@ -4,7 +4,7 @@
  * Implements an AVL tree, with nodes provided such they can be embedded in
  * the element's struct.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,9 +38,13 @@ typedef struct _bs_avltree_node_t bs_avltree_node_t;
 
 /** Actual struct of the tree node. */
 struct _bs_avltree_node_t {
+    /** Back-link to the parent node. NULL for the root node. */
     bs_avltree_node_t         *parent_ptr;
+    /** Links to the left (smaller) node. NULL if this is the smallest node. */
     bs_avltree_node_t         *left_ptr;
+    /** Links to the left (greater) node. NULL if this is the greatest node. */
     bs_avltree_node_t         *right_ptr;
+    /** Node balance. */
     int8_t                    balance;
 };
 

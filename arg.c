@@ -2,7 +2,7 @@
 /**
  * @file arg.c
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,7 +70,9 @@ static bool check_arg(const bs_arg_t *arg_ptr);
 
 /**  Store an arg name in a tree, to identify duplicates. */
 typedef struct {
+    /** Tree node. */
     bs_avltree_node_t         node;
+    /** Argument name. */
     char                      *name_ptr;
 } arg_name_t;
 

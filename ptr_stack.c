@@ -2,7 +2,7 @@
 /**
  * @file ptr_stack.c
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@
 
 /* == Declarations ========================================================= */
 
+/** Initial stack size, 1024 elements. */
 #define INITIAL_SIZE 1024
 
 static bool grow_stack(bs_ptr_stack_t *ptr_stack_ptr);

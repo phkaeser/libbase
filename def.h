@@ -2,7 +2,7 @@
 /**
  * @file def.h
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,10 +26,12 @@
 /* == Definitions for arguments et.al. ===================================== */
 
 #if !defined(__UNUSED__)
+/** Compiler hint, indicating unused elements. */
 #define __UNUSED__ __attribute__ ((unused))
 #endif
 
 #if !defined(__ARG_PRINTF__)
+/** Compiler hint, indicating these are printf-style format args. */
 #define __ARG_PRINTF__(_fmtidx, _paridx) \
     __attribute__ ((format(printf, _fmtidx, _paridx)))
 #endif

@@ -3,7 +3,7 @@
  * @file c2x_compat.h
  * Compatibility layer for upcoming convenient C2x methods.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,13 @@
 extern "C" {
 #endif  // __cplusplus
 
+/**
+ * Returns a pointer to a new string which is a duplicate of `s`.
+ *
+ * @param s
+ *
+ * @return A pointer to the duplicated string, to be free'd with free(3).
+ */
 char *strdup(const char*s);
 
 #ifdef __cplusplus

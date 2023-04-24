@@ -3,7 +3,7 @@
  * @file dllist.h
  * Provides a double-linked list.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,13 +34,17 @@ typedef struct _bs_dllist_node_t bs_dllist_node_t;
 
 /** Details of the list. */
 struct _bs_dllist_t {
+    /** Head of the double-linked list. NULL if empty. */
     bs_dllist_node_t          *head_ptr;
+    /** Tail of the double-linked list. NULL if empty. */
     bs_dllist_node_t          *tail_ptr;
 };
 
 /** Details of said node. */
 struct _bs_dllist_node_t {
+    /** The previous node, or NULL if this is the only node. */
     bs_dllist_node_t          *prev_ptr;
+    /** The next node, or NULL if this is the only node. */
     bs_dllist_node_t          *next_ptr;
 };
 

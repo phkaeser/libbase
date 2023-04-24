@@ -3,7 +3,7 @@
  * @file atomic.h
  * Methods for atomic access to a few basic types.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,14 +42,19 @@
 #define __BS_ATOMIC_GCC_ASM_x86_64
 #else
 
-// C11 supports atomics. We expect support for at least 32-bit atomics.
+/**
+ * Whether we are on C11, which supports atomics.
+ * We expect support for at least 32-bit atomics.
+ */
 #define __BS_ATOMIC_C11_STDATOMIC
 
 // For 64-bit atomics, we fall back to use a mutex.
 #if defined(__ppc64__) || defined(__powerpc64__) || defined(__64BIT__)
 // TODO: Check if/how this behaves on other 64-bit platforms. amd64, arm64.
+/** We can use C11 definitions for 64-bit atomics. */
 #define __BS_ATOMIC_C11_STDATOMIC_INT64
 #else
+/** Whether we should fall back to use a mutex for 64-bit atomics. */
 #define __BS_ATOMIC_INT64_MUTEX
 #endif  // exclude known 64-bit platforms.
 
@@ -76,11 +81,15 @@ static pthread_mutex_t        _bs_atomic_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 #define BS_ATOMIC_INT64_INIT(v)  { (v) }
 
+/** An atomically accessible 32-bit integer. */
 typedef struct {
+    /** The actual value. */
     int32_t                   v;
 } bs_atomic_int32_t;
 
+/** An atomically accessible 64-bit integer. */
 typedef struct {
+    /** The actual value . */
     int64_t                   v;
 } bs_atomic_int64_t;
 

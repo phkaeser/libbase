@@ -3,7 +3,7 @@
  * @file subprocess_test_success.c
  * Test executable for subprocess module: Exit successfully, with stdout/err.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/** A test program that returns a successful code, if args were all correct. */
 int main(int argc, char** argv) {
     if (2 != argc) {
         fprintf(stderr, "Expecting 1 arguments.\n");

@@ -3,7 +3,7 @@
  * @file test.h
  * Declarations for building unit tests.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,8 +31,11 @@
 extern "C" {
 #endif  // __cplusplus
 
+/** Overall state of test. */
 typedef struct _bs_test_t     bs_test_t;
+/** State of unit test. */
 typedef struct _bs_test_case_t bs_test_case_t;
+/**  A test set. */
 typedef struct _bs_test_set_t bs_test_set_t;
 
 /** Test function. */
@@ -102,8 +105,7 @@ int bs_test(const bs_test_set_t *test_sets,
  * Verifies that _expr is true.
  *
  * @param _test
- * @param _a
- * @param _b
+ * @param _expr
  */
 #define BS_TEST_VERIFY_TRUE(_test, _expr) {                             \
         if (!(_expr)) {                                                 \
@@ -116,8 +118,7 @@ int bs_test(const bs_test_set_t *test_sets,
  * Verifies that _expr is false.
  *
  * @param _test
- * @param _a
- * @param _b
+ * @param _expr
  */
 #define BS_TEST_VERIFY_FALSE(_test, _expr) {                            \
         if (_expr) {                                                    \

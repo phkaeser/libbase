@@ -3,7 +3,7 @@
  * @file dequeue.h
  * Provides a double-ended queue.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,12 +35,15 @@ typedef struct _bs_dequeue_node_t bs_dequeue_node_t;
 
 /** Details of the queue. */
 struct _bs_dequeue_t {
+    /** Head of the queue. */
     bs_dequeue_node_t          *head_ptr;
+    /** Tail of the queue. */
     bs_dequeue_node_t          *tail_ptr;
 };
 
 /** Details of the node. */
 struct _bs_dequeue_node_t {
+    /** Next node. */
     bs_dequeue_node_t          *next_ptr;
 };
 

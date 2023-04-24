@@ -2,7 +2,7 @@
 /**
  * @file avltree.c
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,11 +27,15 @@
 
 /* == Declarations ========================================================= */
 
-// Keeping the tree interna local to the implementation file.
+/** @private State of the AVL tree. */
 struct _bs_avltree_t {
+    /** Pointer to the root node. NULL indicates the tree is empty. */
     bs_avltree_node_t         *root_ptr;
+    /** Number of nodes stored in this tree. */
     size_t                    nodes;
+    /** Points to the method for comparing nodes. */
     bs_avltree_node_cmp_t     cmp;
+    /** Points to the method for destroying a node. May be NULL. */
     bs_avltree_node_destroy_t destroy;
 };
 
@@ -782,10 +786,12 @@ bs_avltree_node_t *bs_avltree_node_max(bs_avltree_node_t *node_ptr)
 }
 
 /* == Test Functions ======================================================= */
+/** @cond TEST */
 
 #define BS_AVLTREE_TEST_VALUES          4096
 #define BS_AVLTREE_TEST_VALUE_MAX       3500
 
+/** @internal */
 typedef struct {
     bs_avltree_node_t         node;
     int                       value;
@@ -1010,4 +1016,5 @@ const void *bs_avltree_test_node_key(const bs_avltree_node_t *node_ptr)
     return &bs_node_ptr->value;
 }
 
+/** @endcond */
 /* == End of avltree.c ===================================================== */

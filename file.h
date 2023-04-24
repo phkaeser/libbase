@@ -4,7 +4,7 @@
  * Convenience methods for reading a buffer from a file, respectively writing
  * a buffer to a file.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

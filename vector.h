@@ -3,7 +3,7 @@
  * @file vector.h
  * Methods and definitions to work a bit more conveniently with vectors in C.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

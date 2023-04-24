@@ -4,7 +4,7 @@
  * Methods to conveniently create sub-processes and handle I/O in a non-
  * blocking fashion.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

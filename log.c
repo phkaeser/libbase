@@ -2,7 +2,7 @@
 /**
  * @file log.c
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +35,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
+/** Size of logging buffer. */
 #define MAX_LOG_SIZE 4096
 
 /* == Data ================================================================= */
@@ -79,6 +80,7 @@ void bs_log_write(bs_log_severity_t severity,
 }
 
 /* ------------------------------------------------------------------------- */
+/** Writes the log mesage, taking a va_list argument. */
 void bs_log_vwrite(bs_log_severity_t severity,
                    const char *file_name_ptr,
                    int line_num,

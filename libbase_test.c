@@ -3,7 +3,7 @@
  * @file libbase_test.c
  * Unit tests for libbase.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@
 
 #include <libbase/libbase.h>
 
+/** Unit tests. */
 const bs_test_set_t           libbase_tests[] = {
     { 1, "bs_atomic", bs_atomic_test_cases },
     { 1, "bs_arg", bs_arg_test_cases },
@@ -38,6 +39,7 @@ const bs_test_set_t           libbase_tests[] = {
     { 0, NULL, NULL }
 };
 
+/** Main program, runs all unit tests. */
 int main(int argc, const char **argv)
 {
     return bs_test(libbase_tests, argc, argv);

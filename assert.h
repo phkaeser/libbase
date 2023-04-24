@@ -3,7 +3,7 @@
  * @file assert.h
  * Assertions.
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@
 #define BS_ABORT() { __asm __volatile ( "int $3;" ); }
 #else
 #include <signal.h>
+/** Triggers an abort, ie. fatal error. */
 #define BS_ABORT() { raise(SIGTRAP); }
 #endif
 
@@ -37,6 +38,7 @@
 #undef BS_ASSERT
 #endif
 
+/** An assertion, triggers a fatal error if `_expr` is false. */
 #define BS_ASSERT(_expr) {                                              \
         if (!(_expr)) {                                                 \
             bs_log(BS_FATAL, "ASSERT failed: %s", #_expr);              \

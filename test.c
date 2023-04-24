@@ -2,7 +2,7 @@
 /**
  * @file test.c
  *
- * @license
+ * @copyright
  * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,15 +45,23 @@ struct _bs_test_t {
     char                      report[256];
 };
 
+/** Terminal codes for commands we're requiring. */
 struct _bs_test_tcode {
+    /** Buffer for storing all codes. */
     char                      all_codes[2048];
+    /** Code for setting the foreground color. */
     const char                *code_set_foreground;
+    /** Code for setting the background color. */
     const char                *code_set_background;
+    /** Sets default colour-pair to the original one. */
     const char                *code_orig_pair;
+    /** Code for entering bold mode. */
     const char                *code_enter_bold_mode;
+    /** Code for clearing attributes. */
     const char                *code_exit_attribute_mode;
 };
 
+/** Attributes for setting terminal attributes. */
 enum _bs_test_attributes {
     BS_TEST_ATTR_SKIP = 0x0201,
     BS_TEST_ATTR_FAIL = 0x020C,
@@ -63,15 +71,21 @@ enum _bs_test_attributes {
 
 /** Double-linked-list node, information about a failed test case. */
 struct bs_test_fail_node {
+    /** Node of the double-linked list. */
     bs_dllist_node_t          dlnode;
+    /** Full name of the test (including test suite)*. */
     char                      *full_name_ptr;
 };
 
 /** Summary on a test run (either a case or a set). */
 struct bs_test_report {
+    /** Number of failed tests. */
     int                      failed;
+    /** Number of succeeded tests. */
     int                      succeeded;
+    /** Number of skipped tests. */
     int                      skipped;
+    /** Total number of tests. */
     int                      total;
 };
 
@@ -257,6 +271,7 @@ void bs_test_tcode_init(void)
     memset(&bs_test_tcode, 0, sizeof(struct _bs_test_tcode));
     code_buf_ptr = bs_test_tcode.all_codes;
 
+    // https://pubs.opengroup.org/onlinepubs/007908799/xcurses/terminfo.html.
     bs_test_tcode.code_set_background = tgetstr((char*)"Sb", &code_buf_ptr);
     bs_test_tcode.code_set_foreground = tgetstr((char*)"Sf", &code_buf_ptr);
     bs_test_tcode.code_orig_pair = tgetstr((char*)"op", &code_buf_ptr);
@@ -545,6 +560,7 @@ char *bs_test_case_create_full_name(
 }
 
 /* == Unit self-tests ====================================================== */
+/** @cond TEST */
 
 static void bs_test_test_report(bs_test_t *test_ptr);
 static void bs_test_eq_neq_tests(bs_test_t *test_ptr);
@@ -613,4 +629,5 @@ void bs_test_eq_neq_tests(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ(test_ptr, 1, 2);
 }
 
+/** @endcond */
 /* == End of test.c ======================================================== */
