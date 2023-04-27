@@ -147,15 +147,22 @@ IF(DOXYGEN_FOUND)
 
   # Configure the file.
   CONFIGURE_FILE(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-  MESSAGE(NOTICE "Doxygen available, adding 'doc' target.")
-
   ADD_CUSTOM_TARGET(
-    doc
+    libbase_doc
     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
     DEPENDS ${DOXYGEN_OUT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen."
     VERBATIM)
+  MESSAGE(NOTICE "Doxygen available, adding libbase documentation to 'doc' target.")
+
+  # Add as dependency to an existing 'doc' target, or create it.
+  IF(TARGET doc)
+    ADD_DEPENDENCIES(doc libbase_doc)
+  ELSE(TARGET doc)
+    ADD_CUSTOM_TARGET(doc DEPENDS libbase_doc)
+  ENDIF(TARGET doc)
+
 ELSE(DOXYGEN_FOUND)
   MESSAGE(NOTICE "Doxygen not found. Not adding 'doc' target to generate API documentation.")
 ENDIF(DOXYGEN_FOUND)
