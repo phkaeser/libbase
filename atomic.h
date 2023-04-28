@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_ATOMIC_H__
-#define __BS_ATOMIC_H__
+#ifndef __LIBBASE_ATOMIC_H__
+#define __LIBBASE_ATOMIC_H__
 
 #include "test.h"
 
@@ -465,5 +465,5 @@ extern const bs_test_case_t   bs_atomic_test_cases[];
 
 #endif  /// defined(__cplusplus)
 
-#endif /* __BS_ATOMIC_H__ */
+#endif /* __LIBBASE_ATOMIC_H__ */
 /* == End of atomic.h ====================================================== */

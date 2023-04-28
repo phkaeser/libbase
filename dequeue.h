@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __DEQUEUE_H__
-#define __DEQUEUE_H__
+#ifndef __LIBBASE_DEQUEUE_H__
+#define __LIBBASE_DEQUEUE_H__
 
 #include "assert.h"
 #include "test.h"
@@ -99,5 +99,5 @@ extern const bs_test_case_t   bs_dequeue_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __DEQUEUE_H__ */
+#endif /* __LIBBASE_DEQUEUE_H__ */
 /* == End of dequeue.h ===================================================== */

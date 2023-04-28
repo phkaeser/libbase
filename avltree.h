@@ -19,8 +19,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_AVLTREE_H__
-#define __BS_AVLTREE_H__
+#ifndef __LIBBASE_AVLTREE_H__
+#define __LIBBASE_AVLTREE_H__
 
 #include "test.h"
 
@@ -145,5 +145,5 @@ extern const bs_test_case_t   bs_avltree_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_AVLTREE_H__ */
+#endif /* __LIBBASE_AVLTREE_H__ */
 /* == End of avltree.h ===================================================== */

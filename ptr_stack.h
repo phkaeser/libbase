@@ -19,8 +19,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __PTR_STACK_H__
-#define __PTR_STACK_H__
+#ifndef __LIBBASE_PTR_STACK_H__
+#define __LIBBASE_PTR_STACK_H__
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -99,5 +99,5 @@ extern const bs_test_case_t   bs_ptr_stack_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __PTR_STACK_H__ */
+#endif /* __LIBBASE_PTR_STACK_H__ */
 /* == End of ptr_stack.h =================================================== */

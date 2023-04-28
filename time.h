@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_TIME_H__
-#define __BS_TIME_H__
+#ifndef __LIBBASE_TIME_H__
+#define __LIBBASE_TIME_H__
 
 #include "test.h"
 
@@ -42,5 +42,5 @@ extern const bs_test_case_t   bs_time_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_TIME_H__ */
+#endif /* __LIBBASE_TIME_H__ */
 /* == End of time.h ======================================================== */

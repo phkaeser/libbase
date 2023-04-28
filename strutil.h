@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __STRUTIL_H__
-#define __STRUTIL_H__
+#ifndef __LIBBASE_STRUTIL_H__
+#define __LIBBASE_STRUTIL_H__
 
 #include <stdarg.h>
 #include <sys/types.h>
@@ -72,5 +72,5 @@ extern const bs_test_case_t   bs_strutil_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __STRUTIL_H__ */
+#endif /* __LIBBASE_STRUTIL_H__ */
 /* == End of strutil.h ================================================== */

@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_DLLIST_H__
-#define __BS_DLLIST_H__
+#ifndef __LIBBASE_DLLIST_H__
+#define __LIBBASE_DLLIST_H__
 
 #include "test.h"
 
@@ -107,5 +107,5 @@ extern const bs_test_case_t   bs_dllist_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_DLLIST_H__ */
+#endif /* __LIBBASE_DLLIST_H__ */
 /* == End of dllist.h ====================================================== */

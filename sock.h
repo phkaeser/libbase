@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __SOCK_H__
-#define __SOCK_H__
+#ifndef __LIBBASE_SOCK_H__
+#define __LIBBASE_SOCK_H__
 
 #include <stdbool.h>
 #include <sys/types.h>
@@ -72,5 +72,5 @@ ssize_t bs_sock_read(int fd, void *buf_ptr, size_t count, int msec);
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __SOCK_H__ */
+#endif /* __LIBBASE_SOCK_H__ */
 /* == End of sock.h ======================================================== */

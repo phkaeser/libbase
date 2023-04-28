@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_ASSERT_H__
-#define __BS_ASSERT_H__
+#ifndef __LIBBASE_ASSERT_H__
+#define __LIBBASE_ASSERT_H__
 
 #include "log.h"
 
@@ -46,5 +46,5 @@
         }                                                               \
     }
 
-#endif /* __BS_ASSERT_H__ */
+#endif /* __LIBBASE_ASSERT_H__ */
 /* == End of assert.h ====================================================== */

@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_LOG_H__
-#define __BS_LOG_H__
+#ifndef __LIBBASE_LOG_H__
+#define __LIBBASE_LOG_H__
 
 #include "def.h"
 #include "test.h"
@@ -81,5 +81,5 @@ extern const bs_test_case_t   bs_log_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_LOG_H__ */
+#endif /* __LIBBASE_LOG_H__ */
 /* == End of log.h ========================================================= */

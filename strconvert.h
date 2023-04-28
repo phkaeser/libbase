@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __STRCONVERT_H__
-#define __STRCONVERT_H__
+#ifndef __LIBBASE_STRCONVERT_H__
+#define __LIBBASE_STRCONVERT_H__
 
 #include "test.h"
 
@@ -56,5 +56,5 @@ extern const bs_test_case_t   bs_strconvert_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __STRCONVERT_H__ */
+#endif /* __LIBBASE_STRCONVERT_H__ */
 /* == End of strconvert.h ================================================== */

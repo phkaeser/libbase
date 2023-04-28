@@ -19,8 +19,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __SUBPROCESS_H__
-#define __SUBPROCESS_H__
+#ifndef __LIBBASE_SUBPROCESS_H__
+#define __LIBBASE_SUBPROCESS_H__
 
 #include "test.h"
 
@@ -160,5 +160,5 @@ extern const bs_test_case_t   bs_subprocess_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __SUBPROCESS_H__ */
+#endif /* __LIBBASE_SUBPROCESS_H__ */
 /* == End of subprocess.h ================================================== */

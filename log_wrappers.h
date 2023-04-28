@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __LOG_WRAPPERS_H__
-#define __LOG_WRAPPERS_H__
+#ifndef __LIBBASE_LOG_WRAPPERS_H__
+#define __LIBBASE_LOG_WRAPPERS_H__
 
 #include "log.h"
 
@@ -83,5 +83,5 @@ static inline char *_logged_strdup(
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __LOG_WRAPPERS_H__ */
+#endif /* __LIBBASE_LOG_WRAPPERS_H__ */
 /* == End of log_wrappers.h ================================================== */

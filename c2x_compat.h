@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __C2X_COMPAT_H__
-#define __C2X_COMPAT_H__
+#ifndef __LIBBASE_C2X_COMPAT_H__
+#define __LIBBASE_C2X_COMPAT_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,5 +38,5 @@ char *strdup(const char*s);
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __C2X_COMPAT_H__ */
+#endif /* __LIBBASE_C2X_COMPAT_H__ */
 /* == End of c2x_compat.h ================================================== */

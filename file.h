@@ -19,8 +19,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __FILE_H__
-#define __FILE_H__
+#ifndef __LIBBASE_FILE_H__
+#define __LIBBASE_FILE_H__
 
 #include <stddef.h>
 
@@ -65,5 +65,5 @@ ssize_t bs_file_write_buffer(
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __FILE_H__ */
+#endif /* __LIBBASE_FILE_H__ */
 /* == End of file.h ======================================================== */

@@ -19,8 +19,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __PTR_SET_H__
-#define __PTR_SET_H__
+#ifndef __LIBBASE_PTR_SET_H__
+#define __LIBBASE_PTR_SET_H__
 
 #include <stdbool.h>
 
@@ -94,5 +94,5 @@ extern const bs_test_case_t   bs_ptr_set_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __PTR_SET_H__ */
+#endif /* __LIBBASE_PTR_SET_H__ */
 /* == End of ptr_set.h ===================================================== */

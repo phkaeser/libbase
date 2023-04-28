@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_THREAD_H__
-#define __BS_THREAD_H__
+#ifndef __LIBBASE_THREAD_H__
+#define __LIBBASE_THREAD_H__
 
 #include <pthread.h>
 #include <stdbool.h>
@@ -58,5 +58,5 @@ bool bs_cond_timedwait(pthread_cond_t *condition_ptr,
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_THREAD_H__ */
+#endif /* __LIBBASE_THREAD_H__ */
 /* == End of thread.h ====================================================== */

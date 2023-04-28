@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_DEF_H__
-#define __BS_DEF_H__
+#ifndef __LIBBASE_DEF_H__
+#define __LIBBASE_DEF_H__
 
 // For offsetof.
 #include <stddef.h>
@@ -64,5 +64,5 @@
         (uint8_t*)(elem_ptr) -                                  \
         offsetof(container_type, elem_field))
 
-#endif /* __BS_DEF_H__ */
+#endif /* __LIBBASE_DEF_H__ */
 /* == End of def.h ========================================================= */

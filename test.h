@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_TEST_H__
-#define __BS_TEST_H__
+#ifndef __LIBBASE_TEST_H__
+#define __LIBBASE_TEST_H__
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -185,5 +185,5 @@ extern const bs_test_case_t   bs_test_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_TEST_H__ */
+#endif /* __LIBBASE_TEST_H__ */
 /* == End of test.h ===================================================== */

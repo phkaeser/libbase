@@ -19,8 +19,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BS_ARG_H__
-#define __BS_ARG_H__
+#ifndef __LIBBASE_ARG_H__
+#define __LIBBASE_ARG_H__
 
 #include "test.h"
 
@@ -212,5 +212,5 @@ extern const bs_test_case_t   bs_arg_test_cases[];
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __BS_ARG_H__ */
+#endif /* __LIBBASE_ARG_H__ */
 /* == End of arg.h ========================================================= */

@@ -18,8 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __VECTOR_H__
-#define __VECTOR_H__
+#ifndef __LIBBASE_VECTOR_H__
+#define __LIBBASE_VECTOR_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,5 +68,5 @@ static inline bs_vector_2f_t bs_vec_mul_2f(const double scale,
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __VECTOR_H__ */
+#endif /* __LIBBASE_VECTOR_H__ */
 /* == End of vector.h ====================================================== */
