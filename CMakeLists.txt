@@ -34,7 +34,7 @@ INCLUDE(GNUInstallDirs)
 # Configuration. Remove CMakeCache.txt to rerun...
 OPTION(config_DEBUG "Include debugging information" ON)
 OPTION(config_OPTIM "Optimizations" OFF)
-OPTION(config_COVERAGE "Build with test coverage" ON)
+OPTION(config_COVERAGE "Build with test coverage" OFF)
 
 # Toplevel compile options, for GCC.
 IF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
@@ -169,14 +169,15 @@ ENDIF(DOXYGEN_FOUND)
 
 # Adds 'coverage' target, if configured. Needs 'gcovr'.
 IF(config_COVERAGE)
-  FIND_PROGRAM(GCOVR_FOUND gcovr REQUIRED)
-  IF(NOT GCOVR_FOUND)
-    MESSAGE(FATAL_ERROR "Coverage enabled, but 'govr' not found.")
-  ENDIF()
-  ADD_COMPILE_OPTIONS(--coverage)
-  ADD_LINK_OPTIONS(--coverage)
+  FIND_PROGRAM(GCOVR_FOUND gcovr OPTIONAL)
+  IF(GCOVR_FOUND)
+    ADD_COMPILE_OPTIONS(--coverage)
+    ADD_LINK_OPTIONS(--coverage)
 
-  MESSAGE(NOTICE "Coverage configured, adding 'coverage' target.")
-  ADD_CUSTOM_TARGET(coverage
-    COMMAND gcovr -r ${CMAKE_CURRENT_SOURCE_DIR} . --exclude _deps --print-summary --html-details --html-title "Unittest coverage" -o coverage.html)
+    MESSAGE(NOTICE "Coverage configured, adding 'coverage' target.")
+    ADD_CUSTOM_TARGET(coverage
+      COMMAND gcovr -r ${CMAKE_CURRENT_SOURCE_DIR} . --exclude _deps --print-summary --html-details --html-title "Unittest coverage" -o coverage.html)
+  ELSE(GCOVR_FOUND)
+    MESSAGE(WARNING "Coverage enabled, but 'govr' not found.")
+  ENDIF(GCOVR_FOUND)
 ENDIF()
