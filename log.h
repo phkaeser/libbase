@@ -31,6 +31,9 @@
 extern "C" {
 #endif  // __cplusplus
 
+/** Maximum size of one log message, excluding terminating NUL. */
+#define BS_LOG_MAX_BUF_SIZE 4096
+
 /** Severity for logging. */
 typedef enum {
     BS_DEBUG = 0,
@@ -65,11 +68,18 @@ void bs_log_vwrite(bs_log_severity_t severity,
 bool bs_log_init_file(const char *log_filename_ptr,
                       bs_log_severity_t severity);
 
+/** Returns whether log outut will happen for `severity`. */
+static inline bool bs_will_log(bs_log_severity_t severity)
+{
+    return  ((severity & 0x7f) >= bs_log_severity ||
+             (severity & 0x7f) == BS_FATAL);
+}
+
+
 /** Write a log message, at specified severity. */
 #define bs_log(_severity, ...) {                                        \
         bs_log_severity_t _tmp_sev = (_severity);                       \
-        if ((_tmp_sev & 0x7f) >= bs_log_severity ||                     \
-            (_tmp_sev & 0x7f) == BS_FATAL ) {                           \
+        if (bs_will_log(_tmp_sev)) {                                    \
             bs_log_write(_tmp_sev, __FILE__, __LINE__, __VA_ARGS__);    \
         }                                                               \
     }

@@ -35,9 +35,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-/** Size of logging buffer. */
-#define MAX_LOG_SIZE 4096
-
 /* == Data ================================================================= */
 
 bs_log_severity_t      bs_log_severity = BS_WARNING;
@@ -86,7 +83,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
                    int line_num,
                    const char *fmt_ptr, va_list ap)
 {
-    char buf[MAX_LOG_SIZE + 1];
+    char buf[BS_LOG_MAX_BUF_SIZE + 1];
     int len;
 
     struct timeval tv;
@@ -95,7 +92,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
     }
     struct tm *tm_ptr = localtime(&tv.tv_sec);
 
-    len = snprintf(buf, MAX_LOG_SIZE,
+    len = snprintf(buf, BS_LOG_MAX_BUF_SIZE,
                    "%04d-%02d-%02d %02d:%02d:%02d.%03d %s:%d (%s) ",
                    tm_ptr->tm_year + 1900, tm_ptr->tm_mon + 1, tm_ptr->tm_mday,
                    tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec,
@@ -103,18 +100,18 @@ void bs_log_vwrite(bs_log_severity_t severity,
                    _basename(file_name_ptr), line_num,
                    _severity_names[severity & 0x7f]);
 
-    if (len < MAX_LOG_SIZE) {
-        len += vsnprintf(&buf[len], MAX_LOG_SIZE - len, fmt_ptr, ap);
+    if (len < BS_LOG_MAX_BUF_SIZE) {
+        len += vsnprintf(&buf[len], BS_LOG_MAX_BUF_SIZE - len, fmt_ptr, ap);
     }
-    if (severity & BS_ERRNO && len < MAX_LOG_SIZE) {
-        len += snprintf(&buf[len], MAX_LOG_SIZE - len, ": errno(%d): %s",
-                        errno, strerror(errno));
+    if (severity & BS_ERRNO && len < BS_LOG_MAX_BUF_SIZE) {
+        len += snprintf(&buf[len], BS_LOG_MAX_BUF_SIZE - len,
+                        ": errno(%d): %s", errno, strerror(errno));
     }
-    if (len >= MAX_LOG_SIZE) {
-        len = MAX_LOG_SIZE;
-        buf[MAX_LOG_SIZE - 3] = '.';
-        buf[MAX_LOG_SIZE - 2] = '.';
-        buf[MAX_LOG_SIZE - 1] = '.';
+    if (len >= BS_LOG_MAX_BUF_SIZE) {
+        len = BS_LOG_MAX_BUF_SIZE;
+        buf[BS_LOG_MAX_BUF_SIZE - 3] = '.';
+        buf[BS_LOG_MAX_BUF_SIZE - 2] = '.';
+        buf[BS_LOG_MAX_BUF_SIZE - 1] = '.';
     }
     buf[len++] = '\n';
 
@@ -164,7 +161,7 @@ const char *_basename(const char *path_ptr)
 void verify_log_output_equals(bs_test_t *test_ptr, int fd,
                               const char *expected_str)
 {
-    char buf[MAX_LOG_SIZE + 1];
+    char buf[BS_LOG_MAX_BUF_SIZE + 1];
     memset(buf, 0, sizeof(buf));
 
     size_t timestamp_len = strlen("YYYY-MM-DD hh:mm:ss.ccc");
@@ -174,7 +171,7 @@ void verify_log_output_equals(bs_test_t *test_ptr, int fd,
     } else {
         expected_str = "";
     }
-    if (MAX_LOG_SIZE < expected_len || INT_MAX < expected_len) {
+    if (BS_LOG_MAX_BUF_SIZE < expected_len || INT_MAX < expected_len) {
         bs_test_fail(test_ptr, "Absurdly long string: %zu bytes!",
                      expected_len);
         return;
@@ -227,7 +224,7 @@ void test_basename(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_log(bs_test_t *test_ptr)
 {
-    char                      expected_output[MAX_LOG_SIZE + 1];
+    char                      expected_output[BS_LOG_MAX_BUF_SIZE + 1];
     bs_log_severity_t         backup_severity;
 
     backup_severity = bs_log_severity;
