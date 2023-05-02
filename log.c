@@ -44,7 +44,7 @@ static const char*     _severity_names[5] = {
 
 static int             _log_fd = 2;
 
-static const char *_basename(const char *path_ptr);
+static const char *_strip_prefix(const char *path_ptr);
 
 /* == Functions ============================================================ */
 
@@ -97,7 +97,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
                    tm_ptr->tm_year + 1900, tm_ptr->tm_mon + 1, tm_ptr->tm_mday,
                    tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec,
                    (int)(tv.tv_usec / 1000),
-                   _basename(file_name_ptr), line_num,
+                   _strip_prefix(file_name_ptr), line_num,
                    _severity_names[severity & 0x7f]);
 
     if (len < BS_LOG_MAX_BUF_SIZE) {
@@ -133,18 +133,13 @@ void bs_log_vwrite(bs_log_severity_t severity,
 
 
 /* == Local (static) methods =============================================== */
-const char *_basename(const char *path_ptr)
-{
-    const char *start_ptr;
-    const char *pos_ptr;
 
-    start_ptr = path_ptr;
-    pos_ptr = start_ptr;
-    while (*pos_ptr) {
-        if (*pos_ptr == '/') start_ptr = pos_ptr + 1;
-        pos_ptr++;
-    }
-    return start_ptr;
+/** Strips leading relative (or absolute) path prefix. */
+const char *_strip_prefix(const char *path_ptr)
+{
+    if (*path_ptr == '.') ++path_ptr;
+    if (*path_ptr == '/') ++path_ptr;
+    return path_ptr;
 }
 
 /* == Test functions ======================================================= */
@@ -202,23 +197,25 @@ void verify_log_output_equals(bs_test_t *test_ptr, int fd,
     }
 }
 
-static void test_basename(bs_test_t *test_ptr);
+static void test_strip_prefix(bs_test_t *test_ptr);
 static void test_log(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_log_test_cases[] = {
-    { 1, "basename", test_basename },
+    { 1, "basename", test_strip_prefix },
     { 1, "log", test_log },
     { 0, NULL, NULL }
 };
 
 /* ------------------------------------------------------------------------- */
-void test_basename(bs_test_t *test_ptr)
+void test_strip_prefix(bs_test_t *test_ptr)
 {
-    BS_TEST_VERIFY_STREQ(test_ptr, "", _basename(""));
-    BS_TEST_VERIFY_STREQ(test_ptr, "base", _basename("base"));
-    BS_TEST_VERIFY_STREQ(test_ptr, "base", _basename("/base"));
-    BS_TEST_VERIFY_STREQ(test_ptr, "base", _basename("/a/path/to/base"));
-    BS_TEST_VERIFY_STREQ(test_ptr, "", _basename("/a/path/to/base/"));
+    BS_TEST_VERIFY_STREQ(test_ptr, "", _strip_prefix(""));
+    BS_TEST_VERIFY_STREQ(test_ptr, "base", _strip_prefix("base"));
+    BS_TEST_VERIFY_STREQ(test_ptr, "base", _strip_prefix("/base"));
+    BS_TEST_VERIFY_STREQ(test_ptr, "base", _strip_prefix("./base"));
+    BS_TEST_VERIFY_STREQ(test_ptr, "a/path/to/base", _strip_prefix("/a/path/to/base"));
+    BS_TEST_VERIFY_STREQ(test_ptr, "", _strip_prefix("./"));
+    BS_TEST_VERIFY_STREQ(test_ptr, ".", _strip_prefix("/."));
 }
 
 /* ------------------------------------------------------------------------- */
