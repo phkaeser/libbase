@@ -51,7 +51,7 @@ IF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   # CMake provides absolute paths to GCC, hence the __FILE__ macro includes the
   # full path. This option resets it to a path relative to project source.
-  ADD_COMPILE_OPTIONS(-ffile-prefix-map=${PROJECT_SOURCE_DIR}=.)
+  ADD_COMPILE_OPTIONS(-fmacro-prefix-map=${PROJECT_SOURCE_DIR}=.)
 ENDIF()
 SET(CMAKE_C_STANDARD 11)
 
