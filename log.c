@@ -254,12 +254,12 @@ void test_log(bs_test_t *test_ptr)
 
     _log_fd = fds[1];
     snprintf(expected_output, sizeof(expected_output),
-             "log.c:%d (WARNING) test 42\n", __LINE__ + 1);
+             "log.c:%d (\e[93mWARNING\e[0m) test 42\n", __LINE__ + 1);
     bs_log(BS_WARNING, "test %d", 42);
     verify_log_output_equals(test_ptr, fds[0], expected_output);
 
     snprintf(expected_output, sizeof(expected_output),
-             "log.c:%d (ERROR) test 43: errno(%d): Permission denied\n",
+             "log.c:%d (\e[91mERROR\e[0m) test 43: errno(%d): Permission denied\n",
              __LINE__ + 2, EACCES);
     errno = EACCES;
     bs_log(BS_ERROR | BS_ERRNO, "test %d", 43);
@@ -270,7 +270,7 @@ void test_log(bs_test_t *test_ptr)
 
     bs_log_severity = BS_INFO;
     snprintf(expected_output, sizeof(expected_output),
-             "log.c:%d (INFO) test 45\n", __LINE__ + 1);
+             "log.c:%d (\e[37mINFO\e[0m) test 45\n", __LINE__ + 1);
     bs_log(BS_INFO, "test %d", 45);
     verify_log_output_equals(test_ptr, fds[0], expected_output);
 
