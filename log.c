@@ -21,6 +21,7 @@
 #include "assert.h"
 #include "log.h"
 #include "sock.h"
+#include "strutil.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -84,41 +85,55 @@ void bs_log_vwrite(bs_log_severity_t severity,
                    const char *fmt_ptr, va_list ap)
 {
     char buf[BS_LOG_MAX_BUF_SIZE + 1];
-    int len;
+    size_t pos = 0;
+
+    const char *color_attr_ptr = "";
+    switch (severity & 0x7f) {
+    case BS_DEBUG: color_attr_ptr = "\e[38m"; break;  // Dark gray foreground.
+    case BS_INFO: color_attr_ptr = "\e[37m"; break;  // Light gray foreground.
+    case BS_WARNING: color_attr_ptr = "\e[93m"; break;  // Bright yellow.
+    case BS_ERROR: color_attr_ptr = "\e[91m"; break;  // Bright red.
+    case BS_FATAL: color_attr_ptr = "\e[97;41m"; break;  // White on red.
+    }
+    char *reset_ptr = "";
+    if (*color_attr_ptr != '\0') {
+        reset_ptr = "\e[0m";
+    }
 
     struct timeval tv;
     if (0 != gettimeofday(&tv, NULL)) {
         memset(&tv, 0, sizeof(tv));
     }
     struct tm *tm_ptr = localtime(&tv.tv_sec);
+    pos = bs_strappendf(
+        buf, BS_LOG_MAX_BUF_SIZE, pos,
+        "%04d-%02d-%02d %02d:%02d:%02d.%03d %s:%d (%s%s%s) ",
+        tm_ptr->tm_year + 1900, tm_ptr->tm_mon + 1, tm_ptr->tm_mday,
+        tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec,
+        (int)(tv.tv_usec / 1000),
+        _strip_prefix(file_name_ptr), line_num,
+        color_attr_ptr,
+        _severity_names[severity & 0x7f],
+        reset_ptr);
 
-    len = snprintf(buf, BS_LOG_MAX_BUF_SIZE,
-                   "%04d-%02d-%02d %02d:%02d:%02d.%03d %s:%d (%s) ",
-                   tm_ptr->tm_year + 1900, tm_ptr->tm_mon + 1, tm_ptr->tm_mday,
-                   tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec,
-                   (int)(tv.tv_usec / 1000),
-                   _strip_prefix(file_name_ptr), line_num,
-                   _severity_names[severity & 0x7f]);
-
-    if (len < BS_LOG_MAX_BUF_SIZE) {
-        len += vsnprintf(&buf[len], BS_LOG_MAX_BUF_SIZE - len, fmt_ptr, ap);
+    pos = bs_vstrappendf(buf, BS_LOG_MAX_BUF_SIZE, pos, fmt_ptr, ap);
+    if (severity & BS_ERRNO) {
+        pos = bs_strappendf(
+            buf, BS_LOG_MAX_BUF_SIZE, pos,
+            ": errno(%d): %s", errno, strerror(errno));
     }
-    if (severity & BS_ERRNO && len < BS_LOG_MAX_BUF_SIZE) {
-        len += snprintf(&buf[len], BS_LOG_MAX_BUF_SIZE - len,
-                        ": errno(%d): %s", errno, strerror(errno));
-    }
-    if (len >= BS_LOG_MAX_BUF_SIZE) {
-        len = BS_LOG_MAX_BUF_SIZE;
+    if (pos >= BS_LOG_MAX_BUF_SIZE) {
+        pos = BS_LOG_MAX_BUF_SIZE;
         buf[BS_LOG_MAX_BUF_SIZE - 3] = '.';
         buf[BS_LOG_MAX_BUF_SIZE - 2] = '.';
         buf[BS_LOG_MAX_BUF_SIZE - 1] = '.';
     }
-    buf[len++] = '\n';
+    buf[pos++] = '\n';
 
-    ssize_t written_bytes = 0;
-    while (written_bytes < len) {
+    size_t written_bytes = 0;
+    while (written_bytes < pos) {
         ssize_t more_bytes = write(_log_fd, &buf[written_bytes],
-                                   len - written_bytes);
+                                   pos - written_bytes);
         if (0 > more_bytes) {
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
                 continue;
