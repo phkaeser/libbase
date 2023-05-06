@@ -23,7 +23,7 @@
 #include "avltree.h"
 #include "c2x_compat.h"
 #include "log.h"
-#include "strconvert.h"
+#include "strutil.h"
 
 #include <ctype.h>
 #include <errno.h>

@@ -1033,11 +1033,11 @@ void test_nonexisting(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ(test_ptr, SIGABRT, signal_number);
 
     const char *expected_stderr =
-        "(\e[91mERROR\e[0m) Failed execvp(./subprocess_test_does_not_exist";
+        "Failed execvp(./subprocess_test_does_not_exist";
     BS_TEST_VERIFY_EQ(
         test_ptr, 0, strncmp(
             expected_stderr,
-            bs_subprocess_stderr(sp_ptr) + 24 + 17,
+            bs_subprocess_stderr(sp_ptr) + 67,
             strlen(expected_stderr)));
     bs_subprocess_destroy(sp_ptr);
 }

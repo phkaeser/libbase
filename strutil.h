@@ -21,6 +21,7 @@
 #ifndef __LIBBASE_STRUTIL_H__
 #define __LIBBASE_STRUTIL_H__
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <sys/types.h>
 
@@ -64,6 +65,24 @@ size_t bs_vstrappendf(
     size_t buf_pos,
     const char *fmt_ptr,
     va_list ap) __ARG_PRINTF__(4, 0);
+
+/**
+ * Converts a uint64_t from |string_ptr| with |base| and stores it in
+ * |value_ptr|.
+ *
+ * The string is considered valid if it is fully consumed, or if the conversion
+ * ends parsing at a whitespace character.
+ *
+ * @param string_ptr
+ * @param value_ptr
+ * @param base
+ *
+ * @return true on success.
+ */
+bool bs_strconvert_uint64(
+    const char *string_ptr,
+    uint64_t *value_ptr,
+    int base);
 
 /** Test cases. */
 extern const bs_test_case_t   bs_strutil_test_cases[];

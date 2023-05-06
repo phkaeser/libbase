@@ -91,9 +91,9 @@ void bs_log_vwrite(bs_log_severity_t severity,
     switch (severity & 0x7f) {
     case BS_DEBUG: color_attr_ptr = "\e[38m"; break;  // Dark gray foreground.
     case BS_INFO: color_attr_ptr = "\e[37m"; break;  // Light gray foreground.
-    case BS_WARNING: color_attr_ptr = "\e[93m"; break;  // Bright yellow.
-    case BS_ERROR: color_attr_ptr = "\e[91m"; break;  // Bright red.
-    case BS_FATAL: color_attr_ptr = "\e[97;41m"; break;  // White on red.
+    case BS_WARNING: color_attr_ptr = "\e[1;93m"; break;  // Yellow & bold.
+    case BS_ERROR: color_attr_ptr = "\e[1;91m"; break;  // Bright red & bold.
+    case BS_FATAL: color_attr_ptr = "\e[1;97;41m"; break; // White on red,bold.
     }
     char *reset_ptr = "";
     if (*color_attr_ptr != '\0') {
@@ -107,21 +107,23 @@ void bs_log_vwrite(bs_log_severity_t severity,
     struct tm *tm_ptr = localtime(&tv.tv_sec);
     pos = bs_strappendf(
         buf, BS_LOG_MAX_BUF_SIZE, pos,
-        "%04d-%02d-%02d %02d:%02d:%02d.%03d %s:%d (%s%s%s) ",
+        "%04d-%02d-%02d %02d:%02d:%02d.%03d (%s%s%s) %s:%d ",
         tm_ptr->tm_year + 1900, tm_ptr->tm_mon + 1, tm_ptr->tm_mday,
         tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec,
         (int)(tv.tv_usec / 1000),
-        _strip_prefix(file_name_ptr), line_num,
         color_attr_ptr,
         _severity_names[severity & 0x7f],
-        reset_ptr);
+        reset_ptr,
+        _strip_prefix(file_name_ptr), line_num);
 
+    pos = bs_strappendf(buf, BS_LOG_MAX_BUF_SIZE, pos, "%s", color_attr_ptr);
     pos = bs_vstrappendf(buf, BS_LOG_MAX_BUF_SIZE, pos, fmt_ptr, ap);
     if (severity & BS_ERRNO) {
         pos = bs_strappendf(
             buf, BS_LOG_MAX_BUF_SIZE, pos,
             ": errno(%d): %s", errno, strerror(errno));
     }
+    pos = bs_strappendf(buf, BS_LOG_MAX_BUF_SIZE, pos, "%s", reset_ptr);
     if (pos >= BS_LOG_MAX_BUF_SIZE) {
         pos = BS_LOG_MAX_BUF_SIZE;
         buf[BS_LOG_MAX_BUF_SIZE - 3] = '.';
@@ -254,12 +256,14 @@ void test_log(bs_test_t *test_ptr)
 
     _log_fd = fds[1];
     snprintf(expected_output, sizeof(expected_output),
-             "log.c:%d (\e[93mWARNING\e[0m) test 42\n", __LINE__ + 1);
+             "(\e[1;93mWARNING\e[0m) log.c:%d \e[1;93mtest 42\e[0m\n",
+             __LINE__ + 1);
     bs_log(BS_WARNING, "test %d", 42);
     verify_log_output_equals(test_ptr, fds[0], expected_output);
 
     snprintf(expected_output, sizeof(expected_output),
-             "log.c:%d (\e[91mERROR\e[0m) test 43: errno(%d): Permission denied\n",
+             "(\e[1;91mERROR\e[0m) log.c:%d \e[1;91mtest 43"
+             ": errno(%d): Permission denied\e[0m\n",
              __LINE__ + 2, EACCES);
     errno = EACCES;
     bs_log(BS_ERROR | BS_ERRNO, "test %d", 43);
@@ -270,7 +274,8 @@ void test_log(bs_test_t *test_ptr)
 
     bs_log_severity = BS_INFO;
     snprintf(expected_output, sizeof(expected_output),
-             "log.c:%d (\e[37mINFO\e[0m) test 45\n", __LINE__ + 1);
+             "(\e[37mINFO\e[0m) log.c:%d \e[37mtest 45\e[0m\n",
+             __LINE__ + 1);
     bs_log(BS_INFO, "test %d", 45);
     verify_log_output_equals(test_ptr, fds[0], expected_output);
 

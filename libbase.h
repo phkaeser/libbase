@@ -35,7 +35,6 @@
 #include "ptr_stack.h"
 #include "subprocess.h"
 #include "sock.h"
-#include "strconvert.h"
 #include "strutil.h"
 #include "thread.h"
 #include "time.h"

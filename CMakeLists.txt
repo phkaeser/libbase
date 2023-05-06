@@ -73,7 +73,6 @@ SET(PUBLIC_HEADER_FILES
   ptr_set.h
   ptr_stack.h
   sock.h
-  strconvert.h
   strutil.h
   subprocess.h
   test.h
@@ -93,7 +92,6 @@ SET(SOURCES
   ptr_set.c
   ptr_stack.c
   sock.c
-  strconvert.c
   strutil.c
   subprocess.c
   test.c
