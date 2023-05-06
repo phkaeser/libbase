@@ -89,7 +89,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
 
     const char *color_attr_ptr = "";
     switch (severity & 0x7f) {
-    case BS_DEBUG: color_attr_ptr = "\e[38m"; break;  // Dark gray foreground.
+    case BS_DEBUG: color_attr_ptr = "\e[90m"; break;  // Dark gray foreground.
     case BS_INFO: color_attr_ptr = "\e[37m"; break;  // Light gray foreground.
     case BS_WARNING: color_attr_ptr = "\e[1;93m"; break;  // Yellow & bold.
     case BS_ERROR: color_attr_ptr = "\e[1;91m"; break;  // Bright red & bold.
@@ -107,7 +107,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
     struct tm *tm_ptr = localtime(&tv.tv_sec);
     pos = bs_strappendf(
         buf, BS_LOG_MAX_BUF_SIZE, pos,
-        "%04d-%02d-%02d %02d:%02d:%02d.%03d (%s%s%s) %s:%d ",
+        "%04d-%02d-%02d %02d:%02d:%02d.%03d (%s%s%s) \e[90m%s:%d\e[0m ",
         tm_ptr->tm_year + 1900, tm_ptr->tm_mon + 1, tm_ptr->tm_mday,
         tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec,
         (int)(tv.tv_usec / 1000),
@@ -256,13 +256,13 @@ void test_log(bs_test_t *test_ptr)
 
     _log_fd = fds[1];
     snprintf(expected_output, sizeof(expected_output),
-             "(\e[1;93mWARNING\e[0m) log.c:%d \e[1;93mtest 42\e[0m\n",
+             "(\e[1;93mWARNING\e[0m) \e[90mlog.c:%d\e[0m \e[1;93mtest 42\e[0m\n",
              __LINE__ + 1);
     bs_log(BS_WARNING, "test %d", 42);
     verify_log_output_equals(test_ptr, fds[0], expected_output);
 
     snprintf(expected_output, sizeof(expected_output),
-             "(\e[1;91mERROR\e[0m) log.c:%d \e[1;91mtest 43"
+             "(\e[1;91mERROR\e[0m) \e[90mlog.c:%d\e[0m \e[1;91mtest 43"
              ": errno(%d): Permission denied\e[0m\n",
              __LINE__ + 2, EACCES);
     errno = EACCES;
@@ -274,7 +274,7 @@ void test_log(bs_test_t *test_ptr)
 
     bs_log_severity = BS_INFO;
     snprintf(expected_output, sizeof(expected_output),
-             "(\e[37mINFO\e[0m) log.c:%d \e[37mtest 45\e[0m\n",
+             "(\e[37mINFO\e[0m) \e[90mlog.c:%d\e[0m \e[37mtest 45\e[0m\n",
              __LINE__ + 1);
     bs_log(BS_INFO, "test %d", 45);
     verify_log_output_equals(test_ptr, fds[0], expected_output);
