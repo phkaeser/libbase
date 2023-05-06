@@ -265,6 +265,11 @@ void bs_subprocess_destroy(bs_subprocess_t *subprocess_ptr)
         free(subprocess_ptr->stdout_buf_ptr);
     }
 
+    if (NULL != subprocess_ptr->env_vars_ptr) {
+        _free_env_var_list(subprocess_ptr->env_vars_ptr);
+        subprocess_ptr->env_vars_ptr = NULL;
+    }
+
     if (NULL != subprocess_ptr->argv_ptr) {
         _free_argv_list(subprocess_ptr->argv_ptr);
         // If argv_ptr was created, then file_ptr was argv_ptr[0], and thus it
@@ -623,6 +628,10 @@ char **_split_command(const char *cmd_ptr, _env_var_t **env_var_ptr_ptr)
 
     _env_var_t *env_var_ptr;
     env_var_ptr = logged_calloc(1, sizeof(_env_var_t));
+    if (NULL == env_var_ptr) {
+        free(argv_ptr);
+        return NULL;
+    }
     size_t env_var_size = 0;
 
     line_ptr = cmd_ptr;
@@ -632,6 +641,7 @@ char **_split_command(const char *cmd_ptr, _env_var_t **env_var_ptr_ptr)
 
             if (0 == argv_size &&
                 _is_variable_assignment(token_ptr, &env_var_ptr[env_var_size])) {
+                free(token_ptr);
 
                 void *tmp_ptr = realloc(
                     env_var_ptr,
@@ -778,8 +788,9 @@ bool _populate_env_var(_env_var_t *env_var_ptr,
  *     variable name. Will only be set if the function returns true. If so,
  *     the allocated memory must be free()-ed.
  * @param value_ptr_ptr       If `word_ptr` is a variable assignent, then
- *     *value_ptr_ptr will be set to point to the variable's value. It points
- *     into `word_ptr`, and does not need to be free()-ed.
+ *     *value_ptr_ptr will be set to point to a newly allocated copy of the
+ *     variable's value. Will only be set if the function return true. I fos,
+ *     the allocated memory must be free()-ed.
  *
  * @return true if `word_ptr` is a variable, and false if it's not a varaible
  *     or if an error occurred. *name_ptr_ptr and *value_ptr_ptr will be set
@@ -924,6 +935,8 @@ void test_is_variable_assignment(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(test_ptr, _is_variable_assignment("a=", &var));
     BS_TEST_VERIFY_STREQ(test_ptr, var.name_ptr, "a");
     BS_TEST_VERIFY_STREQ(test_ptr, var.value_ptr, "");
+    free(var.name_ptr);
+    free(var.value_ptr);
 
     BS_TEST_VERIFY_FALSE(test_ptr, _is_variable_assignment("a", &var));
     BS_TEST_VERIFY_FALSE(test_ptr, _is_variable_assignment("1a=b", &var));
@@ -1032,13 +1045,9 @@ void test_nonexisting(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ(test_ptr, INT_MIN, exit_status);
     BS_TEST_VERIFY_EQ(test_ptr, SIGABRT, signal_number);
 
-    const char *expected_stderr =
-        "Failed execvp(./subprocess_test_does_not_exist";
-    BS_TEST_VERIFY_EQ(
-        test_ptr, 0, strncmp(
-            expected_stderr,
-            bs_subprocess_stderr(sp_ptr) + 67,
-            strlen(expected_stderr)));
+    BS_TEST_VERIFY_STRMATCH(
+        test_ptr, bs_subprocess_stderr(sp_ptr),
+        ".*ERROR.*Failed execvp\\(\\./subprocess_test_does_not_exist");
     bs_subprocess_destroy(sp_ptr);
 }
 

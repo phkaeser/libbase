@@ -21,6 +21,7 @@
 #ifndef __LIBBASE_TEST_H__
 #define __LIBBASE_TEST_H__
 
+#include <regex.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -175,6 +176,36 @@ int bs_test(const bs_test_set_t *test_sets,
                          "%s(%d): %s (\"%s\") not equal %s (\"%s\") at" \
                          " %zu (0x%02x != 0x%02x)", __FILE__, __LINE__, \
                          #_a, _a1, #_b, _b1, pos, _a1[pos], _b1[pos]);  \
+        }                                                               \
+    }
+
+/**
+ * Verifies that the string _a matches the regular expression _regex.
+ *
+ * @param _test
+ * @param _a
+ * @param _regex
+ */
+#define BS_TEST_VERIFY_STRMATCH(_test, _a, _regex) {                    \
+    char _a1[4097], _regex1[4097];                                      \
+        snprintf(_a1, sizeof(_a1), "%s", (_a));                         \
+        snprintf(_regex1, sizeof(_regex1), "%s", (_regex));             \
+        bs_test_t *_test1 = _test;                                      \
+        regex_t regex;                                                  \
+        int rv = regcomp(&regex, _regex1, REG_EXTENDED);                \
+        if (0 != rv) {                                                  \
+            char err_buf[512];                                          \
+            regerror(rv, &regex, err_buf, sizeof(err_buf));             \
+            bs_test_fail(_test1, "Failed regcomp(\"%s\"): %s",          \
+                         _regex1, err_buf);                             \
+        } else {                                                        \
+            regmatch_t matches[1];                                      \
+            rv = regexec(&regex, _a, 1, matches, 0);                    \
+            regfree(&regex);                                            \
+            if (REG_NOMATCH == rv) {                                    \
+                bs_test_fail(_test1, "\"%s\" does not match \"%s\".",   \
+                             _a1, _regex);                              \
+            }                                                           \
         }                                                               \
     }
 
