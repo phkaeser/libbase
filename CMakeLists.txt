@@ -57,6 +57,9 @@ SET(CMAKE_C_STANDARD 11)
 
 FIND_PACKAGE(Curses REQUIRED)
 
+FIND_PACKAGE(PkgConfig REQUIRED)
+PKG_CHECK_MODULES(CAIRO REQUIRED IMPORTED_TARGET cairo>=1.16.0)
+
 SET(PUBLIC_HEADER_FILES
   arg.h
   assert.h
@@ -67,6 +70,7 @@ SET(PUBLIC_HEADER_FILES
   dequeue.h
   dllist.h
   file.h
+  gfxbuf.h
   libbase.h
   log.h
   log_wrappers.h
@@ -88,6 +92,7 @@ SET(SOURCES
   dequeue.c
   dllist.c
   file.c
+  gfxbuf.c
   log.c
   ptr_set.c
   ptr_stack.c
@@ -107,6 +112,13 @@ SET_TARGET_PROPERTIES(
   base PROPERTIES
   VERSION 1.0
   PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
+
+IF(CAIRO_FOUND)
+  TARGET_COMPILE_DEFINITIONS(base PUBLIC HAVE_CAIRO)
+  TARGET_INCLUDE_DIRECTORIES(base PUBLIC ${CAIRO_INCLUDE_DIRS})
+  TARGET_LINK_LIBRARIES(base PUBLIC PkgConfig::CAIRO)
+ENDIF(CAIRO_FOUND)
+
 
 # Create pkg-config file from the template.
 CONFIGURE_FILE(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)

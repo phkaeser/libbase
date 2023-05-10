@@ -28,6 +28,7 @@ const bs_test_set_t           libbase_tests[] = {
     { 1, "bs_avltree", bs_avltree_test_cases },
     { 1, "bs_dequeue", bs_dequeue_test_cases },
     { 1, "bs_dllist", bs_dllist_test_cases },
+    { 1, "bs_gfxbuf", bs_gfxbuf_test_cases },
     { 1, "bs_log", bs_log_test_cases },
     { 1, "bs_ptr_set", bs_ptr_set_test_cases },
     { 1, "bs_ptr_stack", bs_ptr_stack_test_cases },
