@@ -21,6 +21,8 @@
 #include "gfxbuf.h"
 
 #include <inttypes.h>
+#include <libgen.h>
+#include <limits.h>
 
 #include "log_wrappers.h"
 #include "test.h"
@@ -180,7 +182,7 @@ void bs_gfxbuf_copy_area(
 
 /* ------------------------------------------------------------------------- */
 #ifdef HAVE_CAIRO
-cairo_t *bs_gfxbuf_create_cairo(bs_gfxbuf_t *gfxbuf_ptr)
+cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr)
 {
     cairo_surface_t *cairo_surface_ptr = cairo_image_surface_create_for_data(
         (unsigned char*)gfxbuf_ptr->data_ptr, bs_gfx_cairo_image_format,
@@ -202,6 +204,103 @@ cairo_t *bs_gfxbuf_create_cairo(bs_gfxbuf_t *gfxbuf_ptr)
     }
     return cairo_ptr;
 }
+
+/* ------------------------------------------------------------------------- */
+/** TODO(kaeser@gubbe.ch): Change this to use libpng, and clean the code. */
+void bs_test_gfxbuf_equals_png_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    int line,
+    const bs_gfxbuf_t *gfxbuf_ptr,
+    const char *png_fname_ptr)
+{
+    if (NULL == png_fname_ptr) {
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line, "PNG file name is NULL");
+        return;
+    }
+
+    cairo_surface_t *png_surface_ptr =
+        cairo_image_surface_create_from_png(png_fname_ptr);
+    if (NULL == png_surface_ptr) {
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "Failed cairo_image_surface_create_from_png(\"%s\")",
+            png_fname_ptr);
+        return;
+    }
+
+    if (CAIRO_STATUS_SUCCESS != cairo_surface_status(png_surface_ptr)) {
+        bs_test_fail_at(test_ptr, fname_ptr, line,
+                        "Failed to load PNG surface from \"%s\"",
+                        png_fname_ptr);
+    }
+
+    if ((unsigned)cairo_image_surface_get_width(png_surface_ptr) !=
+        gfxbuf_ptr->width) {
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "gfxbuf width %u != PNG width %d",
+            gfxbuf_ptr->width,
+            cairo_image_surface_get_width(png_surface_ptr));
+    }
+    if ((unsigned)cairo_image_surface_get_height(png_surface_ptr) !=
+        gfxbuf_ptr->height) {
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "gfxbuf height %u != PNG height %d",
+            gfxbuf_ptr->height,
+            cairo_image_surface_get_height(png_surface_ptr));
+    }
+    if ((unsigned)cairo_image_surface_get_stride(png_surface_ptr) <
+        gfxbuf_ptr->width * sizeof(uint32_t)) {
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "PNG bytes per line (%d) lower than gfxbuf width.",
+            cairo_image_surface_get_stride(png_surface_ptr));
+    }
+
+    if (!bs_test_failed(test_ptr)) {
+        for (unsigned l = 0; l < gfxbuf_ptr->height; ++l) {
+            if (0 != memcmp(
+                    bs_gfxbuf_pixel_at(gfxbuf_ptr, 0, l),
+                    cairo_image_surface_get_data(png_surface_ptr) + (
+                        l * cairo_image_surface_get_stride(png_surface_ptr)),
+                    gfxbuf_ptr->width * sizeof(uint32_t))) {
+                bs_test_fail_at(
+                    test_ptr, fname_ptr, line,
+                    "gfxbuf content at line %u different from PNG.", line);
+            }
+        }
+    }
+
+    cairo_surface_destroy(png_surface_ptr);
+
+    if (!bs_test_failed(test_ptr)) return;
+
+    cairo_t *cairo_ptr = bs_gfxbuf_create_cairo(gfxbuf_ptr);
+    if (NULL == cairo_ptr) {
+        bs_log(BS_ERROR, "Failed bs_gfxbuf_create_cairo");
+        return;
+    }
+    cairo_surface_t *surface_ptr = cairo_get_target(cairo_ptr);
+    if (NULL == cairo_ptr) {
+        bs_log(BS_ERROR, "Failed cairo_get_target");
+        cairo_destroy(cairo_ptr);
+        return;
+    }
+
+    cairo_status_t status = cairo_surface_write_to_png(surface_ptr, "/tmp/out.png");
+    if (CAIRO_STATUS_SUCCESS == status) {
+        bs_log(BS_ERROR, "PNG did not match. gfxbuf written to \"/tmp/out.png\"");
+    } else {
+        bs_log(BS_ERROR, "Failed cairo_surface_write_to_png(%p, \"/tmp/out.png\")",
+               surface_ptr);
+    }
+
+    cairo_destroy(cairo_ptr);
+}
+
 #endif  // HAVE_CAIRO
 
 /* == Tests ================================================================ */
@@ -212,6 +311,7 @@ static void benchmark_copy(bs_test_t *test_ptr);
 static void test_copy_area(bs_test_t *test_ptr);
 #ifdef HAVE_CAIRO
 static void test_cairo(bs_test_t *test_ptr);
+static void test_equals_png(bs_test_t *test_ptr);
 #endif  // HAVE_CAIRO
 
 /* set benchmarks to last for 2.5s each */
@@ -224,6 +324,7 @@ const bs_test_case_t          bs_gfxbuf_test_cases[] = {
     { 1, "copy_area", test_copy_area },
 #ifdef HAVE_CAIRO
     { 1, "cairo", test_cairo },
+    { 1, "equals_png", test_equals_png },
 #endif  // HAVE_CAIRO
     { 0, NULL, NULL }
 };
@@ -247,6 +348,7 @@ static void benchmark_clear(bs_test_t *test_ptr)
 
     bs_test_succeed(test_ptr, "bs_gfxbuf_clear: %.3e pix/sec - %"PRIu64"us",
                     (double)iterations * 1024 * 768 / (usec * 1e-6), usec);
+    bs_gfxbuf_destroy(buf_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -268,6 +370,7 @@ static void benchmark_clear_nonblack(bs_test_t *test_ptr)
 
     bs_test_succeed(test_ptr, "bs_gfxbuf_clear: %.3e pix/sec - %"PRIu64"us",
                     (double)iterations * 1024 * 768 / (usec * 1e-6), usec);
+    bs_gfxbuf_destroy(buf_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -281,6 +384,7 @@ static void benchmark_copy(bs_test_t *test_ptr)
     bs_gfxbuf_t *buf_2_ptr = bs_gfxbuf_create(1024, 768);
     if (NULL == buf_2_ptr) {
         BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        bs_gfxbuf_destroy(buf_1_ptr);
         return;
     }
 
@@ -294,6 +398,8 @@ static void benchmark_copy(bs_test_t *test_ptr)
 
     bs_test_succeed(test_ptr, "bs_gfxbuf_copy: %.3e pix/sec",
                     (double)iterations * 1024 * 768 / (usec * 1e-6));
+    bs_gfxbuf_destroy(buf_1_ptr);
+    bs_gfxbuf_destroy(buf_2_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -334,6 +440,17 @@ void test_cairo(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ(test_ptr, 0xffffffff, *bs_gfxbuf_pixel_at(buf, 0, 0));
 
     cairo_destroy(cairo_ptr);
+    bs_gfxbuf_destroy(buf);
+}
+
+/* ------------------------------------------------------------------------- */
+void test_equals_png(bs_test_t *test_ptr)
+{
+    bs_gfxbuf_t *buf = bs_gfxbuf_create(1, 1);
+    bs_gfxbuf_clear(buf, 0xff804020);
+    bs_test_gfxbuf_equals_png_at(
+        test_ptr, __FILE__, __LINE__, buf,
+        bs_test_resolve_path("testdata/gfxbuf_equals.png"));
     bs_gfxbuf_destroy(buf);
 }
 #endif  // HAVE_CAIRO

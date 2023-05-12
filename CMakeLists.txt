@@ -119,6 +119,9 @@ IF(CAIRO_FOUND)
   TARGET_LINK_LIBRARIES(base PUBLIC PkgConfig::CAIRO)
 ENDIF(CAIRO_FOUND)
 
+# Refer to the source path for relative testdata.
+TARGET_COMPILE_DEFINITIONS(
+  base PUBLIC BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Create pkg-config file from the template.
 CONFIGURE_FILE(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)

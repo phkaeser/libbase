@@ -148,6 +148,21 @@ void bs_test_verify_strmatch_at(
     const char *hash_a_ptr,
     const char *regex_ptr);
 
+/**
+ * Resolves a relative path into an absolute, with configured test directory.
+ *
+ * If fname_ptr is already an absolute path, this will return the resolved path
+ * using realpath(3). Otherwise, it is joined with the configured test
+ * directory, and resolved using realpath(3).
+ *
+ * @param fname_ptr
+ *
+ * @return A pointer to the resolved path or NULL on error. It points to a
+ *     thread-local static store and does not need to be free()-ed. It may get
+ *     overwritten by the next call to @ref bs_test_resolve_path.
+ */
+const char *bs_test_resolve_path(const char *fname_ptr);
+
 /* == Verification macros ================================================== */
 
 /**

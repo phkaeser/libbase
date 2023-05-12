@@ -171,7 +171,31 @@ static inline void bs_gfxbuf_set_pixel(
  * @return A cairo drawing context, or NULL on error. The returned context must
  *     be destroyed by calling cairo_destroy().
  */
-cairo_t *bs_gfxbuf_create_cairo(bs_gfxbuf_t *gfxbuf_ptr);
+cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr);
+
+/**
+ * Tests whether the graphics is equal to the contents of the PNG file.
+ *
+ * @param test_ptr
+ * @paran fname_ptr
+ * @paran line
+ * @param gfxbuf_ptr
+ * @param png_fname_ptr       Name of the PNG file. The test will report as
+ *                            failed if `png_fname_ptr` is NULL.
+ */
+void bs_test_gfxbuf_equals_png_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    int line,
+    const bs_gfxbuf_t *gfxbuf_ptr,
+    const char *png_fname_ptr);
+
+/** Test macro for verifying whether @ref bs_gfxbuf_t equals the PNG file. */
+#define BS_TEST_VERIFY_GFXBUF_EQALS_PNG(_test, _gfxbuf_ptr, _png_name) { \
+        bs_test_gfxbuf_equals_png_at(                                   \
+        (_test), __FILE__, __LINE__, (_gfxbuf_ptr), (_png_name));       \
+    }
+
 #endif  // HAVE_CAIRO
 
 /** Unit tests. */

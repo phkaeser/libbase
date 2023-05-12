@@ -21,10 +21,12 @@
 #include <curses.h>
 #include <stdarg.h>
 #include <fnmatch.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <term.h>
+#include <threads.h>
 
 #include "arg.h"
 #include "assert.h"
@@ -116,6 +118,11 @@ static char *bs_test_case_create_full_name(
     const bs_test_set_t *set_ptr,
     const bs_test_case_t *case_ptr);
 
+#if !defined(BS_TEST_DATA_DIR)
+/** Directory root for looking up test data. See @ref bs_test_resolve_path. */
+#define BS_TEST_DATA_DIR "./"
+#endif  // BS_TEST_DATA_DIR
+
 /* == Data ================================================================= */
 
 /** Terminal codes. */
@@ -130,6 +137,7 @@ static const char             *bs_test_report_separator_ptr =
     "=======================================";
 
 static char                  *bs_test_filter_ptr = NULL;
+static char                  *bs_test_data_dir_ptr = NULL;
 
 static const bs_arg_t        bs_test_args[] = {
     BS_ARG_STRING(
@@ -137,6 +145,11 @@ static const bs_arg_t        bs_test_args[] = {
         "Filter to apply for selecting tests. Uses fnmatch on the full name.",
         "*",
         &bs_test_filter_ptr),
+    BS_ARG_STRING(
+        "test_data_directory",
+        "Directory to use for test data.",
+        BS_TEST_DATA_DIR,
+        &bs_test_data_dir_ptr),
     BS_ARG_SENTINEL()
 };
 
@@ -217,13 +230,13 @@ int bs_test(const bs_test_set_t *test_sets, int argc, const char **argv)
 
 
 /* ------------------------------------------------------------------------- */
-void bs_test_succeed(bs_test_t *test, const char *fmt, ...)
+void bs_test_succeed(bs_test_t *test, const char *fmt_ptr, ...)
 {
     va_list                   ap;
 
     if ((!test->failed) && ('\0' == test->report[0])) {
-        va_start(ap, fmt);
-        vsnprintf(test->report, sizeof(test->report), fmt, ap);
+        va_start(ap, fmt_ptr);
+        vsnprintf(test->report, sizeof(test->report), fmt_ptr, ap);
         va_end(ap);
     }
 }
@@ -233,17 +246,18 @@ void bs_test_fail_at(
     bs_test_t *test,
     const char *fname_ptr,
     int line,
-    const char *fmt, ...)
+    const char *fmt_ptr, ...)
 {
     va_list                   ap;
 
     if (!test->failed) {
         test->failed = true;
-        int pos = snprintf(test->report, sizeof(test->report), "%s(%d): ",
-                           fname_ptr, line);
-        if (0 > pos || (size_t)pos >= sizeof(test->report)) return
-        va_start(ap, fmt);
-        vsnprintf(&test->report[pos], sizeof(test->report) - pos, fmt, ap);
+        int pos = snprintf(&test->report[0], sizeof(test->report),
+                           "%s(%d): ", fname_ptr, line);
+        if (0 > pos || (size_t)pos >= sizeof(test->report)) return;
+
+        va_start(ap, fmt_ptr);
+        vsnprintf(&test->report[pos], sizeof(test->report) - pos, fmt_ptr, ap);
         va_end(ap);
     }
 }
@@ -309,6 +323,28 @@ void bs_test_verify_strmatch_at(
     }
 }
 
+/* ------------------------------------------------------------------------- */
+const char *bs_test_resolve_path(const char *fname_ptr)
+{
+    char joined_path[PATH_MAX];
+    const char *input_path_ptr;
+
+    if (fname_ptr[0] == '/') {
+        input_path_ptr = fname_ptr;
+    } else {
+        snprintf(joined_path, sizeof(joined_path), "%s/%s",
+                 bs_test_data_dir_ptr, fname_ptr);
+        input_path_ptr = &joined_path[0];
+    }
+
+    static thread_local char resolved_path[PATH_MAX];
+    char *resolved_path_ptr = realpath(input_path_ptr, resolved_path);
+    if (NULL == resolved_path_ptr) {
+        bs_log(BS_ERROR | BS_ERRNO, "Failed realphath(\"%s\", %p)",
+               fname_ptr, resolved_path_ptr);
+    }
+    return resolved_path_ptr;
+}
 /* == Static (Local) Functions ============================================= */
 
 /* ------------------------------------------------------------------------- */
