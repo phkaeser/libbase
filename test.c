@@ -229,15 +229,22 @@ void bs_test_succeed(bs_test_t *test, const char *fmt, ...)
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_test_fail(bs_test_t *test, const char *fmt, ...)
+void bs_test_fail_at(
+    bs_test_t *test,
+    const char *fname_ptr,
+    int line,
+    const char *fmt, ...)
 {
     va_list                   ap;
 
     if (!test->failed) {
-        va_start(ap, fmt);
-        vsnprintf(test->report, sizeof(test->report), fmt, ap);
-        va_end(ap);
         test->failed = true;
+        int pos = snprintf(test->report, sizeof(test->report), "%s(%d): ",
+                           fname_ptr, line);
+        if (0 > pos || (size_t)pos >= sizeof(test->report)) return
+        va_start(ap, fmt);
+        vsnprintf(&test->report[pos], sizeof(test->report) - pos, fmt, ap);
+        va_end(ap);
     }
 }
 
@@ -245,6 +252,61 @@ void bs_test_fail(bs_test_t *test, const char *fmt, ...)
 bool bs_test_failed(bs_test_t *test_ptr)
 {
     return test_ptr->failed;
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_test_verify_streq_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    const int line,
+    const char *a_ptr,
+    const char *hash_a_ptr,
+    const char *b_ptr,
+    const char *hash_b_ptr)
+{
+    if (0 == strcmp(a_ptr, b_ptr)) {
+        // TODO: report bs_test_succeed.
+        return;
+    }
+
+    size_t pos = 0;
+    while (a_ptr[pos] && b_ptr[pos] && a_ptr[pos] == b_ptr[pos]) {
+        ++pos;
+    }
+    bs_test_fail_at(
+        test_ptr, fname_ptr, line,
+        "%s (\"%s\") not equal %s (\"%s\") at %zu (0x%02x != 0x%02x)",
+        hash_a_ptr, a_ptr, hash_b_ptr, b_ptr, pos, a_ptr[pos], b_ptr[pos]);
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_test_verify_strmatch_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    const int line,
+    const char *a_ptr,
+    const char *hash_a_ptr,
+    const char *regex_ptr)
+{
+    regex_t regex;
+    int rv = regcomp(&regex, regex_ptr, REG_EXTENDED);
+    if (0 != rv) {
+        char err_buf[512];
+        regerror(rv, &regex, err_buf, sizeof(err_buf));
+        BS_TEST_FAIL(test_ptr, "Failed regcomp(\"%s\"): %s",
+                     regex_ptr, err_buf);
+        return;
+    }
+
+    regmatch_t matches[1];
+    rv = regexec(&regex, a_ptr, 1, matches, 0);
+    regfree(&regex);
+    if (REG_NOMATCH == rv) {
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "%s (\"%s\") does not match \"%s\".",
+            hash_a_ptr, a_ptr, regex_ptr);
+    }
 }
 
 /* == Static (Local) Functions ============================================= */
@@ -573,7 +635,7 @@ const bs_test_case_t bs_test_test_cases[] = {
 
 void bs_test_test_fail(bs_test_t *test_ptr)
 {
-    bs_test_fail(test_ptr, "fail");
+    BS_TEST_FAIL(test_ptr, "fail");
 }
 
 void bs_test_test_succeed(bs_test_t *test_ptr)
@@ -584,12 +646,12 @@ void bs_test_test_succeed(bs_test_t *test_ptr)
 void bs_test_test_succeed_fail(bs_test_t *test_ptr)
 {
     bs_test_succeed(test_ptr, "success");
-    bs_test_fail(test_ptr, "fail");
+    BS_TEST_FAIL(test_ptr, "fail");
 }
 
 void bs_test_test_fail_succeed(bs_test_t *test_ptr)
 {
-    bs_test_fail(test_ptr, "fail");
+    BS_TEST_FAIL(test_ptr, "fail");
     bs_test_succeed(test_ptr, "success");
 }
 
@@ -627,6 +689,9 @@ void bs_test_eq_neq_tests(bs_test_t *test_ptr)
 {
     BS_TEST_VERIFY_EQ(test_ptr, 1, 1);
     BS_TEST_VERIFY_NEQ(test_ptr, 1, 2);
+
+    BS_TEST_VERIFY_STREQ(test_ptr, "a", "a");
+    BS_TEST_VERIFY_STRMATCH(test_ptr, "asdf", "^[a-z]+$");
 }
 
 /** @endcond */

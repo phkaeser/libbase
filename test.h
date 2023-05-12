@@ -76,14 +76,20 @@ void bs_test_succeed(bs_test_t *test_ptr, const char *fmt_ptr, ...)
     __ARG_PRINTF__(2, 3);
 
 /**
- * Reports the given test as failed.
+ * Reports the given test as failed for the given position.
  *
  * @param test_ptr            Test state.
+ * @param fname_ptr           Filename to report the failure for.
+ * @param line                line number.
  * @param fmt_ptr             Format string for report message.
  * @param ...                 Additional arguments to format string.
  */
-void bs_test_fail(bs_test_t *test_ptr, const char *fmt_ptr, ...)
-    __ARG_PRINTF__(2, 3);
+void bs_test_fail_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    int line,
+    const char *fmt_ptr, ...)
+    __ARG_PRINTF__(4, 5);
 
 /**
  * Check failure status of test.
@@ -100,7 +106,58 @@ bool bs_test_failed(bs_test_t *test_ptr);
 int bs_test(const bs_test_set_t *test_sets,
             int argc, const char **argv);
 
+/**
+ * Tests whether the strings at `a_ptr` and `b_ptr` are equal.
+ *
+ * Helper method, you should use the BS_TEST_VERIFY_STREQ macro instead.
+ *
+ * @param test_ptr
+ * @param fname_ptr
+ * @param line
+ * @param a_ptr
+ * @param hash_a_ptr
+ * @param b_ptr
+ * @param hash_b_ptr
+ */
+void bs_test_verify_streq_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    const int line,
+    const char *a_ptr,
+    const char *hash_a_ptr,
+    const char *b_ptr,
+    const char *hash_b_ptr);
+
+/**
+ * Tests whether the string at `a_ptr` matches the regular expression.
+ *
+ * Helper method, you should use the BS_TEST_VERIFY_STRMATCH macro instead.
+ *
+ * @param fname_ptr
+ * @param line
+ * @param test_ptr
+ * @param a_ptr
+ * @param hash_a_ptr
+ * @param regex_ptr
+ */
+void bs_test_verify_strmatch_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    const int line,
+    const char *a_ptr,
+    const char *hash_a_ptr,
+    const char *regex_ptr);
+
 /* == Verification macros ================================================== */
+
+/**
+ * Reports the test as failed, at current position .
+ *
+ * @param _test
+ */
+#define BS_TEST_FAIL(_test, ...) {                                      \
+        bs_test_fail_at((_test), __FILE__, __LINE__, __VA_ARGS__);      \
+    }
 
 /**
  * Verifies that _expr is true.
@@ -110,8 +167,8 @@ int bs_test(const bs_test_set_t *test_sets,
  */
 #define BS_TEST_VERIFY_TRUE(_test, _expr) {                             \
         if (!(_expr)) {                                                 \
-            bs_test_fail((_test), "%s(%d): %s not true.",               \
-                         __FILE__, __LINE__, #_expr);                   \
+            bs_test_fail_at((_test), __FILE__, __LINE__,                \
+                            "%s not true.", #_expr);                    \
         }                                                               \
     }
 
@@ -123,8 +180,8 @@ int bs_test(const bs_test_set_t *test_sets,
  */
 #define BS_TEST_VERIFY_FALSE(_test, _expr) {                            \
         if (_expr) {                                                    \
-            bs_test_fail((_test), "%s(%d): %s not false.",              \
-                         __FILE__, __LINE__, #_expr);                   \
+            bs_test_fail_at((_test), __FILE__, __LINE__,                \
+                            "%s not false.", #_expr);                   \
         }                                                               \
     }
 
@@ -137,8 +194,8 @@ int bs_test(const bs_test_set_t *test_sets,
  */
 #define BS_TEST_VERIFY_EQ(_test, _a, _b) {                              \
         if (!((_a) == (_b))) {                                          \
-            bs_test_fail((_test), "%s(%d): %s not equal %s.",           \
-                         __FILE__, __LINE__, #_a, #_b);                 \
+            bs_test_fail_at((_test), __FILE__, __LINE__,                \
+                            "%s not equal %s.", #_a, #_b);              \
         }                                                               \
     }
 
@@ -151,8 +208,8 @@ int bs_test(const bs_test_set_t *test_sets,
  */
 #define BS_TEST_VERIFY_NEQ(_test, _a, _b) {                             \
         if ((_a) == (_b)) {                                             \
-            bs_test_fail((_test), "%s(%d): %s equal %s.",               \
-                         __FILE__, __LINE__, #_a, #_b);                 \
+            bs_test_fail_at((_test), __FILE__, __LINE__,                \
+                            "%s equal %s.", #_a, #_b);                  \
         }                                                               \
     }
 
@@ -164,19 +221,8 @@ int bs_test(const bs_test_set_t *test_sets,
  * @param _b
  */
 #define BS_TEST_VERIFY_STREQ(_test, _a, _b) {                           \
-        char _a1[4097], _b1[4097];                                      \
-        snprintf(_a1, sizeof(_a1), "%s", (_a));                         \
-        snprintf(_b1, sizeof(_b1), "%s", (_b));                         \
-        if (0 != strcmp(_a1, _b1)) {                                    \
-            size_t pos = 0;                                             \
-            while (_a1[pos] && _b1[pos] && _a1[pos] == _b1[pos]) {      \
-                ++pos;                                                  \
-            }                                                           \
-            bs_test_fail((_test),                                       \
-                         "%s(%d): %s (\"%s\") not equal %s (\"%s\") at" \
-                         " %zu (0x%02x != 0x%02x)", __FILE__, __LINE__, \
-                         #_a, _a1, #_b, _b1, pos, _a1[pos], _b1[pos]);  \
-        }                                                               \
+        bs_test_verify_streq_at(                                        \
+            (_test), __FILE__, __LINE__, _a, #_a, _b, #_b);             \
     }
 
 /**
@@ -187,26 +233,8 @@ int bs_test(const bs_test_set_t *test_sets,
  * @param _regex
  */
 #define BS_TEST_VERIFY_STRMATCH(_test, _a, _regex) {                    \
-    char _a1[4097], _regex1[4097];                                      \
-        snprintf(_a1, sizeof(_a1), "%s", (_a));                         \
-        snprintf(_regex1, sizeof(_regex1), "%s", (_regex));             \
-        bs_test_t *_test1 = _test;                                      \
-        regex_t regex;                                                  \
-        int rv = regcomp(&regex, _regex1, REG_EXTENDED);                \
-        if (0 != rv) {                                                  \
-            char err_buf[512];                                          \
-            regerror(rv, &regex, err_buf, sizeof(err_buf));             \
-            bs_test_fail(_test1, "Failed regcomp(\"%s\"): %s",          \
-                         _regex1, err_buf);                             \
-        } else {                                                        \
-            regmatch_t matches[1];                                      \
-            rv = regexec(&regex, _a, 1, matches, 0);                    \
-            regfree(&regex);                                            \
-            if (REG_NOMATCH == rv) {                                    \
-                bs_test_fail(_test1, "\"%s\" does not match \"%s\".",   \
-                             _a1, _regex);                              \
-            }                                                           \
-        }                                                               \
+        bs_test_verify_strmatch_at(                                     \
+            (_test), __FILE__, __LINE__, _a, #_a, _regex);              \
     }
 
 /** Test cases. */

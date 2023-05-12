@@ -233,7 +233,7 @@ static void benchmark_clear(bs_test_t *test_ptr)
 {
     bs_gfxbuf_t *buf_ptr = bs_gfxbuf_create(1024, 768);
     if (NULL == buf_ptr) {
-        bs_test_fail(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
         return;
     }
 
@@ -254,7 +254,7 @@ static void benchmark_clear_nonblack(bs_test_t *test_ptr)
 {
     bs_gfxbuf_t *buf_ptr = bs_gfxbuf_create(1024, 768);
     if (NULL == buf_ptr) {
-        bs_test_fail(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
         return;
     }
 
@@ -275,12 +275,12 @@ static void benchmark_copy(bs_test_t *test_ptr)
 {
     bs_gfxbuf_t *buf_1_ptr = bs_gfxbuf_create(1024, 768);
     if (NULL == buf_1_ptr) {
-        bs_test_fail(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
         return;
     }
     bs_gfxbuf_t *buf_2_ptr = bs_gfxbuf_create(1024, 768);
     if (NULL == buf_2_ptr) {
-        bs_test_fail(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
         return;
     }
 

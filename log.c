@@ -167,11 +167,17 @@ const char *_strip_prefix(const char *path_ptr)
  * |fd|. Will verify length and report to |test_ptr|.
  *
  * @param test_ptr
+ * @param fname_ptr
+ * @param line
  * @param fd
  * @param expected_str
  */
-void verify_log_output_equals(bs_test_t *test_ptr, int fd,
-                              const char *expected_str)
+void verify_log_output_equals_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    int line,
+    int fd,
+    const char *expected_str)
 {
     char buf[BS_LOG_MAX_BUF_SIZE + 1];
     memset(buf, 0, sizeof(buf));
@@ -184,32 +190,36 @@ void verify_log_output_equals(bs_test_t *test_ptr, int fd,
         expected_str = "";
     }
     if (BS_LOG_MAX_BUF_SIZE < expected_len || INT_MAX < expected_len) {
-        bs_test_fail(test_ptr, "Absurdly long string: %zu bytes!",
-                     expected_len);
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "Absurdly long string: %zu bytes!", expected_len);
         return;
     }
 
     ssize_t available_len = bs_sock_read(fd, buf, expected_len, 10);
     if (0 > available_len) {
-        bs_test_fail(test_ptr, "Failed reading \"%s\" from %d", expected_str,
-                     fd);
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "Failed reading \"%s\" from %d", expected_str, fd);
         return;
     }
 
     if ((size_t)available_len != expected_len) {
-        bs_test_fail(test_ptr,
-                     "Only found %zd bytes, expected %zu (\"%.*s\" != \"%s\"",
-                     available_len, expected_len, (int)available_len, buf,
-                     expected_str);
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "Only found %zd bytes, expected %zu (\"%.*s\" != \"%s\"",
+            available_len, expected_len, (int)available_len, buf,
+            expected_str);
         return;
     }
 
     BS_TEST_VERIFY_STREQ(test_ptr, expected_str, &buf[timestamp_len + 1]);
 
     if (0 != bs_sock_poll_read(fd, 10)) {
-        bs_test_fail(test_ptr,
-                     "Unexpected extra (> %zu) bytes found reading \"%s\"",
-                     expected_len, expected_str);
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "Unexpected extra (> %zu) bytes found reading \"%s\"",
+            expected_len, expected_str);
         return;
     }
 }
@@ -245,12 +255,15 @@ void test_log(bs_test_t *test_ptr)
 
     int fds[2];
     if (0 != pipe(fds)) {
-        bs_test_fail(test_ptr, "Failed pipe(%p): errno(%d): %s", fds, errno,
-                     strerror(errno));
+        BS_TEST_FAIL(
+            test_ptr,
+            "Failed pipe(%p): errno(%d): %s", fds, errno, strerror(errno));
         return;
     }
     if (!bs_sock_set_blocking(fds[0], false)) {
-        bs_test_fail(test_ptr, "Failed bs_sock_set_blocking(%d, false)", fds[0]);
+        BS_TEST_FAIL(
+            test_ptr,
+            "Failed bs_sock_set_blocking(%d, false)", fds[0]);
         return;
     }
 
@@ -259,7 +272,8 @@ void test_log(bs_test_t *test_ptr)
              "(\e[1;93mWARNING\e[0m) \e[90mlog.c:%d\e[0m \e[1;93mtest 42\e[0m\n",
              __LINE__ + 1);
     bs_log(BS_WARNING, "test %d", 42);
-    verify_log_output_equals(test_ptr, fds[0], expected_output);
+    verify_log_output_equals_at(
+        test_ptr, __FILE__, __LINE__, fds[0], expected_output);
 
     snprintf(expected_output, sizeof(expected_output),
              "(\e[1;91mERROR\e[0m) \e[90mlog.c:%d\e[0m \e[1;91mtest 43"
@@ -267,17 +281,20 @@ void test_log(bs_test_t *test_ptr)
              __LINE__ + 2, EACCES);
     errno = EACCES;
     bs_log(BS_ERROR | BS_ERRNO, "test %d", 43);
-    verify_log_output_equals(test_ptr, fds[0], expected_output);
+    verify_log_output_equals_at(
+        test_ptr, __FILE__, __LINE__, fds[0], expected_output);
 
     bs_log(BS_INFO, "test %d", 44);
-    verify_log_output_equals(test_ptr, fds[0], NULL);
+    verify_log_output_equals_at(
+        test_ptr, __FILE__, __LINE__, fds[0], NULL);
 
     bs_log_severity = BS_INFO;
     snprintf(expected_output, sizeof(expected_output),
              "(\e[37mINFO\e[0m) \e[90mlog.c:%d\e[0m \e[37mtest 45\e[0m\n",
              __LINE__ + 1);
     bs_log(BS_INFO, "test %d", 45);
-    verify_log_output_equals(test_ptr, fds[0], expected_output);
+    verify_log_output_equals_at(
+        test_ptr, __FILE__, __LINE__, fds[0], expected_output);
 
     _log_fd = 2;
 
