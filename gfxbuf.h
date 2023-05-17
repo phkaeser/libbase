@@ -218,6 +218,9 @@ void bs_test_gfxbuf_equals_png_at(
 /** Unit tests. */
 extern const bs_test_case_t   bs_gfxbuf_test_cases[];
 
+/** Benchmarks, in the form of an unit test. */
+extern const bs_test_case_t   bs_gfxbuf_benchmarks[];
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

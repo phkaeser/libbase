@@ -144,6 +144,9 @@ IF(CMAKE_PROJECT_NAME STREQUAL libbase)
   ADD_EXECUTABLE(libbase_test libbase_test.c)
   TARGET_LINK_LIBRARIES(libbase_test base)
 
+  ADD_EXECUTABLE(libbase_benchmark libbase_benchmark.c)
+  TARGET_LINK_LIBRARIES(libbase_benchmark base)
+
   ADD_EXECUTABLE(subprocess_test_hang subprocess_test_hang.c)
   ADD_EXECUTABLE(subprocess_test_failure subprocess_test_failure.c)
   ADD_EXECUTABLE(subprocess_test_sigpipe subprocess_test_sigpipe.c)

@@ -322,9 +322,6 @@ void bs_test_gfxbuf_equals_png_at(
 
 /* == Tests ================================================================ */
 
-static void benchmark_clear(bs_test_t *test_ptr);
-static void benchmark_clear_nonblack(bs_test_t *test_ptr);
-static void benchmark_copy(bs_test_t *test_ptr);
 static void test_copy_area(bs_test_t *test_ptr);
 static void test_argb888_to_floats(bs_test_t *test_ptr);
 #ifdef HAVE_CAIRO
@@ -332,13 +329,7 @@ static void test_cairo(bs_test_t *test_ptr);
 static void test_equals_png(bs_test_t *test_ptr);
 #endif  // HAVE_CAIRO
 
-/* set benchmarks to last for 2.5s each */
-static const uint64_t benchmark_duration = 2500000;
-
 const bs_test_case_t          bs_gfxbuf_test_cases[] = {
-    { 1, "benchmark-gfxbuf_clear-black", benchmark_clear },
-    { 1, "benchmark-gfxbuf_clear-nonblack", benchmark_clear_nonblack },
-    { 1, "benchmark-gfxbuf_copy", benchmark_copy },
     { 1, "copy_area", test_copy_area },
     { 1, "argb888_fo_floats", test_argb888_to_floats },
 #ifdef HAVE_CAIRO
@@ -347,79 +338,6 @@ const bs_test_case_t          bs_gfxbuf_test_cases[] = {
 #endif  // HAVE_CAIRO
     { 0, NULL, NULL }
 };
-
-/* ------------------------------------------------------------------------- */
-static void benchmark_clear(bs_test_t *test_ptr)
-{
-    bs_gfxbuf_t *buf_ptr = bs_gfxbuf_create(1024, 768);
-    if (NULL == buf_ptr) {
-        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
-        return;
-    }
-
-    uint64_t usec = bs_usec();
-    unsigned iterations = 0;
-    while (usec + benchmark_duration >= bs_usec()) {
-        bs_gfxbuf_clear(buf_ptr, 0);
-        iterations++;
-    }
-    usec = bs_usec() - usec;
-
-    bs_test_succeed(test_ptr, "bs_gfxbuf_clear: %.3e pix/sec - %"PRIu64"us",
-                    (double)iterations * 1024 * 768 / (usec * 1e-6), usec);
-    bs_gfxbuf_destroy(buf_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-static void benchmark_clear_nonblack(bs_test_t *test_ptr)
-{
-    bs_gfxbuf_t *buf_ptr = bs_gfxbuf_create(1024, 768);
-    if (NULL == buf_ptr) {
-        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
-        return;
-    }
-
-    uint64_t usec = bs_usec();
-    unsigned iterations = 0;
-    while (usec + benchmark_duration >= bs_usec()) {
-        bs_gfxbuf_clear(buf_ptr, 0x204080ff);
-        iterations++;
-    }
-    usec = bs_usec() - usec;
-
-    bs_test_succeed(test_ptr, "bs_gfxbuf_clear: %.3e pix/sec - %"PRIu64"us",
-                    (double)iterations * 1024 * 768 / (usec * 1e-6), usec);
-    bs_gfxbuf_destroy(buf_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-static void benchmark_copy(bs_test_t *test_ptr)
-{
-    bs_gfxbuf_t *buf_1_ptr = bs_gfxbuf_create(1024, 768);
-    if (NULL == buf_1_ptr) {
-        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
-        return;
-    }
-    bs_gfxbuf_t *buf_2_ptr = bs_gfxbuf_create(1024, 768);
-    if (NULL == buf_2_ptr) {
-        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
-        bs_gfxbuf_destroy(buf_1_ptr);
-        return;
-    }
-
-    uint64_t usec = bs_usec();
-    unsigned iterations = 0;
-    while (usec + benchmark_duration >= bs_usec()) {
-        bs_gfxbuf_copy(buf_2_ptr, buf_1_ptr);
-        iterations++;
-    }
-    usec = bs_usec() - usec;
-
-    bs_test_succeed(test_ptr, "bs_gfxbuf_copy: %.3e pix/sec",
-                    (double)iterations * 1024 * 768 / (usec * 1e-6));
-    bs_gfxbuf_destroy(buf_1_ptr);
-    bs_gfxbuf_destroy(buf_2_ptr);
-}
 
 /* ------------------------------------------------------------------------- */
 void test_copy_area(bs_test_t *test_ptr)
@@ -496,5 +414,94 @@ void test_equals_png(bs_test_t *test_ptr)
     bs_gfxbuf_destroy(buf);
 }
 #endif  // HAVE_CAIRO
+
+/* == Benchmarks =========================================================== */
+
+static void benchmark_clear(bs_test_t *test_ptr);
+static void benchmark_clear_nonblack(bs_test_t *test_ptr);
+static void benchmark_copy(bs_test_t *test_ptr);
+
+/* set benchmarks to last for 2.5s each */
+static const uint64_t benchmark_duration = 2500000;
+
+const bs_test_case_t          bs_gfxbuf_benchmarks[] = {
+    { 1, "benchmark-gfxbuf_clear-black", benchmark_clear },
+    { 1, "benchmark-gfxbuf_clear-nonblack", benchmark_clear_nonblack },
+    { 1, "benchmark-gfxbuf_copy", benchmark_copy },
+    { 0, NULL, NULL }
+};
+
+/* ------------------------------------------------------------------------- */
+static void benchmark_clear(bs_test_t *test_ptr)
+{
+    bs_gfxbuf_t *buf_ptr = bs_gfxbuf_create(1024, 768);
+    if (NULL == buf_ptr) {
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        return;
+    }
+
+    uint64_t usec = bs_usec();
+    unsigned iterations = 0;
+    while (usec + benchmark_duration >= bs_usec()) {
+        bs_gfxbuf_clear(buf_ptr, 0);
+        iterations++;
+    }
+    usec = bs_usec() - usec;
+
+    bs_test_succeed(test_ptr, "bs_gfxbuf_clear: %.3e pix/sec - %"PRIu64"us",
+                    (double)iterations * 1024 * 768 / (usec * 1e-6), usec);
+    bs_gfxbuf_destroy(buf_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+static void benchmark_clear_nonblack(bs_test_t *test_ptr)
+{
+    bs_gfxbuf_t *buf_ptr = bs_gfxbuf_create(1024, 768);
+    if (NULL == buf_ptr) {
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        return;
+    }
+
+    uint64_t usec = bs_usec();
+    unsigned iterations = 0;
+    while (usec + benchmark_duration >= bs_usec()) {
+        bs_gfxbuf_clear(buf_ptr, 0x204080ff);
+        iterations++;
+    }
+    usec = bs_usec() - usec;
+
+    bs_test_succeed(test_ptr, "bs_gfxbuf_clear: %.3e pix/sec - %"PRIu64"us",
+                    (double)iterations * 1024 * 768 / (usec * 1e-6), usec);
+    bs_gfxbuf_destroy(buf_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+static void benchmark_copy(bs_test_t *test_ptr)
+{
+    bs_gfxbuf_t *buf_1_ptr = bs_gfxbuf_create(1024, 768);
+    if (NULL == buf_1_ptr) {
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        return;
+    }
+    bs_gfxbuf_t *buf_2_ptr = bs_gfxbuf_create(1024, 768);
+    if (NULL == buf_2_ptr) {
+        BS_TEST_FAIL(test_ptr, "Failed bs_gfxbuf_create(1024, 768)");
+        bs_gfxbuf_destroy(buf_1_ptr);
+        return;
+    }
+
+    uint64_t usec = bs_usec();
+    unsigned iterations = 0;
+    while (usec + benchmark_duration >= bs_usec()) {
+        bs_gfxbuf_copy(buf_2_ptr, buf_1_ptr);
+        iterations++;
+    }
+    usec = bs_usec() - usec;
+
+    bs_test_succeed(test_ptr, "bs_gfxbuf_copy: %.3e pix/sec",
+                    (double)iterations * 1024 * 768 / (usec * 1e-6));
+    bs_gfxbuf_destroy(buf_1_ptr);
+    bs_gfxbuf_destroy(buf_2_ptr);
+}
 
 /* == End of gfxbuf.c ====================================================== */

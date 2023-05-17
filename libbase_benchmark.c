@@ -1,7 +1,7 @@
 /* ========================================================================= */
 /**
- * @file libbase_test.c
- * Unit tests for libbase.
+ * @file libbase_benchmark.c
+ * Benchmarks for libbase (in the form of unit test cases).
  *
  * @copyright
  * Copyright 2023 Google LLC
@@ -22,27 +22,15 @@
 #include <libbase/libbase.h>
 
 /** Unit tests. */
-const bs_test_set_t           libbase_tests[] = {
-    { 1, "bs_atomic", bs_atomic_test_cases },
-    { 1, "bs_arg", bs_arg_test_cases },
-    { 1, "bs_avltree", bs_avltree_test_cases },
-    { 1, "bs_dequeue", bs_dequeue_test_cases },
-    { 1, "bs_dllist", bs_dllist_test_cases },
-    { 1, "bs_gfxbuf", bs_gfxbuf_test_cases },
-    { 1, "bs_log", bs_log_test_cases },
-    { 1, "bs_ptr_set", bs_ptr_set_test_cases },
-    { 1, "bs_ptr_stack", bs_ptr_stack_test_cases },
-    { 1, "bs_subprocess", bs_subprocess_test_cases },
-    { 1, "bs_strutil", bs_strutil_test_cases },
-    { 1, "bs_test", bs_test_test_cases },
-    { 1, "bs_time", bs_time_test_cases },
+const bs_test_set_t           libbase_benchmarks[] = {
+    { 1, "bs_gfxbuf", bs_gfxbuf_benchmarks },
     { 0, NULL, NULL }
 };
 
 /** Main program, runs all unit tests. */
 int main(int argc, const char **argv)
 {
-    return bs_test(libbase_tests, argc, argv);
+    return bs_test(libbase_benchmarks, argc, argv);
 }
 
-/* == End of libbase_test.c ================================================ */
+/* == End of libbase_benchmark.c =========================================== */
