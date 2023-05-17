@@ -208,9 +208,9 @@ void bs_test_gfxbuf_equals_png_at(
     const char *png_fname_ptr);
 
 /** Test macro for verifying whether @ref bs_gfxbuf_t equals the PNG file. */
-#define BS_TEST_VERIFY_GFXBUF_EQALS_PNG(_test, _gfxbuf_ptr, _png_name) { \
+#define BS_TEST_VERIFY_GFXBUF_EQUALS_PNG(_test, _gfxbuf_ptr, _png_name) { \
         bs_test_gfxbuf_equals_png_at(                                   \
-        (_test), __FILE__, __LINE__, (_gfxbuf_ptr), (_png_name));       \
+            (_test), __FILE__, __LINE__, (_gfxbuf_ptr), (_png_name));   \
     }
 
 #endif  // HAVE_CAIRO
