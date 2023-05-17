@@ -158,6 +158,23 @@ static inline void bs_gfxbuf_set_pixel(
     *bs_gfxbuf_pixel_at(gfxbuf_ptr, x, y) = color;
 }
 
+/**
+ * Computes the red, green, blue and alpha components as floating points from
+ * the given `argb888` value.
+ *
+ * @param argb888             Color, in ARGB 888 format.
+ * @param red_ptr             Output value, will be clamped to [0, 1].
+ * @param blue_ptr            Output value, will be clamped to [0, 1].
+ * @param green_ptr           Output value, will be clamped to [0, 1].
+ * @param alpha_ptr           Output value, will be clamped to [0, 1].
+ */
+void bs_gfxbuf_argb888_to_floats(
+    const uint32_t argb888,
+    float *red_ptr,
+    float *green_ptr,
+    float *blue_ptr,
+    float *alpha_ptr);
+
 #ifdef HAVE_CAIRO
 /**
  * Creates a Cairo drawing context for the @ref bs_gfxbuf_t.
