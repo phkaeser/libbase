@@ -348,8 +348,8 @@ const char *bs_test_resolve_path(const char *fname_ptr)
     static thread_local char resolved_path[PATH_MAX];
     char *resolved_path_ptr = realpath(input_path_ptr, resolved_path);
     if (NULL == resolved_path_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed realphath(\"%s\", %p)",
-               fname_ptr, resolved_path_ptr);
+        bs_log(BS_ERROR | BS_ERRNO, "Failed realphath(\"%s\")",
+               input_path_ptr);
     }
     return resolved_path_ptr;
 }
