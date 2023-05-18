@@ -62,6 +62,12 @@ struct _bs_test_set_t {
     const bs_test_case_t      *case_ptr;
 };
 
+/** Test parameters. */
+typedef struct {
+    /** Directory to data files. */
+    const char                *test_data_dir_ptr;
+} bs_test_param_t;
+
 /**
  * Reports that the given test succeeded, and print the format string and
  * arguments to the test's report. Calling bs_test_succeed is optional, if
@@ -101,10 +107,19 @@ bool bs_test_failed(bs_test_t *test_ptr);
 /**
  * Runs test sets.
  *
+ * @param test_sets
+ * @param argc
+ * @param argv
+ * @param param_ptr           Optional, points to a @ref bs_test_param_t and
+ *                            specifies parameters for the test environment.
+ *
  * @return 0 on success or the number of failed test sets.
  */
-int bs_test(const bs_test_set_t *test_sets,
-            int argc, const char **argv);
+int bs_test(
+    const bs_test_set_t *test_sets,
+    int argc,
+    const char **argv,
+    const bs_test_param_t *param_ptr);
 
 /**
  * Tests whether the strings at `a_ptr` and `b_ptr` are equal.

@@ -118,11 +118,6 @@ static char *bs_test_case_create_full_name(
     const bs_test_set_t *set_ptr,
     const bs_test_case_t *case_ptr);
 
-#if !defined(BS_TEST_DATA_DIR)
-/** Directory root for looking up test data. See @ref bs_test_resolve_path. */
-#define BS_TEST_DATA_DIR "./"
-#endif  // BS_TEST_DATA_DIR
-
 /* == Data ================================================================= */
 
 /** Terminal codes. */
@@ -147,8 +142,10 @@ static const bs_arg_t        bs_test_args[] = {
         &bs_test_filter_ptr),
     BS_ARG_STRING(
         "test_data_directory",
-        "Directory to use for test data.",
-        BS_TEST_DATA_DIR,
+        "Directory to use for test data. Setting this flag takes precedence "
+        "over the parameter specified through the `bs_test_param_t` arg to "
+        "bs_test().",
+        NULL,
         &bs_test_data_dir_ptr),
     BS_ARG_SENTINEL()
 };
@@ -156,7 +153,11 @@ static const bs_arg_t        bs_test_args[] = {
 /* == Exported Functions =================================================== */
 
 /* ------------------------------------------------------------------------- */
-int bs_test(const bs_test_set_t *test_sets, int argc, const char **argv)
+int bs_test(
+    const bs_test_set_t *test_sets,
+    int argc,
+    const char **argv,
+    const bs_test_param_t *param_ptr)
 {
     struct bs_test_report     report;
     int                       i;
@@ -167,6 +168,13 @@ int bs_test(const bs_test_set_t *test_sets, int argc, const char **argv)
     if (!bs_arg_parse(bs_test_args, BS_ARG_MODE_NO_EXTRA, &argc, argv)) {
         bs_arg_print_usage(stderr, bs_test_args);
         return -1;
+    }
+
+    if (NULL == bs_test_data_dir_ptr &&
+        NULL != param_ptr &&
+        NULL != param_ptr->test_data_dir_ptr) {
+        bs_test_data_dir_ptr = logged_strdup(param_ptr->test_data_dir_ptr);
+        if (NULL == bs_test_data_dir_ptr) return -1;
     }
 
     bs_test_tcode_init();

@@ -30,7 +30,7 @@ const bs_test_set_t           libbase_benchmarks[] = {
 /** Main program, runs all unit tests. */
 int main(int argc, const char **argv)
 {
-    return bs_test(libbase_benchmarks, argc, argv);
+    return bs_test(libbase_benchmarks, argc, argv, NULL);
 }
 
 /* == End of libbase_benchmark.c =========================================== */

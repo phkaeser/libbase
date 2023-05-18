@@ -39,10 +39,19 @@ const bs_test_set_t           libbase_tests[] = {
     { 0, NULL, NULL }
 };
 
+#if !defined(BS_TEST_DATA_DIR)
+/** Directory root for looking up test data. See @ref bs_test_resolve_path. */
+#define BS_TEST_DATA_DIR "./"
+#endif  // BS_TEST_DATA_DIR
+
 /** Main program, runs all unit tests. */
 int main(int argc, const char **argv)
 {
-    return bs_test(libbase_tests, argc, argv);
+    const bs_test_param_t params = {
+        .test_data_dir_ptr   = BS_TEST_DATA_DIR
+    };
+
+    return bs_test(libbase_tests, argc, argv, &params);
 }
 
 /* == End of libbase_test.c ================================================ */
