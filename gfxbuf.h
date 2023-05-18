@@ -207,10 +207,18 @@ void bs_test_gfxbuf_equals_png_at(
     const bs_gfxbuf_t *gfxbuf_ptr,
     const char *png_fname_ptr);
 
-/** Test macro for verifying whether @ref bs_gfxbuf_t equals the PNG file. */
+/**
+ * Tests whether @ref bs_gfxbuf_t equals the PNG file.
+ *
+ * @param _test               The @ref bs_test_t of the current test case.
+ * @param _gfxbuf_ptr         A @ref bs_gfxbuf_t, the graphics buffer to test.
+ * @param _png_name           Path to the PNG file name. Relative paths will be
+ *                            resolved using @ref bs_test_resolve_path.
+ */
 #define BS_TEST_VERIFY_GFXBUF_EQUALS_PNG(_test, _gfxbuf_ptr, _png_name) { \
         bs_test_gfxbuf_equals_png_at(                                   \
-            (_test), __FILE__, __LINE__, (_gfxbuf_ptr), (_png_name));   \
+            (_test), __FILE__, __LINE__, (_gfxbuf_ptr),                 \
+            bs_test_resolve_path(_png_name));                           \
     }
 
 #endif  // HAVE_CAIRO
