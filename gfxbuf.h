@@ -191,6 +191,16 @@ void bs_gfxbuf_argb8888_to_floats(
 cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr);
 
 /**
+ * Sets the source color for the cairo at `cairo_ptr`.
+ *
+ * @param cairo_ptr
+ * @param argb8888            Color, in ARGB 8888 format.
+ */
+void bs_gfxbuf_cairo_set_source_argb8888(
+    cairo_t *cairo_ptr,
+    uint32_t argb8888);
+
+/**
  * Tests whether the graphics is equal to the contents of the PNG file.
  *
  * @param test_ptr

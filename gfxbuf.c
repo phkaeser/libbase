@@ -223,6 +223,17 @@ cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_gfxbuf_cairo_set_source_argb8888(
+    cairo_t *cairo_ptr,
+    uint32_t argb8888)
+{
+    float r, g, b, alpha;
+    bs_gfxbuf_argb8888_to_floats(argb8888, &r, &g, &b, &alpha);
+    cairo_set_source_rgba(cairo_ptr, r, g, b, alpha);
+
+}
+
+/* ------------------------------------------------------------------------- */
 /** TODO(kaeser@gubbe.ch): Change this to use libpng, and clean the code. */
 void bs_test_gfxbuf_equals_png_at(
     bs_test_t *test_ptr,
