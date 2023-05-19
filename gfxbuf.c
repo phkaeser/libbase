@@ -182,18 +182,18 @@ void bs_gfxbuf_copy_area(
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_gfxbuf_argb888_to_floats(
-    const uint32_t argb888,
+void bs_gfxbuf_argb8888_to_floats(
+    const uint32_t argb8888,
     float *red_ptr,
     float *green_ptr,
     float *blue_ptr,
     float *alpha_ptr)
 {
-    *red_ptr = BS_MIN(1.0, ((argb888 & 0xff0000) >> 0x10) / 255.0);
-    *green_ptr = BS_MIN(1.0, ((argb888 & 0x00ff00) >> 0x8) / 255.0);
-    *blue_ptr = BS_MIN(1.0, ((argb888 & 0x0000ff)) / 255.0);
+    *red_ptr = BS_MIN(1.0, ((argb8888 & 0xff0000) >> 0x10) / 255.0);
+    *green_ptr = BS_MIN(1.0, ((argb8888 & 0x00ff00) >> 0x8) / 255.0);
+    *blue_ptr = BS_MIN(1.0, ((argb8888 & 0x0000ff)) / 255.0);
     if (NULL != alpha_ptr) {
-        *alpha_ptr = BS_MIN(1.0, ((argb888 & 0xff000000) >> 0x18) / 255.0);
+        *alpha_ptr = BS_MIN(1.0, ((argb8888 & 0xff000000) >> 0x18) / 255.0);
     }
 }
 
@@ -323,7 +323,7 @@ void bs_test_gfxbuf_equals_png_at(
 /* == Tests ================================================================ */
 
 static void test_copy_area(bs_test_t *test_ptr);
-static void test_argb888_to_floats(bs_test_t *test_ptr);
+static void test_argb8888_to_floats(bs_test_t *test_ptr);
 #ifdef HAVE_CAIRO
 static void test_cairo(bs_test_t *test_ptr);
 static void test_equals_png(bs_test_t *test_ptr);
@@ -331,7 +331,7 @@ static void test_equals_png(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_gfxbuf_test_cases[] = {
     { 1, "copy_area", test_copy_area },
-    { 1, "argb888_fo_floats", test_argb888_to_floats },
+    { 1, "argb8888_fo_floats", test_argb8888_to_floats },
 #ifdef HAVE_CAIRO
     { 1, "cairo", test_cairo },
     { 1, "equals_png", test_equals_png },
@@ -359,23 +359,23 @@ void test_copy_area(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-/** Verifies that cairo_util_argb888_to_floats behaves properly */
-void test_argb888_to_floats(bs_test_t *test_ptr) {
+/** Verifies that cairo_util_argb8888_to_floats behaves properly */
+void test_argb8888_to_floats(bs_test_t *test_ptr) {
     float r, g, b, alpha;
-    bs_gfxbuf_argb888_to_floats(0, &r, &g, &b, &alpha);
+    bs_gfxbuf_argb8888_to_floats(0, &r, &g, &b, &alpha);
     BS_TEST_VERIFY_EQ(test_ptr, 0, r);
     BS_TEST_VERIFY_EQ(test_ptr, 0, g);
     BS_TEST_VERIFY_EQ(test_ptr, 0, b);
     BS_TEST_VERIFY_EQ(test_ptr, 0, alpha);
 
-    bs_gfxbuf_argb888_to_floats(0xffffffff, &r, &g, &b, &alpha);
+    bs_gfxbuf_argb8888_to_floats(0xffffffff, &r, &g, &b, &alpha);
     BS_TEST_VERIFY_EQ(test_ptr, 1.0, r);
     BS_TEST_VERIFY_EQ(test_ptr, 1.0, g);
     BS_TEST_VERIFY_EQ(test_ptr, 1.0, b);
     BS_TEST_VERIFY_EQ(test_ptr, 1.0, alpha);
 
     // Floating point - we're fine with a near-enough value.
-    bs_gfxbuf_argb888_to_floats(0xffc08040, &r, &g, &b, NULL);
+    bs_gfxbuf_argb8888_to_floats(0xffc08040, &r, &g, &b, NULL);
     BS_TEST_VERIFY_TRUE(test_ptr, 1e-3 > fabs(r - 0.7529));
     BS_TEST_VERIFY_TRUE(test_ptr, 1e-3 > fabs(g - 0.5020));
     BS_TEST_VERIFY_TRUE(test_ptr, 1e-3 > fabs(b - 0.2510));

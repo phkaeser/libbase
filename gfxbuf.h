@@ -84,7 +84,7 @@ void bs_gfxbuf_destroy(bs_gfxbuf_t *gfxbuf_ptr);
  * Clears the graphics buffer with the specified `color`.
  *
  * @param gfxbuf_ptr
- * @param color               The fill color, as an ARGB 888.
+ * @param color               The fill color, as an ARGB 8888.
  */
 void bs_gfxbuf_clear(bs_gfxbuf_t *gfxbuf_ptr, const uint32_t color);
 
@@ -160,16 +160,16 @@ static inline void bs_gfxbuf_set_pixel(
 
 /**
  * Computes the red, green, blue and alpha components as floating points from
- * the given `argb888` value.
+ * the given `argb8888` value.
  *
- * @param argb888             Color, in ARGB 888 format.
+ * @param argb8888            Color, in ARGB 8888 format.
  * @param red_ptr             Output value, will be clamped to [0, 1].
  * @param blue_ptr            Output value, will be clamped to [0, 1].
  * @param green_ptr           Output value, will be clamped to [0, 1].
  * @param alpha_ptr           Output value, will be clamped to [0, 1].
  */
-void bs_gfxbuf_argb888_to_floats(
-    const uint32_t argb888,
+void bs_gfxbuf_argb8888_to_floats(
+    const uint32_t argb8888,
     float *red_ptr,
     float *green_ptr,
     float *blue_ptr,
