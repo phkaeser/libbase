@@ -199,7 +199,7 @@ void bs_gfxbuf_argb8888_to_floats(
 
 /* ------------------------------------------------------------------------- */
 #ifdef HAVE_CAIRO
-cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr)
+cairo_t *cairo_create_from_bs_gfxbuf(const bs_gfxbuf_t *gfxbuf_ptr)
 {
     cairo_surface_t *cairo_surface_ptr = cairo_image_surface_create_for_data(
         (unsigned char*)gfxbuf_ptr->data_ptr, bs_gfx_cairo_image_format,
@@ -223,7 +223,7 @@ cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_gfxbuf_cairo_set_source_argb8888(
+void cairo_set_source_argb8888(
     cairo_t *cairo_ptr,
     uint32_t argb8888)
 {
@@ -306,9 +306,9 @@ void bs_test_gfxbuf_equals_png_at(
 
     if (!bs_test_failed(test_ptr)) return;
 
-    cairo_t *cairo_ptr = bs_gfxbuf_create_cairo(gfxbuf_ptr);
+    cairo_t *cairo_ptr = cairo_create_from_bs_gfxbuf(gfxbuf_ptr);
     if (NULL == cairo_ptr) {
-        bs_log(BS_ERROR, "Failed bs_gfxbuf_create_cairo");
+        bs_log(BS_ERROR, "Failed cairo_create_from_bs_gfxbuf");
         return;
     }
     cairo_surface_t *surface_ptr = cairo_get_target(cairo_ptr);
@@ -397,7 +397,7 @@ void test_argb8888_to_floats(bs_test_t *test_ptr) {
 void test_cairo(bs_test_t *test_ptr)
 {
     bs_gfxbuf_t *buf = bs_gfxbuf_create(1, 1);
-    cairo_t *cairo_ptr = bs_gfxbuf_create_cairo(buf);
+    cairo_t *cairo_ptr = cairo_create_from_bs_gfxbuf(buf);
 
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, cairo_ptr);
     // Color is 0 after initialization.

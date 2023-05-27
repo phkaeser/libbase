@@ -188,7 +188,7 @@ void bs_gfxbuf_argb8888_to_floats(
  * @return A cairo drawing context, or NULL on error. The returned context must
  *     be destroyed by calling cairo_destroy().
  */
-cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr);
+cairo_t *cairo_create_from_bs_gfxbuf(const bs_gfxbuf_t *gfxbuf_ptr);
 
 /**
  * Sets the source color for the cairo at `cairo_ptr`.
@@ -196,7 +196,7 @@ cairo_t *bs_gfxbuf_create_cairo(const bs_gfxbuf_t *gfxbuf_ptr);
  * @param cairo_ptr
  * @param argb8888            Color, in ARGB 8888 format.
  */
-void bs_gfxbuf_cairo_set_source_argb8888(
+void cairo_set_source_argb8888(
     cairo_t *cairo_ptr,
     uint32_t argb8888);
 
