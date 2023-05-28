@@ -268,24 +268,31 @@ void bs_test_gfxbuf_equals_png_at(
         gfxbuf_ptr->width) {
         bs_test_fail_at(
             test_ptr, fname_ptr, line,
-            "gfxbuf width %u != PNG width %d",
+            "gfxbuf width %u != expected width %d. "
+            "Expected output: \"%s\", gfxbuf under test: \"%s\"",
             gfxbuf_ptr->width,
-            cairo_image_surface_get_width(png_surface_ptr));
+            cairo_image_surface_get_width(png_surface_ptr),
+            png_fname_ptr, "/tmp/out.png");
     }
     if ((unsigned)cairo_image_surface_get_height(png_surface_ptr) !=
         gfxbuf_ptr->height) {
         bs_test_fail_at(
             test_ptr, fname_ptr, line,
-            "gfxbuf height %u != PNG height %d",
-            gfxbuf_ptr->height,
-            cairo_image_surface_get_height(png_surface_ptr));
+            "gfxbuf height %u != expected height %d. "
+            "Expected output: \"%s\", gfxbuf under test: \"%s\"",
+            gfxbuf_ptr->width,
+            cairo_image_surface_get_height(png_surface_ptr),
+            png_fname_ptr, "/tmp/out.png");
     }
     if ((unsigned)cairo_image_surface_get_stride(png_surface_ptr) <
         gfxbuf_ptr->width * sizeof(uint32_t)) {
         bs_test_fail_at(
             test_ptr, fname_ptr, line,
-            "PNG bytes per line (%d) lower than gfxbuf width.",
-            cairo_image_surface_get_stride(png_surface_ptr));
+            "gfxbuf bytes per line (%u * %zu) lower than PNG stride %d. "
+            "Expected output: \"%s\", gfxbuf under test: \"%s\"",
+            gfxbuf_ptr->width, sizeof(uint32_t),
+            cairo_image_surface_get_stride(png_surface_ptr),
+            png_fname_ptr, "/tmp/out.png");
     }
 
     if (!bs_test_failed(test_ptr)) {
@@ -297,7 +304,9 @@ void bs_test_gfxbuf_equals_png_at(
                     gfxbuf_ptr->width * sizeof(uint32_t))) {
                 bs_test_fail_at(
                     test_ptr, fname_ptr, line,
-                    "gfxbuf content at line %u different from PNG.", line);
+                    "gfxbuf content at line %u differs from expected PNG. "
+                    "Expected output: \"%s\", gfxbuf under test: \"%s\"",
+                    l, png_fname_ptr, "/tmp/out.png");
             }
         }
     }
@@ -319,9 +328,7 @@ void bs_test_gfxbuf_equals_png_at(
     }
 
     cairo_status_t status = cairo_surface_write_to_png(surface_ptr, "/tmp/out.png");
-    if (CAIRO_STATUS_SUCCESS == status) {
-        bs_log(BS_ERROR, "PNG did not match. gfxbuf written to \"/tmp/out.png\"");
-    } else {
+    if (CAIRO_STATUS_SUCCESS != status) {
         bs_log(BS_ERROR, "Failed cairo_surface_write_to_png(%p, \"/tmp/out.png\")",
                surface_ptr);
     }
