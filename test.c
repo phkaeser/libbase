@@ -31,6 +31,7 @@
 #include "arg.h"
 #include "assert.h"
 #include "dllist.h"
+#include "file.h"
 #include "log_wrappers.h"
 #include "test.h"
 
@@ -334,24 +335,11 @@ void bs_test_verify_strmatch_at(
 /* ------------------------------------------------------------------------- */
 const char *bs_test_resolve_path(const char *fname_ptr)
 {
-    char joined_path[PATH_MAX];
-    const char *input_path_ptr;
-
-    if (fname_ptr[0] == '/') {
-        input_path_ptr = fname_ptr;
-    } else {
-        snprintf(joined_path, sizeof(joined_path), "%s/%s",
-                 bs_test_data_dir_ptr, fname_ptr);
-        input_path_ptr = &joined_path[0];
-    }
-
-    static thread_local char resolved_path[PATH_MAX];
-    char *resolved_path_ptr = realpath(input_path_ptr, resolved_path);
-    if (NULL == resolved_path_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed realphath(\"%s\")",
-               input_path_ptr);
-    }
-    return resolved_path_ptr;
+    // POSIX doesn't really say whether the terminating NUL would fit.
+    // Add a spare byte for that.
+    static thread_local char resolved_path[PATH_MAX + 1];
+    return bs_file_join_realpath(
+        bs_test_data_dir_ptr, fname_ptr, resolved_path);
 }
 /* == Static (Local) Functions ============================================= */
 

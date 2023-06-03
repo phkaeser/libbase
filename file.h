@@ -26,6 +26,8 @@
 
 #include <sys/types.h>
 
+#include "test.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -60,6 +62,48 @@ ssize_t bs_file_write_buffer(
     const char *fname_ptr,
     const char *buf_ptr,
     size_t buf_len);
+
+
+/**
+ * Joins `path_ptr` and `fname_ptr` and resolves the real path to it.
+ *
+ * @param path_ptr
+ * @param fname_ptr
+ * @param joined_realpath_ptr If specified as NULL; then bs_file_join_realpath
+ *                            will allocate a buffer of suitable length, and
+ *                            return the pointer to it. The caller then needs
+ *                            to release that buffer by calling free(3).
+ *
+ * @return NULL if the joined path is too long, or the file cannot be resolved.
+ *     Upon success, a pointer to the path is returned. If joined_realpath_ptr
+ *     was NULL, it must be released by calling free(3).
+ */
+char *bs_file_join_realpath(
+    const char *path_ptr,
+    const char *fname_ptr,
+    char *joined_realpath_ptr);
+
+/**
+ * Looks up a file from the set of provided paths.
+ *
+ * @param fname_ptr           Name of the file that shall be looked up.
+ * @param paths_ptr_ptr       A NULL-terminated array of paths to search.
+ * @param mode                Optional, indicates to only consider these types
+ *                            of the file. Matches the `st_mode` field of stat.
+ * @param lookedup_path_ptr   See the `joined_realpath_ptr` to @ref
+ *                            bs_file_join_realpath.
+ *
+ * @return NULL if no suitable file was found. Upon success, a pointer to the
+ *     resolved real path is returned. If `lookedup_path_ptr` was NULL; the
+ *     returned value must be released by calling free(3).
+ */
+char *bs_file_lookup(const char *fname_ptr,
+                     const char **paths_ptr_ptr,
+                     int mode,
+                     char *lookedup_path_ptr);
+
+/** Unit tests. */
+extern const bs_test_case_t   bs_file_test_cases[];
 
 #ifdef __cplusplus
 }  // extern "C"
