@@ -168,6 +168,27 @@ void bs_dllist_remove(bs_dllist_t *list_ptr, bs_dllist_node_t *node_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_dllist_insert_before(
+    bs_dllist_t *list_ptr,
+    bs_dllist_node_t *reference_node_ptr,
+    bs_dllist_node_t *new_node_ptr)
+{
+    BS_ASSERT(bs_dllist_contains(list_ptr, reference_node_ptr));
+    BS_ASSERT(bs_dllist_node_orphaned(new_node_ptr));
+
+    if (NULL == reference_node_ptr->prev_ptr) {
+        bs_dllist_push_front(list_ptr, new_node_ptr);
+        return;
+    }
+
+    reference_node_ptr->prev_ptr->next_ptr = new_node_ptr;
+    new_node_ptr->prev_ptr = reference_node_ptr->prev_ptr;
+
+    reference_node_ptr->prev_ptr = new_node_ptr;
+    new_node_ptr->next_ptr = reference_node_ptr;
+}
+
+/* ------------------------------------------------------------------------- */
 bool bs_dllist_contains(
     const bs_dllist_t *list_ptr,
     bs_dllist_node_t *dlnode_ptr)
@@ -247,6 +268,7 @@ bool find_is(bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
 static void bs_dllist_test_back(bs_test_t *test_ptr);
 static void bs_dllist_test_front(bs_test_t *test_ptr);
 static void bs_dllist_test_remove(bs_test_t *test_ptr);
+static void bs_dllist_test_insert(bs_test_t *test_ptr);
 static void bs_dllist_test_find(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each(bs_test_t *test_ptr);
 
@@ -254,6 +276,7 @@ const bs_test_case_t          bs_dllist_test_cases[] = {
     { 1, "push/pop back", bs_dllist_test_back },
     { 1, "push/pop front", bs_dllist_test_front },
     { 1, "remove", bs_dllist_test_remove },
+    { 1, "insert", bs_dllist_test_insert },
     { 1, "find", bs_dllist_test_find },
     { 1, "for_each", bs_dllist_test_for_each },
     { 0, NULL, NULL }
@@ -391,6 +414,33 @@ void bs_dllist_test_remove(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_EQ(test_ptr, 0, bs_dllist_size(&list));
     BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_empty(&list));
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_dllist_test_insert(bs_test_t *test_ptr)
+{
+    bs_dllist_t               list;
+    bs_dllist_node_t          node1, node2, node3, node4;
+
+    memset(&list, 0, sizeof(bs_dllist_t));
+    memset(&node1, 0, sizeof(bs_dllist_node_t));
+    memset(&node2, 0, sizeof(bs_dllist_node_t));
+    memset(&node3, 0, sizeof(bs_dllist_node_t));
+    memset(&node4, 0, sizeof(bs_dllist_node_t));
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_node_orphaned(&node1));
+
+    bs_dllist_push_back(&list, &node1);
+    bs_dllist_insert_before(&list, &node1, &node2);
+    assert_consistency(&list);
+    BS_TEST_VERIFY_EQ(test_ptr, list.head_ptr, &node2);
+    BS_TEST_VERIFY_EQ(test_ptr, node2.next_ptr, &node1);
+
+    bs_dllist_insert_before(&list, &node1, &node3);
+    assert_consistency(&list);
+    BS_TEST_VERIFY_EQ(test_ptr, list.head_ptr, &node2);
+    BS_TEST_VERIFY_EQ(test_ptr, node2.next_ptr, &node3);
+    BS_TEST_VERIFY_EQ(test_ptr, node3.next_ptr, &node1);
 }
 
 /* ------------------------------------------------------------------------- */

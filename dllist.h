@@ -66,6 +66,12 @@ bs_dllist_node_t * bs_dllist_pop_front(bs_dllist_t *list_ptr);
 /** Removes the node from the list. */
 void bs_dllist_remove(bs_dllist_t *list_ptr, bs_dllist_node_t *node_ptr);
 
+/** Inserts `new_node_ptr` into the list, before `reference_node_ptr`. */
+void bs_dllist_insert_before(
+    bs_dllist_t *list_ptr,
+    bs_dllist_node_t *reference_node_ptr,
+    bs_dllist_node_t *new_node_ptr);
+
 /** Returns whether |list_ptr| contains |dlnode_ptr|. */
 bool bs_dllist_contains(
     const bs_dllist_t *list_ptr,
