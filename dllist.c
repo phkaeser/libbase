@@ -168,7 +168,7 @@ void bs_dllist_remove(bs_dllist_t *list_ptr, bs_dllist_node_t *node_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_dllist_insert_before(
+void bs_dllist_insert_node_before(
     bs_dllist_t *list_ptr,
     bs_dllist_node_t *reference_node_ptr,
     bs_dllist_node_t *new_node_ptr)
@@ -431,12 +431,12 @@ void bs_dllist_test_insert(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_node_orphaned(&node1));
 
     bs_dllist_push_back(&list, &node1);
-    bs_dllist_insert_before(&list, &node1, &node2);
+    bs_dllist_insert_node_before(&list, &node1, &node2);
     assert_consistency(&list);
     BS_TEST_VERIFY_EQ(test_ptr, list.head_ptr, &node2);
     BS_TEST_VERIFY_EQ(test_ptr, node2.next_ptr, &node1);
 
-    bs_dllist_insert_before(&list, &node1, &node3);
+    bs_dllist_insert_node_before(&list, &node1, &node3);
     assert_consistency(&list);
     BS_TEST_VERIFY_EQ(test_ptr, list.head_ptr, &node2);
     BS_TEST_VERIFY_EQ(test_ptr, node2.next_ptr, &node3);

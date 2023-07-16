@@ -67,7 +67,7 @@ bs_dllist_node_t * bs_dllist_pop_front(bs_dllist_t *list_ptr);
 void bs_dllist_remove(bs_dllist_t *list_ptr, bs_dllist_node_t *node_ptr);
 
 /** Inserts `new_node_ptr` into the list, before `reference_node_ptr`. */
-void bs_dllist_insert_before(
+void bs_dllist_insert_node_before(
     bs_dllist_t *list_ptr,
     bs_dllist_node_t *reference_node_ptr,
     bs_dllist_node_t *new_node_ptr);
