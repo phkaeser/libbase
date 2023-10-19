@@ -333,6 +333,25 @@ void bs_test_verify_strmatch_at(
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_test_verify_memeq_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    const int line,
+    const void *a_ptr,
+    const char *hash_a_ptr,
+    const void *b_ptr,
+    const char *hash_b_ptr,
+    const size_t size)
+{
+    if (0 != memcmp(a_ptr, b_ptr, size)) {
+        bs_test_fail_at(
+            test_ptr, fname_ptr, line,
+            "Buffer at %p (%s) != at %p (%s) for %zu",
+            a_ptr, hash_a_ptr, b_ptr, hash_b_ptr, size);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
 const char *bs_test_resolve_path(const char *fname_ptr)
 {
     // POSIX doesn't really say whether the terminating NUL would fit.
@@ -724,6 +743,8 @@ void bs_test_eq_neq_tests(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_STREQ(test_ptr, "a", "a");
     BS_TEST_VERIFY_STRMATCH(test_ptr, "asdf", "^[a-z]+$");
+
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "asdf", "asdf", 4);
 }
 
 /** @endcond */

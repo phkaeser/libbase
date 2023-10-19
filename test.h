@@ -164,6 +164,30 @@ void bs_test_verify_strmatch_at(
     const char *regex_ptr);
 
 /**
+ * Tests whether the memory buffers at `a_ptr` and `b_ptr` are equal.
+ *
+ * Helper method, you should use the BS_TEST_VERIFY_MEMEQ macro instead.
+ *
+ * @param test_ptr
+ * @param fname_ptr
+ * @param line
+ * @param a_ptr
+ * @param hash_a_ptr
+ * @param b_ptr
+ * @param hash_b_ptr
+ * @param size
+ */
+void bs_test_verify_memeq_at(
+    bs_test_t *test_ptr,
+    const char *fname_ptr,
+    const int line,
+    const void *a_ptr,
+    const char *hash_a_ptr,
+    const void *b_ptr,
+    const char *hash_b_ptr,
+    const size_t size);
+
+/**
  * Resolves a relative path into an absolute, with configured test directory.
  *
  * If fname_ptr is already an absolute path, this will return the resolved path
@@ -244,7 +268,7 @@ const char *bs_test_resolve_path(const char *fname_ptr);
     }
 
 /**
- * Verifies that the strings _a != _b.
+ * Verifies that the strings _a == _b.
  *
  * @param _test
  * @param _a
@@ -265,6 +289,19 @@ const char *bs_test_resolve_path(const char *fname_ptr);
 #define BS_TEST_VERIFY_STRMATCH(_test, _a, _regex) {                    \
         bs_test_verify_strmatch_at(                                     \
             (_test), __FILE__, __LINE__, _a, #_a, _regex);              \
+    }
+
+/**
+ * Verifies that the memory buffers _a == _b.
+ *
+ * @param _test
+ * @param _a
+ * @param _b
+ * @param _size
+ */
+#define BS_TEST_VERIFY_MEMEQ(_test, _a, _b, _size) {                    \
+        bs_test_verify_memeq_at(                                        \
+            (_test), __FILE__, __LINE__, _a, #_a, _b, #_b, _size);      \
     }
 
 /** Test cases. */
