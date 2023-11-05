@@ -27,6 +27,7 @@
 
 static bool find_is(bs_dllist_node_t *dlnode_ptr, void *ud_ptr);
 static void assert_consistency(const bs_dllist_t *list_ptr);
+static bool node_orphaned(const bs_dllist_node_t *dlnode_ptr);
 
 /* == Exported Functions =================================================== */
 
@@ -174,7 +175,7 @@ void bs_dllist_insert_node_before(
     bs_dllist_node_t *new_node_ptr)
 {
     BS_ASSERT(bs_dllist_contains(list_ptr, reference_node_ptr));
-    BS_ASSERT(bs_dllist_node_orphaned(new_node_ptr));
+    BS_ASSERT(node_orphaned(new_node_ptr));
 
     if (NULL == reference_node_ptr->prev_ptr) {
         bs_dllist_push_front(list_ptr, new_node_ptr);
@@ -194,12 +195,6 @@ bool bs_dllist_contains(
     bs_dllist_node_t *dlnode_ptr)
 {
     return bs_dllist_find(list_ptr, find_is, dlnode_ptr) == dlnode_ptr;
-}
-
-/* ------------------------------------------------------------------------- */
-bool bs_dllist_node_orphaned(const bs_dllist_node_t *dlnode_ptr)
-{
-    return (NULL == dlnode_ptr->prev_ptr) && (NULL == dlnode_ptr->next_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -231,6 +226,7 @@ void bs_dllist_for_each(
 
 /* == Local methods ======================================================== */
 
+/* ------------------------------------------------------------------------- */
 void assert_consistency(const bs_dllist_t *list_ptr)
 {
     const bs_dllist_node_t *node_ptr;
@@ -257,10 +253,28 @@ void assert_consistency(const bs_dllist_t *list_ptr)
     }
 }
 
+/* ------------------------------------------------------------------------- */
 /** Returns whether dlnode_ptr == ud_ptr. */
 bool find_is(bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
 {
     return dlnode_ptr == ud_ptr;
+}
+
+/* ------------------------------------------------------------------------- */
+/**
+ * Returns whether |dlnode_ptr| is orphaned, ie. not in any list.
+ *
+ * Note: This does not guarantee that dlnode_ptr is not member of a list,
+ * merely that it refers no neighbours. The case of it being the single list
+ * node cannot be distinguished.
+ *
+ * @param dlnode_ptr
+ *
+ * @reutrn Whether the list holds no references.
+ */
+bool node_orphaned(const bs_dllist_node_t *dlnode_ptr)
+{
+    return (NULL == dlnode_ptr->prev_ptr) && (NULL == dlnode_ptr->next_ptr);
 }
 
 /* == Tests =============================================================== */
@@ -376,8 +390,9 @@ void bs_dllist_test_remove(bs_test_t *test_ptr)
     memset(&node3, 0, sizeof(bs_dllist_node_t));
     memset(&node4, 0, sizeof(bs_dllist_node_t));
 
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_node_orphaned(&node1));
+    BS_TEST_VERIFY_TRUE(test_ptr, node_orphaned(&node1));
 
+    // Sequence: 1, 2, 3, 4.
     bs_dllist_push_back(&list, &node1);
     assert_consistency(&list);
     bs_dllist_push_back(&list, &node2);
@@ -389,20 +404,23 @@ void bs_dllist_test_remove(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_EQ(test_ptr, 4, bs_dllist_size(&list));
     BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_empty(&list));
-    BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_node_orphaned(&node1));
+    BS_TEST_VERIFY_FALSE(test_ptr, node_orphaned(&node1));
 
     bs_dllist_remove(&list, &node3);
+    // Now: 1, 2, 4.
     assert_consistency(&list);
     BS_TEST_VERIFY_EQ(test_ptr, NULL, node3.prev_ptr);
     BS_TEST_VERIFY_EQ(test_ptr, NULL, node3.next_ptr);
 
     bs_dllist_remove(&list, &node1);
+    // Now: 2, 4.
     assert_consistency(&list);
     BS_TEST_VERIFY_EQ(test_ptr, NULL, node1.prev_ptr);
     BS_TEST_VERIFY_EQ(test_ptr, NULL, node1.next_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_node_orphaned(&node1));
+    BS_TEST_VERIFY_TRUE(test_ptr, node_orphaned(&node1));
 
     bs_dllist_remove(&list, &node4);
+    // Now: 2.
     assert_consistency(&list);
     BS_TEST_VERIFY_EQ(test_ptr, NULL, node4.prev_ptr);
     BS_TEST_VERIFY_EQ(test_ptr, NULL, node4.next_ptr);
@@ -428,7 +446,7 @@ void bs_dllist_test_insert(bs_test_t *test_ptr)
     memset(&node3, 0, sizeof(bs_dllist_node_t));
     memset(&node4, 0, sizeof(bs_dllist_node_t));
 
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_node_orphaned(&node1));
+    BS_TEST_VERIFY_TRUE(test_ptr, node_orphaned(&node1));
 
     bs_dllist_push_back(&list, &node1);
     bs_dllist_insert_node_before(&list, &node1, &node2);

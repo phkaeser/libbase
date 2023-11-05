@@ -77,9 +77,6 @@ bool bs_dllist_contains(
     const bs_dllist_t *list_ptr,
     bs_dllist_node_t *dlnode_ptr);
 
-/** Returns whether |dlnode_ptr| is orphaned, ie. not in any list. */
-bool bs_dllist_node_orphaned(const bs_dllist_node_t *dlnode_ptr);
-
 /**
  * Returns the node for which |func()| is true.
  *
