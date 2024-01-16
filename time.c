@@ -19,7 +19,8 @@
  */
 
 /// clock_gettime(2) is a POSIX extension, needs this macro.
-#define _POSIX_C_SOURCE 199309L
+/// gettimeofday(2) is a XSI extension, needs this macro.
+#define _XOPEN_SOURCE 500
 
 #include "log.h"
 #include "time.h"
@@ -30,7 +31,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#undef _POSIX_C_SOURCE
+#undef _XOPEN_SOURCE
 
 /* == Methods ============================================================== */
 
