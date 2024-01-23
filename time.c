@@ -18,8 +18,9 @@
  * limitations under the License.
  */
 
-/// clock_gettime(2) is a POSIX extension, needs this macro.
-/// gettimeofday(2) is a XSI extension, needs this macro.
+/// clock_gettime(2) is a POSIX extension, at 199309L. _XOPEN_SOURCE 500
+/// defines _POSIX_C_SOURCE at 199506L.
+/// gettimeofday(2) is a XSI extension, needing _XOPEN_SOURCE 500.
 #define _XOPEN_SOURCE 500
 
 #include "log.h"
