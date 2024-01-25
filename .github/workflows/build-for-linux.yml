@@ -43,5 +43,6 @@ jobs:
 
     - name: Run all tests
       run: |
+        ${{github.workspace}}/build/subprocess_test_success this
         ctest --test-dir ${{github.workspace}}/build --build-run-dir ${{github.workspace}}/build -V
 
