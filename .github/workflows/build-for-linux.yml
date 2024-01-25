@@ -17,6 +17,7 @@ jobs:
     steps:
     - name: Install package dependencies.
       run: |
+        apt-get update
         apt-get install -y git \
           cmake \
           doxygen \
