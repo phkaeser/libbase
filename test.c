@@ -375,8 +375,8 @@ void bs_test_tcode_init(void)
 
     char *term_ptr = getenv("TERM");
     if (NULL == term_ptr) {
-        // Fallback: revert to vt100 as ancient default.
-        term_ptr = "vt100";
+        // Fallback: Use xterm, provides colors also on github workflows...
+        term_ptr = "xterm";
     } else if (0 == strcmp(term_ptr, "xterm-color") ||
                0 == strcmp(term_ptr, "xterm-256color")) {
         // Hack: Some Unixes use xterm-color, but fail to provide a termcap.
