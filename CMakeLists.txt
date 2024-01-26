@@ -36,8 +36,8 @@ OPTION(config_DEBUG "Include debugging information" ON)
 OPTION(config_OPTIM "Optimizations" OFF)
 OPTION(config_COVERAGE "Build with test coverage" OFF)
 
-# Toplevel compile options, for GCC.
-IF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+# Toplevel compile options, for Clang and GCC.
+IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
   IF(config_DEBUG)
     ADD_COMPILE_OPTIONS(-ggdb -DDEBUG)
   ENDIF(config_DEBUG)

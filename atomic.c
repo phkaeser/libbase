@@ -22,6 +22,14 @@
 #include "atomic.h"
 #include "test.h"
 
+#if defined(__cplusplus) || defined(__clang__)
+
+const bs_test_case_t          bs_atomic_test_cases[] = {
+    { 0, NULL, NULL }
+};
+
+#else  // defined(__cplusplus) || !defined(__clang__)
+
 /* == Atomic tests ========================================================= */
 
 static void bs_atomic_test_int32(bs_test_t *test_ptr);
@@ -87,4 +95,6 @@ void bs_atomic_test_int64(bs_test_t *test_ptr)
                                           0x0807060504030201));
     BS_TEST_VERIFY_EQ(test_ptr, 0x1122334455667788, bs_atomic_int64_get(&a));
 }
+#endif
+
 /* == End of atomic.c ===================================================== */
