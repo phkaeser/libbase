@@ -25,14 +25,14 @@
 
 #include <stdint.h>
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) || defined(__clang__)
 
 // C++ (gcc) is not compatible with <stdatomic.h>. When using C++, please
 // resort to using C++ STL <atomic> definitions instead.
 //
 // Therefore, the __cplusplus #if is just an empty block.
 
-#else  // defined(__cplusplus)
+#else  // defined(__cplusplus) || defined(__clang__)
 
 /* == Types and Definitions ================================================ */
 
@@ -460,10 +460,10 @@ static inline void bs_atomic_int64_xchg(bs_atomic_int64_t *a_ptr,
 #endif
 }
 
+#endif  // defined(__cplusplus) || defined(__clang__)
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_atomic_test_cases[];
-
-#endif  /// defined(__cplusplus)
 
 #endif /* __LIBBASE_ATOMIC_H__ */
 /* == End of atomic.h ====================================================== */
