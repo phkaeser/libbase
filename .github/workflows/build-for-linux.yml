@@ -10,39 +10,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    container:
-      image: debian:bookworm
-        
     steps:
     - name: Install package dependencies.
       run: |
-        apt-get update
-        apt-get install -y git \
+        sudo apt-get update
+        sudo apt-get install -y \
           cmake \
           doxygen \
+          git \
           libcairo2-dev \
           libncurses-dev
     
-    - name: Checkout code including submodule dependencies.
+    - name: Checkout code.
       uses: actions/checkout@v3
-      with:
-        submodules: recursive
 
     - name: Configure libbase through CMake.
-      # Configure CMake in a 'build' subdirectory.
       run: |
         cmake -B ${{github.workspace}}/build
 
     - name: Build libbase.
-      # Build your program with the given configuration
       run: |
         cmake --build ${{github.workspace}}/build
 
     - name: Build documentation.
-      run: cmake --build ${{github.workspace}}/build --target doc
-
-    - name: Run all tests
       run: |
-        ${{github.workspace}}/build/subprocess_test_success this
+        cmake --build ${{github.workspace}}/build --target doc
+
+    - name: Run tests.
+      run: |
         ctest --test-dir ${{github.workspace}}/build --build-run-dir ${{github.workspace}}/build -V
 
