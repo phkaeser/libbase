@@ -374,9 +374,12 @@ void bs_test_tcode_init(void)
     char                      tc_buf[4096];
 
     char *term_ptr = getenv("TERM");
-    if (0 == strcmp(term_ptr, "xterm-color") ||
-        0 == strcmp(term_ptr, "xterm-256color")) {
-        /* Hack: Some Unixes use xterm-color, but fail to provide a termcap */
+    if (NULL == term_ptr) {
+        // Fallback: Use xterm, provides colors also on github workflows...
+        term_ptr = "xterm";
+    } else if (0 == strcmp(term_ptr, "xterm-color") ||
+               0 == strcmp(term_ptr, "xterm-256color")) {
+        // Hack: Some Unixes use xterm-color, but fail to provide a termcap.
         term_ptr = "xterm";
     }
     BS_ASSERT(0 < tgetent(tc_buf, term_ptr));
