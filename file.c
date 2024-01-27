@@ -30,6 +30,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+/* == Declarations ========================================================= */
+
+static char *_bs_file_join_realpath_log_severity(
+    bs_log_severity_t severity,
+    const char *path_ptr,
+    const char *fname_ptr,
+    char *joined_realpath_ptr);
+
 /* == Exported methods ===================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -110,23 +118,8 @@ char *bs_file_join_realpath(
     const char *fname_ptr,
     char *joined_realpath_ptr)
 {
-    char joined_path[PATH_MAX + 1];
-    int written_bytes = snprintf(joined_path, sizeof(joined_path),
-                                 "%s/%s", path_ptr, fname_ptr);
-    if (sizeof(joined_path) < (size_t)written_bytes) {
-        bs_log(BS_ERROR, "Exceeds PATH_MAX (%d): %s/%s",
-               PATH_MAX, path_ptr, fname_ptr);
-        return NULL;
-    }
-
-    char *resolved_path_ptr = realpath(joined_path, joined_realpath_ptr);
-    if (NULL == resolved_path_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed realpath(%s, %p)",
-               joined_path, joined_realpath_ptr);
-        return NULL;
-    }
-
-    return resolved_path_ptr;
+    return _bs_file_join_realpath_log_severity(
+        BS_ERROR, path_ptr, fname_ptr, joined_realpath_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -136,8 +129,8 @@ char *bs_file_lookup(const char *fname_ptr,
                      char *lookedup_path_ptr)
 {
     for (; NULL != *paths_ptr_ptr; ++paths_ptr_ptr) {
-        char *resolved_path_ptr = bs_file_join_realpath(
-            *paths_ptr_ptr, fname_ptr, lookedup_path_ptr);
+        char *resolved_path_ptr = _bs_file_join_realpath_log_severity(
+            BS_DEBUG, *paths_ptr_ptr, fname_ptr, lookedup_path_ptr);
         if (NULL == resolved_path_ptr) continue;
 
         // Found something and not needed to check type? We have it.
@@ -157,6 +150,35 @@ char *bs_file_lookup(const char *fname_ptr,
     }
 
     return NULL;
+}
+
+/* == Static (local) functions ============================================= */
+
+/* ------------------------------------------------------------------------- */
+/** @ref bs_file_join_realpath. Logs realpath(3) errors with |severity|. */
+char *_bs_file_join_realpath_log_severity(
+    bs_log_severity_t severity,
+    const char *path_ptr,
+    const char *fname_ptr,
+    char *joined_realpath_ptr)
+{
+    char joined_path[PATH_MAX + 1];
+    int written_bytes = snprintf(joined_path, sizeof(joined_path),
+                                 "%s/%s", path_ptr, fname_ptr);
+    if (sizeof(joined_path) < (size_t)written_bytes) {
+        bs_log(BS_ERROR, "Exceeds PATH_MAX (%d): %s/%s",
+               PATH_MAX, path_ptr, fname_ptr);
+        return NULL;
+    }
+
+    char *resolved_path_ptr = realpath(joined_path, joined_realpath_ptr);
+    if (NULL == resolved_path_ptr) {
+        bs_log(severity | BS_ERRNO, "Failed realpath(%s, %p)",
+               joined_path, joined_realpath_ptr);
+        return NULL;
+    }
+
+    return resolved_path_ptr;
 }
 
 /* == Test Functions ======================================================= */
