@@ -30,6 +30,7 @@
 #include "dllist.h"
 #include "file.h"
 #include "gfxbuf.h"
+#include "gfxbuf_xpm.h"
 #include "log.h"
 #include "log_wrappers.h"
 #include "ptr_set.h"

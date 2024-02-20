@@ -71,6 +71,7 @@ SET(PUBLIC_HEADER_FILES
   dllist.h
   file.h
   gfxbuf.h
+  gfxbuf_xpm.h
   libbase.h
   log.h
   log_wrappers.h
@@ -93,6 +94,7 @@ SET(SOURCES
   dllist.c
   file.c
   gfxbuf.c
+  gfxbuf_xpm.c
   log.c
   ptr_set.c
   ptr_stack.c
