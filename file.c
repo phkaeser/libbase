@@ -146,7 +146,7 @@ char *bs_file_lookup(const char *fname_ptr,
             bs_log(BS_ERROR | BS_ERRNO, "Failed stat(%s, %p)",
                    resolved_path_ptr, &stat_buf);
         }
-        if (NULL != lookedup_path_ptr) free(resolved_path_ptr);
+        if (NULL == lookedup_path_ptr) free(resolved_path_ptr);
     }
 
     return NULL;
