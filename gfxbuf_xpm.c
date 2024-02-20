@@ -35,7 +35,7 @@ typedef struct {
     char                      *pixel_chars_ptr;
     /** Number of caracters that make up the pixel. */
     unsigned                  chars_per_pixel;
-    /** Corresponding color, in ARGB32. */
+    /** Corresponding color, in ARGB8888. */
     uint32_t                  color;
 } bs_gfxbuf_xpm_color_node_t;
 
@@ -88,7 +88,8 @@ bs_gfxbuf_t *bs_gfxbuf_xpm_create_from_data(const char * const *xpm_data_ptr)
 /* ------------------------------------------------------------------------- */
 /**
  * Loads an XPM from included data at `xpm_data_ptr` to the position
- * `dest_x`, `dest_y` into `gfxbuf_ptr`.
+ * `dest_x`, `dest_y` into `gfxbuf_ptr`. Will not overwrite pixels where the
+ * XPM is transparent (color: None).
  *
  * @param gfxbuf_ptr
  * @param xpm_data_ptr
@@ -165,7 +166,7 @@ bool _bs_gfxbuf_xpm_copy_data(
                     tree_ptr,
                     *xpm_data_ptr + x * chars_per_pixel);
             // Ignore transparent pixels.
-            if (color_node_ptr->color != 0xff000000) {
+            if (color_node_ptr->color != 0x00000000) {
                 bs_gfxbuf_set_pixel(
                     gfxbuf_ptr,
                     dest_x + x, dest_y + y,
@@ -249,7 +250,7 @@ bool _bs_gfxbuf_xpm_parse_color_into_node(
 
     // The <color>. If it's "None", it means the pixel is transparent.
     if (0 == strncmp(color_line_ptr, "None", 4)) {
-        color_node_ptr->color = 0xff000000;
+        color_node_ptr->color = 0;
         return true;
     }
 
@@ -272,7 +273,7 @@ bool _bs_gfxbuf_xpm_parse_color_into_node(
                    tmp_value);
             return false;
         }
-        color_node_ptr->color = tmp_value;
+        color_node_ptr->color = tmp_value | 0xff000000;
 
         return true;
     }
@@ -358,21 +359,21 @@ void test_parse_color(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(
         test_ptr,
         _bs_gfxbuf_xpm_parse_color_into_node(&cnode, 2, "xy c #123456"));
-    BS_TEST_VERIFY_EQ(test_ptr, cnode.color, 0x123456);
+    BS_TEST_VERIFY_EQ(test_ptr, 0xff123456, cnode.color);
     BS_TEST_VERIFY_EQ(test_ptr, 'x', cnode.pixel_chars_ptr[0]);
     BS_TEST_VERIFY_EQ(test_ptr, 'y', cnode.pixel_chars_ptr[1]);
 
     BS_TEST_VERIFY_TRUE(
         test_ptr,
         _bs_gfxbuf_xpm_parse_color_into_node(&cnode, 2, "ab c None"));
-    BS_TEST_VERIFY_EQ(test_ptr, cnode.color, 0xff000000);
+    BS_TEST_VERIFY_EQ(test_ptr, cnode.color, 0x00000000);
     BS_TEST_VERIFY_EQ(test_ptr, 'a', cnode.pixel_chars_ptr[0]);
     BS_TEST_VERIFY_EQ(test_ptr, 'b', cnode.pixel_chars_ptr[1]);
 
     BS_TEST_VERIFY_TRUE(
         test_ptr,
         _bs_gfxbuf_xpm_parse_color_into_node(&cnode, 2, "a  c None"));
-    BS_TEST_VERIFY_EQ(test_ptr, cnode.color, 0xff000000);
+    BS_TEST_VERIFY_EQ(test_ptr, cnode.color, 0x00000000);
     BS_TEST_VERIFY_EQ(test_ptr, 'a', cnode.pixel_chars_ptr[0]);
     BS_TEST_VERIFY_EQ(test_ptr, ' ', cnode.pixel_chars_ptr[1]);
 
@@ -408,12 +409,14 @@ void test_parse_xpm(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ(test_ptr, 42, *bs_gfxbuf_pixel_at(buf_ptr, 2, 0));
 
     BS_TEST_VERIFY_EQ(test_ptr, 42, *bs_gfxbuf_pixel_at(buf_ptr, 0, 1));
-    BS_TEST_VERIFY_EQ(test_ptr, 0xff, *bs_gfxbuf_pixel_at(buf_ptr, 1, 1));
-    BS_TEST_VERIFY_EQ(test_ptr, 0, *bs_gfxbuf_pixel_at(buf_ptr, 2, 1));
+    BS_TEST_VERIFY_EQ(test_ptr, 0xff0000ff, *bs_gfxbuf_pixel_at(buf_ptr, 1, 1));
+    BS_TEST_VERIFY_EQ(test_ptr, 0xff000000, *bs_gfxbuf_pixel_at(buf_ptr, 2, 1));
 
     BS_TEST_VERIFY_EQ(test_ptr, 42, *bs_gfxbuf_pixel_at(buf_ptr, 0, 2));
-    BS_TEST_VERIFY_EQ(test_ptr, 0, *bs_gfxbuf_pixel_at(buf_ptr, 1, 2));
+    BS_TEST_VERIFY_EQ(test_ptr, 0xff000000, *bs_gfxbuf_pixel_at(buf_ptr, 1, 2));
     BS_TEST_VERIFY_EQ(test_ptr, 42, *bs_gfxbuf_pixel_at(buf_ptr, 2, 2));
+
+    bs_gfxbuf_destroy(buf_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
