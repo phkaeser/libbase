@@ -35,7 +35,7 @@ extern "C" {
  * @return A new @ref bs_gfxbuf_t, or NULL on error. Must be destroyed by
  *     calling @ref bs_gfxbuf_destroy.
  */
-bs_gfxbuf_t *bs_gfxbuf_xpm_create_from_data(const char * const *xpm_data_ptr);
+bs_gfxbuf_t *bs_gfxbuf_xpm_create_from_data(char **xpm_data_ptr);
 
 /** Unit test cases. */
 extern const bs_test_case_t bs_gfxbuf_xpm_test_cases[];

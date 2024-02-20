@@ -41,7 +41,7 @@ typedef struct {
 
 static bool _bs_gfxbuf_xpm_copy_data(
     bs_gfxbuf_t *gfxbuf_ptr,
-    const char* const* xpm_data_ptr,
+    char **xpm_data_ptr,
     unsigned dest_x,
     unsigned dest_y);
 
@@ -67,7 +67,7 @@ static int _bs_gfxbuf_xpm_color_node_cmp(
 /* == Exported methods ===================================================== */
 
 /* ------------------------------------------------------------------------- */
-bs_gfxbuf_t *bs_gfxbuf_xpm_create_from_data(const char * const *xpm_data_ptr)
+bs_gfxbuf_t *bs_gfxbuf_xpm_create_from_data(char **xpm_data_ptr)
 {
     unsigned width, height, colors, chars_per_pixel;
     if (!_bs_gfxbuf_xpm_parse_header_line(
@@ -100,7 +100,7 @@ bs_gfxbuf_t *bs_gfxbuf_xpm_create_from_data(const char * const *xpm_data_ptr)
  */
 bool _bs_gfxbuf_xpm_copy_data(
     bs_gfxbuf_t *gfxbuf_ptr,
-    const char* const* xpm_data_ptr,
+    char **xpm_data_ptr,
     unsigned dest_x,
     unsigned dest_y)
 {
@@ -268,7 +268,7 @@ bool _bs_gfxbuf_xpm_parse_color_into_node(
         if (!bs_strconvert_uint64(color_line_ptr + 1, &tmp_value, 16)) {
             return false;
         }
-        if (tmp_value >= 0xffffff) {
+        if (tmp_value > 0xffffff) {
             bs_log(BS_ERROR, "Color value out of range: 0x%"PRIx64,
                    tmp_value);
             return false;
@@ -339,7 +339,7 @@ const bs_test_case_t          bs_gfxbuf_xpm_test_cases[] = {
     { 0, NULL, NULL }
 };
 
-static const char *test_xpm_data[] = {
+static char *test_xpm_data[] = {
     "2 2 3 1",
     "  c None",
     ". c #0000ff",
@@ -360,6 +360,13 @@ void test_parse_color(bs_test_t *test_ptr)
         test_ptr,
         _bs_gfxbuf_xpm_parse_color_into_node(&cnode, 2, "xy c #123456"));
     BS_TEST_VERIFY_EQ(test_ptr, 0xff123456, cnode.color);
+    BS_TEST_VERIFY_EQ(test_ptr, 'x', cnode.pixel_chars_ptr[0]);
+    BS_TEST_VERIFY_EQ(test_ptr, 'y', cnode.pixel_chars_ptr[1]);
+
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        _bs_gfxbuf_xpm_parse_color_into_node(&cnode, 2, "xy c #ffffff"));
+    BS_TEST_VERIFY_EQ(test_ptr, 0xffffffff, cnode.color);
     BS_TEST_VERIFY_EQ(test_ptr, 'x', cnode.pixel_chars_ptr[0]);
     BS_TEST_VERIFY_EQ(test_ptr, 'y', cnode.pixel_chars_ptr[1]);
 
