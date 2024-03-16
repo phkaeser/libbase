@@ -293,6 +293,19 @@ bs_avltree_node_t *bs_avltree_node_prev(__UNUSED__ bs_avltree_t *tree_ptr,
     return node_ptr->parent_ptr;
 }
 
+/* ------------------------------------------------------------------------- */
+int bs_avltree_cmp_ptr(const void *node_key_ptr,
+                       const void *key_ptr)
+{
+    if (node_key_ptr < key_ptr) {
+        return -1;
+    } else if (node_key_ptr > key_ptr) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 /* == Local methods ======================================================== */
 
 /* ------------------------------------------------------------------------- */
