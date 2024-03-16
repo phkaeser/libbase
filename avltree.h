@@ -145,7 +145,7 @@ bs_avltree_node_t *bs_avltree_node_prev(bs_avltree_t *tree_ptr,
  * looks up the key from the `node_ptr` argument.
  *
  * @param node_key_ptr        The key obtained for the node under comparison.
- * @param key_ptr             As passed from @ref bs_avltree_node_tmp_t.
+ * @param key_ptr             As passed from @ref bs_avltree_node_cmp_t.
  *
  * @return See @ref bs_avltree_node_cmp_t.
  */
