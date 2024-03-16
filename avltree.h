@@ -138,6 +138,20 @@ bs_avltree_node_t *bs_avltree_node_next(bs_avltree_t *tree_ptr,
 bs_avltree_node_t *bs_avltree_node_prev(bs_avltree_t *tree_ptr,
                                         bs_avltree_node_t *node_ptr);
 
+/**
+ * Helper: Comparator to compare two pointers.
+ *
+ * To be used for @ref bs_avltree_node_cmp_t, after the comparison function
+ * looks up the key from the `node_ptr` argument.
+ *
+ * @param node_key_ptr        The key obtained for the node under comparison.
+ * @param key_ptr             As passed from @ref bs_avltree_node_tmp_t.
+ *
+ * @return See @ref bs_avltree_node_cmp_t.
+ */
+int bs_avltree_cmp_ptr(const void *node_key_ptr,
+                       const void *key_ptr);
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_avltree_test_cases[];
 
