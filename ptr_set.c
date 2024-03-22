@@ -110,6 +110,17 @@ bool bs_ptr_set_contains(bs_ptr_set_t *set_ptr, void *elem_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+void *bs_ptr_set_any(bs_ptr_set_t *set_ptr)
+{
+    bs_avltree_node_t *avlnode_ptr = bs_avltree_min(set_ptr->tree_ptr);
+    if (NULL == avlnode_ptr) return NULL;
+
+    bs_ptr_set_elem_holder_t *holder_ptr = BS_CONTAINER_OF(
+        avlnode_ptr, bs_ptr_set_elem_holder_t, avlnode);
+    return holder_ptr->elem_ptr;
+}
+
+/* ------------------------------------------------------------------------- */
 bool bs_ptr_set_empty(bs_ptr_set_t *set_ptr)
 {
     return 0 == bs_avltree_size(set_ptr->tree_ptr);
@@ -151,17 +162,20 @@ void bs_ptr_set_test(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_set_empty(set_ptr));
     BS_TEST_VERIFY_FALSE(test_ptr, bs_ptr_set_contains(set_ptr, data1_ptr));
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, bs_ptr_set_any(set_ptr));
 
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_set_insert(set_ptr, data1_ptr));
 
     BS_TEST_VERIFY_FALSE(test_ptr, bs_ptr_set_empty(set_ptr));
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_set_contains(set_ptr, data1_ptr));
+    BS_TEST_VERIFY_EQ(test_ptr, data1_ptr, bs_ptr_set_any(set_ptr));
 
     BS_TEST_VERIFY_FALSE(test_ptr, bs_ptr_set_insert(set_ptr, data1_ptr));
 
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_set_insert(set_ptr, data2_ptr));
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_set_contains(set_ptr, data1_ptr));
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_set_contains(set_ptr, data2_ptr));
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, bs_ptr_set_any(set_ptr));
 
     bs_ptr_set_erase(set_ptr, data1_ptr);
     bs_ptr_set_erase(set_ptr, data2_ptr);

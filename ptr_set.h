@@ -79,6 +79,15 @@ void bs_ptr_set_erase(bs_ptr_set_t *set_ptr, void *elem_ptr);
 bool bs_ptr_set_contains(bs_ptr_set_t *set_ptr, void *elem_ptr);
 
 /**
+ * Returns any of the contained pointers. Can be used for deletion.
+ *
+ * @param set_ptr
+ *
+ * @return Any of the contained pointers, or NULL on error.
+ */
+void *bs_ptr_set_any(bs_ptr_set_t *set_ptr);
+
+/**
  * Returns whether `set_ptr` is empty.
  *
  * @param set_ptr
