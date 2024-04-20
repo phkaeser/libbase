@@ -40,24 +40,23 @@
 #define __BS_ATOMIC_GCC_ASM_i386
 #elif (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
 #define __BS_ATOMIC_GCC_ASM_x86_64
+
 #else
+
 /** C11 supports atomics. We expect support for at least 32-bit atomics. */
 #define __BS_ATOMIC_C11_STDATOMIC
-#endif  //  (defined(__GNUC__) || defined(__clang__)) && (i386 or __x86_64__).
-
-#if defined (__BS_ATOMIC_C11_STDATOMIC)
-// Note: Does not work with C++, https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60932.
 #include <stdatomic.h>
-#endif  // defined(BS_ATOMIC_C11_STDATOMIC)
 
-// Fall back to using a mutex if 'long long' is not lock-free.
 #if defined(ATOMIC_LLONG_LOCK_FREE)
+
 /** We can use C11 definitions for 64-bit atomics. */
 #define __BS_ATOMIC_C11_STDATOMIC_INT64
 #else  // defined(ATOMIC_LLONG_LOCK_FREE)
 /** fall back to use a mutex for 64-bit atomics. */
 #define __BS_ATOMIC_INT64_MUTEX
 #endif  // defined(ATOMIC_LLONG_LOCK_FREE)
+
+#endif  //  (defined(__GNUC__) || defined(__clang__)) && (i386 || __x86_64__).
 
 #if defined(__BS_ATOMIC_INT64_MUTEX)
 #include <pthread.h>
@@ -429,14 +428,12 @@ static inline void bs_atomic_int64_xchg(bs_atomic_int64_t *a_ptr,
                                         int64_t *v_ptr)
 {
 #if defined(__BS_ATOMIC_GCC_ASM_i386)
-
     // Exchange using CAS.
     int64_t curr_value;
     do {
         curr_value = bs_atomic_int64_get(a_ptr);
     } while (curr_value != bs_atomic_int64_cas(a_ptr, *v_ptr, curr_value));
     *v_ptr = curr_value;
-
 #elif defined(__BS_ATOMIC_GCC_ASM_x86_64)
     __asm__ volatile (
         "lock; \n"
