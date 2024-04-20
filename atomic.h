@@ -25,46 +25,39 @@
 
 #include <stdint.h>
 
-#if defined(__cplusplus) || defined(__clang__)
+#if defined(__cplusplus)
 
 // C++ (gcc) is not compatible with <stdatomic.h>. When using C++, please
 // resort to using C++ STL <atomic> definitions instead.
 //
 // Therefore, the __cplusplus #if is just an empty block.
 
-#else  // defined(__cplusplus) || defined(__clang__)
+#else  // defined(__cplusplus)
 
 /* == Types and Definitions ================================================ */
 
-#if defined(__GNUC__) && defined(i386)
+#if (defined(__GNUC__) || defined(__clang__)) && defined(i386)
 #define __BS_ATOMIC_GCC_ASM_i386
-#elif defined(__GNUC__) && defined(__x86_64__)
+#elif (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
 #define __BS_ATOMIC_GCC_ASM_x86_64
 #else
-
-/**
- * Whether we are on C11, which supports atomics.
- * We expect support for at least 32-bit atomics.
- */
+/** C11 supports atomics. We expect support for at least 32-bit atomics. */
 #define __BS_ATOMIC_C11_STDATOMIC
-
-// For 64-bit atomics, we fall back to use a mutex.
-#if defined(__ppc64__) || defined(__powerpc64__) || defined(__64BIT__)
-// TODO: Check if/how this behaves on other 64-bit platforms. amd64, arm64.
-/** We can use C11 definitions for 64-bit atomics. */
-#define __BS_ATOMIC_C11_STDATOMIC_INT64
-#else
-/** Whether we should fall back to use a mutex for 64-bit atomics. */
-#define __BS_ATOMIC_INT64_MUTEX
-#endif  // exclude known 64-bit platforms.
-
-#endif
+#endif  //  (defined(__GNUC__) || defined(__clang__)) && (i386 or __x86_64__).
 
 #if defined (__BS_ATOMIC_C11_STDATOMIC)
 // Note: Does not work with C++, https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60932.
 #include <stdatomic.h>
 #endif  // defined(BS_ATOMIC_C11_STDATOMIC)
 
+// Fall back to using a mutex if 'long long' is not lock-free.
+#if defined(ATOMIC_LLONG_LOCK_FREE)
+/** We can use C11 definitions for 64-bit atomics. */
+#define __BS_ATOMIC_C11_STDATOMIC_INT64
+#else  // defined(ATOMIC_LLONG_LOCK_FREE)
+/** fall back to use a mutex for 64-bit atomics. */
+#define __BS_ATOMIC_INT64_MUTEX
+#endif  // defined(ATOMIC_LLONG_LOCK_FREE)
 
 #if defined(__BS_ATOMIC_INT64_MUTEX)
 #include <pthread.h>
@@ -83,14 +76,22 @@ static pthread_mutex_t        _bs_atomic_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /** An atomically accessible 32-bit integer. */
 typedef struct {
+#if defined(__BS_ATOMIC_C11_STDATOMIC)
+    atomic_int_least32_t      v;
+#else  // defined (__BS_ATOMIC_C11_STDATOMIC)
     /** The actual value. */
     int32_t                   v;
+#endif  // defined (__BS_ATOMIC_C11_STDATOMIC)
 } bs_atomic_int32_t;
 
 /** An atomically accessible 64-bit integer. */
 typedef struct {
+#if defined(__BS_ATOMIC_C11_STDATOMIC_INT64)
+    atomic_int_least64_t      v;
+#else  // defined (__BS_ATOMIC_C11_STDATOMIC_INT64)
     /** The actual value . */
     int64_t                   v;
+#endif  // defined (__BS_ATOMIC_C11_STDATOMIC_INT64)
 } bs_atomic_int64_t;
 
 /* == 32-bit integer ======================================================= */
@@ -247,6 +248,8 @@ static inline void bs_atomic_int64_set(bs_atomic_int64_t *a_ptr, int64_t v)
 
 #elif defined(__BS_ATOMIC_INT64_MUTEX)
 
+    #error "HERE"
+
     pthread_mutex_lock(&_bs_atomic_mutex);
     a_ptr->v = v;
     pthread_mutex_unlock(&_bs_atomic_mutex);
@@ -285,7 +288,7 @@ static inline int64_t bs_atomic_int64_get(bs_atomic_int64_t *a_ptr)
         : "m" (a_ptr->v)
         );
     return rv;
-#elif defined(__BS_ATOMIC_C11_INT64_STDATOMIC_INT64)
+#elif defined(__BS_ATOMIC_C11_STDATOMIC_INT64)
 
     return atomic_load(&a_ptr->v);
 
@@ -401,7 +404,7 @@ static inline int64_t bs_atomic_int64_cas(bs_atomic_int64_t *a_ptr,
     if (atomic_compare_exchange_strong(&a_ptr->v, &old_val, new_val)) {
         return old_val;
     } else {
-        return new_val;
+        return atomic_load(&a_ptr->v);
     }
 
 #elif defined(__BS_ATOMIC_INT64_MUTEX)
@@ -460,7 +463,7 @@ static inline void bs_atomic_int64_xchg(bs_atomic_int64_t *a_ptr,
 #endif
 }
 
-#endif  // defined(__cplusplus) || defined(__clang__)
+#endif  // defined(__cplusplus)
 
 /** Unit tests. */
 extern const bs_test_case_t   bs_atomic_test_cases[];
