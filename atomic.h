@@ -76,6 +76,7 @@ static pthread_mutex_t        _bs_atomic_mutex = PTHREAD_MUTEX_INITIALIZER;
 /** An atomically accessible 32-bit integer. */
 typedef struct {
 #if defined(__BS_ATOMIC_C11_STDATOMIC)
+    /** The actual value. */
     atomic_int_least32_t      v;
 #else  // defined (__BS_ATOMIC_C11_STDATOMIC)
     /** The actual value. */
@@ -86,6 +87,7 @@ typedef struct {
 /** An atomically accessible 64-bit integer. */
 typedef struct {
 #if defined(__BS_ATOMIC_C11_STDATOMIC_INT64)
+    /** The actual value . */
     atomic_int_least64_t      v;
 #else  // defined (__BS_ATOMIC_C11_STDATOMIC_INT64)
     /** The actual value . */
