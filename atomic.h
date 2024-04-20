@@ -248,8 +248,6 @@ static inline void bs_atomic_int64_set(bs_atomic_int64_t *a_ptr, int64_t v)
 
 #elif defined(__BS_ATOMIC_INT64_MUTEX)
 
-    #error "HERE"
-
     pthread_mutex_lock(&_bs_atomic_mutex);
     a_ptr->v = v;
     pthread_mutex_unlock(&_bs_atomic_mutex);
