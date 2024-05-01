@@ -1,6 +1,7 @@
 *~
 CMakeFiles/*
 build/*
+build-clang/*
 CMakeCache.txt
 cmake_install.cmake
 Makefile
