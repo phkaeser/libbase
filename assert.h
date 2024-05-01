@@ -39,12 +39,20 @@
 #endif
 
 /** An assertion, triggers a fatal error if `_expr` is false. */
-#define BS_ASSERT(_expr) {                                              \
+#define BS_ASSERT(_expr) do {                                           \
         if (!(_expr)) {                                                 \
             bs_log(BS_FATAL, "ASSERT failed: %s", #_expr);              \
             BS_ABORT();                                                 \
         }                                                               \
-    }
+    } while (0)
+
+/** Asserts that _expr is not NULL, and returns the value of _expr. */
+#define BS_ASSERT_NOTNULL(_expr)                                        \
+    ({                                                                  \
+        __typeof__(_expr) __expr = (_expr);                             \
+        BS_ASSERT(NULL != __expr);                                      \
+        __expr;                                                         \
+    })
 
 #endif /* __LIBBASE_ASSERT_H__ */
 /* == End of assert.h ====================================================== */
