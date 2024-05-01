@@ -48,7 +48,7 @@
     })
 #endif  // !defined(BS_MIN)
 
-/** Returns the larer of (a, b) */
+/** Returns the greater of (a, b) */
 #if !defined(BS_MAX)
 #define BS_MAX(a, b)                                \
     ({                                              \
