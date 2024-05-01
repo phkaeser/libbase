@@ -21,6 +21,16 @@
 
 #include <libbase/libbase.h>
 
+static void test_assert(bs_test_t *test_ptr);
+static void test_def(bs_test_t *test_ptr);
+
+/** Further tests of definitions, without .c file. */
+static const bs_test_case_t bs_header_only_test_cases[] = {
+    { 1, "assert", test_assert },
+    { 1, "def", test_def },
+    { 0, NULL, NULL }
+};
+
 /** Unit tests. */
 const bs_test_set_t           libbase_tests[] = {
     { 1, "bs_atomic", bs_atomic_test_cases },
@@ -31,6 +41,7 @@ const bs_test_set_t           libbase_tests[] = {
     { 1, "bs_file", bs_file_test_cases },
     { 1, "bs_gfxbuf", bs_gfxbuf_test_cases },
     { 1, "bs_gfxbuf_xpm", bs_gfxbuf_xpm_test_cases },
+    { 1, "bs_header_only", bs_header_only_test_cases },
     { 1, "bs_log", bs_log_test_cases },
     { 1, "bs_ptr_set", bs_ptr_set_test_cases },
     { 1, "bs_ptr_stack", bs_ptr_stack_test_cases },
@@ -41,11 +52,28 @@ const bs_test_set_t           libbase_tests[] = {
     { 0, NULL, NULL }
 };
 
+/* ------------------------------------------------------------------------- */
+/** Tests the functions of 'assert.h' */
+void test_assert(bs_test_t *test_ptr)
+{
+    void *ptr = test_assert;
+    BS_TEST_VERIFY_EQ(test_ptr, ptr, BS_ASSERT_NOTNULL(ptr));
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests the functions of 'def.h' */
+void test_def(bs_test_t *test_ptr)
+{
+    BS_TEST_VERIFY_EQ(test_ptr, 1, BS_MIN(1, 2));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, BS_MAX(1, 2));
+}
+
 #if !defined(BS_TEST_DATA_DIR)
 /** Directory root for looking up test data. See @ref bs_test_resolve_path. */
 #define BS_TEST_DATA_DIR "./"
 #endif  // BS_TEST_DATA_DIR
 
+/* ========================================================================= */
 /** Main program, runs all unit tests. */
 int main(int argc, const char **argv)
 {
