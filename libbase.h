@@ -35,6 +35,7 @@
 #include "log_wrappers.h"
 #include "ptr_set.h"
 #include "ptr_stack.h"
+#include "ptr_vector.h"
 #include "subprocess.h"
 #include "sock.h"
 #include "strutil.h"
