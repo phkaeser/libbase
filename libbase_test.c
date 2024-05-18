@@ -45,6 +45,7 @@ const bs_test_set_t           libbase_tests[] = {
     { 1, "log", bs_log_test_cases },
     { 1, "ptr_set", bs_ptr_set_test_cases },
     { 1, "ptr_stack", bs_ptr_stack_test_cases },
+    { 1, "ptr_vector", bs_ptr_vector_test_cases },
     { 1, "subprocess", bs_subprocess_test_cases },
     { 1, "strutil", bs_strutil_test_cases },
     { 1, "test", bs_test_test_cases },

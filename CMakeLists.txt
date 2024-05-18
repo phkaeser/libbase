@@ -77,6 +77,7 @@ SET(PUBLIC_HEADER_FILES
   log_wrappers.h
   ptr_set.h
   ptr_stack.h
+  ptr_vector.h
   sock.h
   strutil.h
   subprocess.h
@@ -98,6 +99,7 @@ SET(SOURCES
   log.c
   ptr_set.c
   ptr_stack.c
+  ptr_vector.c
   sock.c
   strutil.c
   subprocess.c
