@@ -126,9 +126,11 @@ bool _bs_ptr_vector_grow(bs_ptr_vector_t *ptr_vector_ptr)
 /* == Unit tests =========================================================== */
 
 static void basic_test(bs_test_t *test_ptr);
+static void large_test(bs_test_t *test_ptr);
 
 const bs_test_case_t bs_ptr_vector_test_cases[] = {
     { 1, "basic", basic_test },
+    { 1, "large", large_test },
     { 0, NULL, NULL }
 };
 
@@ -137,7 +139,7 @@ const bs_test_case_t bs_ptr_vector_test_cases[] = {
 void basic_test(bs_test_t *test_ptr)
 {
     bs_ptr_vector_t ptr_vector;
-    static char e = 'e';
+    char e = 'e';
 
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_init(&ptr_vector));
     BS_TEST_VERIFY_EQ(test_ptr, 0, bs_ptr_vector_size(&ptr_vector));
@@ -150,6 +152,30 @@ void basic_test(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ(test_ptr, 0, bs_ptr_vector_size(&ptr_vector));
 
     bs_ptr_vector_fini(&ptr_vector);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests with enough elements to trigger growth. */
+void large_test(bs_test_t *test_ptr)
+{
+    bs_ptr_vector_t vec;
+    char e[2 * INITIAL_SIZE];
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_init(&vec));
+
+    for (size_t i = 0; i < 2 * INITIAL_SIZE; ++i) {
+        BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_push_back(&vec, &e[i]));
+    }
+
+    for (size_t i = 0; i < 2 * INITIAL_SIZE; ++i) {
+        BS_TEST_VERIFY_EQ(test_ptr, &e[i], bs_ptr_vector_at(&vec, i));
+    }
+
+    for (size_t i = 0; i < 2 * INITIAL_SIZE; ++i) {
+        BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_erase(&vec, 0));
+    }
+
+    bs_ptr_vector_fini(&vec);
 }
 
 /* == End of ptr_vector.c ================================================== */
