@@ -92,6 +92,18 @@ bool bs_ptr_stack_push(bs_ptr_stack_t *ptr_stack_ptr, void *elem_ptr);
  */
 void *bs_ptr_stack_pop(bs_ptr_stack_t *ptr_stack_ptr);
 
+/**
+ * Peeks at the stack value that is `index` items below the top.
+ *
+ * @param ptr_stack_ptr
+ * @param index
+ *
+ * @return The stacked pointer, or NULL if `index` is too large or the stack is
+ *     empty.
+ */
+void *bs_ptr_stack_peek(bs_ptr_stack_t *ptr_stack_ptr,
+                        size_t index);
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_ptr_stack_test_cases[];
 
