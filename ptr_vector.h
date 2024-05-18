@@ -22,6 +22,11 @@
 #ifndef __LIBBASE_PTR_VECTOR_H__
 #define __LIBBASE_PTR_VECTOR_H__
 
+#include <stdbool.h>
+#include <stddef.h>
+
+#include "test.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
