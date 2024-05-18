@@ -96,6 +96,14 @@ void *bs_ptr_stack_pop(bs_ptr_stack_t *ptr_stack_ptr)
     return ptr_stack_ptr->data_ptr[--ptr_stack_ptr->pos];
 }
 
+/* ------------------------------------------------------------------------- */
+void *bs_ptr_stack_peek(bs_ptr_stack_t *ptr_stack_ptr,
+                        size_t index)
+{
+    if (index >= ptr_stack_ptr->pos) return NULL;
+    return ptr_stack_ptr->data_ptr[ptr_stack_ptr->pos - index - 1];
+}
+
 /* == Local (static) methods =============================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -137,6 +145,7 @@ void basic_test(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_EQ(test_ptr, NULL, bs_ptr_stack_pop(&ptr_stack));
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_stack_push(&ptr_stack, elem_ptr));
+    BS_TEST_VERIFY_EQ(test_ptr, elem_ptr, bs_ptr_stack_peek(&ptr_stack, 0));
     BS_TEST_VERIFY_EQ(test_ptr, elem_ptr, bs_ptr_stack_pop(&ptr_stack));
     BS_TEST_VERIFY_EQ(test_ptr, NULL, bs_ptr_stack_pop(&ptr_stack));
 
@@ -156,6 +165,19 @@ void large_test(bs_test_t *test_ptr)
         BS_TEST_VERIFY_TRUE(test_ptr,
                             bs_ptr_stack_push(&ptr_stack, &elem[i]));
     }
+
+    for (size_t i = 0; i < 2 * INITIAL_SIZE; ++i) {
+        BS_TEST_VERIFY_EQ(
+            test_ptr,
+            &elem[2 * INITIAL_SIZE - 1 - i],
+            bs_ptr_stack_peek(&ptr_stack, i));
+    }
+    BS_TEST_VERIFY_EQ(
+        test_ptr, NULL,
+        bs_ptr_stack_peek(&ptr_stack, 2 * INITIAL_SIZE));
+    BS_TEST_VERIFY_EQ(
+        test_ptr, NULL,
+        bs_ptr_stack_peek(&ptr_stack, 2 * INITIAL_SIZE + 1));
 
     for (size_t i = 0; i < 2 * INITIAL_SIZE; ++i) {
         void *ptr = bs_ptr_stack_pop(&ptr_stack);
