@@ -57,6 +57,34 @@ bool bs_ptr_vector_init(bs_ptr_vector_t *ptr_vector_ptr);
  */
 void bs_ptr_vector_fini(bs_ptr_vector_t *ptr_vector_ptr);
 
+/** @return  the size of the vector, ie. @ref bs_ptr_vector_t::consumed. */
+size_t bs_ptr_vector_size(bs_ptr_vector_t *ptr_vector_ptr);
+
+/**
+ * Adds `data_ptr` at the end of the vector.
+ *
+ * @param ptr_vector_ptr
+ * @param data_ptr
+ *
+ * @return true on success.
+ */
+bool bs_ptr_vector_push_back(bs_ptr_vector_t *ptr_vector_ptr,
+                             void *data_ptr);
+
+/**
+ * Erases the element at pos.
+ *
+ * @param ptr_vector_ptr
+ * @param pos
+ *
+ * @return true if pos was valid.
+ */
+bool bs_ptr_vector_erase(bs_ptr_vector_t *ptr_vector_ptr,
+                         size_t pos);
+
+/** @return the element at `pos`. It must be `pos` < size. */
+void* bs_ptr_vector_at(bs_ptr_vector_t *ptr_vector_ptr, size_t pos);
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_ptr_vector_test_cases[];
 

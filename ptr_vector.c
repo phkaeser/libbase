@@ -22,6 +22,7 @@
 
 #include "ptr_vector.h"
 
+#include "assert.h"
 #include "log.h"
 
 /* == Declarations ========================================================= */
@@ -56,6 +57,45 @@ void bs_ptr_vector_fini(bs_ptr_vector_t *ptr_vector_ptr)
     }
     ptr_vector_ptr->capacity = 0;
     ptr_vector_ptr->consumed = 0;
+}
+
+/* ------------------------------------------------------------------------- */
+size_t bs_ptr_vector_size(bs_ptr_vector_t *ptr_vector_ptr)
+{
+    return ptr_vector_ptr->consumed;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bs_ptr_vector_push_back(bs_ptr_vector_t *ptr_vector_ptr,
+                             void *data_ptr)
+{
+    while (ptr_vector_ptr->consumed >= ptr_vector_ptr->capacity) {
+        if (!_bs_ptr_vector_grow(ptr_vector_ptr)) return false;
+    }
+    ptr_vector_ptr->elements_ptr[ptr_vector_ptr->consumed++] = data_ptr;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bs_ptr_vector_erase(bs_ptr_vector_t *ptr_vector_ptr,
+                         size_t pos)
+{
+    if (pos >= ptr_vector_ptr->consumed) return false;
+
+    if (pos + 1 < ptr_vector_ptr->consumed) {
+        memmove(ptr_vector_ptr->elements_ptr + pos,
+                ptr_vector_ptr->elements_ptr + pos + 1,
+                (ptr_vector_ptr->consumed - pos) * sizeof(void*));
+    }
+    --ptr_vector_ptr->consumed;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+void* bs_ptr_vector_at(bs_ptr_vector_t *ptr_vector_ptr, size_t pos)
+{
+    BS_ASSERT(pos < ptr_vector_ptr->consumed);
+    return ptr_vector_ptr->elements_ptr[pos];
 }
 
 /* == Local (static) methods =============================================== */
@@ -97,8 +137,18 @@ const bs_test_case_t bs_ptr_vector_test_cases[] = {
 void basic_test(bs_test_t *test_ptr)
 {
     bs_ptr_vector_t ptr_vector;
+    static char e = 'e';
 
     BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_init(&ptr_vector));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_ptr_vector_size(&ptr_vector));
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_push_back(&ptr_vector, &e));
+    BS_TEST_VERIFY_EQ(test_ptr, 1, bs_ptr_vector_size(&ptr_vector));
+    BS_TEST_VERIFY_EQ(test_ptr, &e, bs_ptr_vector_at(&ptr_vector, 0));
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_erase(&ptr_vector, 0));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_ptr_vector_size(&ptr_vector));
+
     bs_ptr_vector_fini(&ptr_vector);
 }
 
