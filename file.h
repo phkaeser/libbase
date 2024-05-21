@@ -88,6 +88,9 @@ char *bs_file_join_realpath(
  *
  * @param fname_ptr           Name of the file that shall be looked up.
  * @param paths_ptr_ptr       A NULL-terminated array of paths to search.
+ *                            Paths that start with "~/" or "${HOME}" will be
+ *                            expanded with getenv("HOME"). (Not implemented to
+ *                            support further variables - yet).
  * @param mode                Optional, indicates to only consider these types
  *                            of the file. Matches the `st_mode` field of stat.
  * @param lookedup_path_ptr   See the `joined_realpath_ptr` to @ref

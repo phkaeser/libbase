@@ -20,8 +20,6 @@
 
 #include "file.h"
 
-#include "log.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -29,6 +27,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include "log.h"
+#include "strutil.h"
 
 /* == Declarations ========================================================= */
 
@@ -128,9 +129,29 @@ char *bs_file_lookup(const char *fname_ptr,
                      int mode,
                      char *lookedup_path_ptr)
 {
+    char full_path[PATH_MAX];
     for (; NULL != *paths_ptr_ptr; ++paths_ptr_ptr) {
+        const char *path_ptr = *paths_ptr_ptr;
+        if (bs_str_startswith(path_ptr, "~/")) {
+            if (NULL == getenv("HOME")) {
+                bs_log(BS_WARNING, "Failed getenv(\"HOME\") for path %s",
+                       path_ptr);
+                continue;
+            }
+            snprintf(full_path, PATH_MAX, "%s/%s", getenv("HOME"), path_ptr+2);
+            path_ptr = &full_path[0];
+        } else if (bs_str_startswith(path_ptr, "${HOME}")) {
+            if (NULL == getenv("HOME")) {
+                bs_log(BS_WARNING, "Failed getenv(\"HOME\") for path %s",
+                       path_ptr);
+                continue;
+            }
+            snprintf(full_path, PATH_MAX, "%s/%s", getenv("HOME"), path_ptr+7);
+            path_ptr = &full_path[0];
+        }
+
         char *resolved_path_ptr = _bs_file_join_realpath_log_severity(
-            BS_DEBUG, *paths_ptr_ptr, fname_ptr, lookedup_path_ptr);
+            BS_DEBUG, path_ptr, fname_ptr, lookedup_path_ptr);
         if (NULL == resolved_path_ptr) continue;
 
         // Found something and not needed to check type? We have it.
@@ -227,6 +248,15 @@ void test_lookup(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
 
     p = bs_file_lookup("libbase_test", paths, S_IFREG, path);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+
+    paths[0] = "~/";
+    paths[1] = NULL;
+    p = bs_file_lookup("", paths, S_IFDIR, NULL);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+
+    paths[0] = "${HOME}";
+    p = bs_file_lookup("", paths, S_IFDIR, NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
 }
 

@@ -84,6 +84,9 @@ bool bs_strconvert_uint64(
     uint64_t *value_ptr,
     int base);
 
+/** @return Whether `string_ptr` starts with `prefix_ptr`. */
+bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr);
+
 /** Test cases. */
 extern const bs_test_case_t   bs_strutil_test_cases[];
 
