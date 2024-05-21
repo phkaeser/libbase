@@ -83,14 +83,22 @@ bool bs_strconvert_uint64(
     return true;
 }
 
+/* ------------------------------------------------------------------------- */
+bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr)
+{
+    return 0 == strncmp(string_ptr, prefix_ptr, strlen(prefix_ptr));
+}
+
 /* == Test functions ======================================================= */
 
 static void test_strappend(bs_test_t *test_ptr);
 static void strconvert_uint64_test(bs_test_t *test_ptr);
+static void test_startswith(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_strutil_test_cases[] = {
     { 1, "strappend", test_strappend },
     { 1, "strconvert_uint64", strconvert_uint64_test },
+    { 1, "startswith", test_startswith },
     { 0, NULL, NULL }
 };
 
@@ -148,6 +156,16 @@ void strconvert_uint64_test(bs_test_t *test_ptr)
         bs_strconvert_uint64("18446744073709551616", &value, 10));
 
     BS_TEST_VERIFY_FALSE(test_ptr, bs_strconvert_uint64("42x", &value, 10));
+}
+
+/* ------------------------------------------------------------------------- */
+void test_startswith(bs_test_t *test_ptr)
+{
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_str_startswith("asdf", "asd"));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_str_startswith("asdf", "asdfe"));
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_str_startswith("asdf", ""));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_str_startswith("", "asdf"));
 }
 
 /* == End of strutil.c ===================================================== */
