@@ -140,14 +140,6 @@ char *bs_file_lookup(const char *fname_ptr,
             }
             snprintf(full_path, PATH_MAX, "%s/%s", getenv("HOME"), path_ptr+2);
             path_ptr = &full_path[0];
-        } else if (bs_str_startswith(path_ptr, "${HOME}")) {
-            if (NULL == getenv("HOME")) {
-                bs_log(BS_WARNING, "Failed getenv(\"HOME\") for path %s",
-                       path_ptr);
-                continue;
-            }
-            snprintf(full_path, PATH_MAX, "%s/%s", getenv("HOME"), path_ptr+7);
-            path_ptr = &full_path[0];
         }
 
         char *resolved_path_ptr = _bs_file_join_realpath_log_severity(
@@ -183,12 +175,25 @@ char *_bs_file_join_realpath_log_severity(
     const char *fname_ptr,
     char *joined_realpath_ptr)
 {
+    const char *prefix_dir_ptr = NULL;
+    if (bs_str_startswith(path_ptr, "~/")) {
+        prefix_dir_ptr = getenv("HOME");
+        if (NULL != prefix_dir_ptr) {
+            path_ptr += 2;
+        } else {
+            bs_log(BS_WARNING, "Failed getenv(\"HOME\") for path %s",
+                   path_ptr);
+        }
+    }
+    if (NULL == prefix_dir_ptr) prefix_dir_ptr = "";
+
     char joined_path[PATH_MAX + 1];
-    int written_bytes = snprintf(joined_path, sizeof(joined_path),
-                                 "%s/%s", path_ptr, fname_ptr);
+    int written_bytes = snprintf(
+        joined_path, sizeof(joined_path),
+        "%s%s/%s", prefix_dir_ptr, path_ptr, fname_ptr);
     if (sizeof(joined_path) < (size_t)written_bytes) {
-        bs_log(BS_ERROR, "Exceeds PATH_MAX (%d): %s/%s",
-               PATH_MAX, path_ptr, fname_ptr);
+        bs_log(BS_ERROR, "Exceeds PATH_MAX (%d): %s%s/%s",
+               PATH_MAX, prefix_dir_ptr, path_ptr, fname_ptr);
         return NULL;
     }
 
@@ -225,6 +230,9 @@ void test_join_realpath(bs_test_t *test_ptr)
     char path[PATH_MAX];
     p = bs_file_join_realpath("/proc/self/cwd", "libbase_test", path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+
+    p = bs_file_join_realpath("~/", "", path);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -252,10 +260,6 @@ void test_lookup(bs_test_t *test_ptr)
 
     paths[0] = "~/";
     paths[1] = NULL;
-    p = bs_file_lookup("", paths, S_IFDIR, NULL);
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
-
-    paths[0] = "${HOME}";
     p = bs_file_lookup("", paths, S_IFDIR, NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
 }
