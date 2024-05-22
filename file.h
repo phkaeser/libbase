@@ -67,7 +67,8 @@ ssize_t bs_file_write_buffer(
 /**
  * Joins `path_ptr` and `fname_ptr` and resolves the real path to it.
  *
- * @param path_ptr
+ * @param path_ptr            Path to join from. Paths that start with "~/"
+ *                            will be expanded with getenv("HOME").
  * @param fname_ptr
  * @param joined_realpath_ptr If specified as NULL; then bs_file_join_realpath
  *                            will allocate a buffer of suitable length, and
@@ -87,10 +88,9 @@ char *bs_file_join_realpath(
  * Looks up a file from the set of provided paths.
  *
  * @param fname_ptr           Name of the file that shall be looked up.
- * @param paths_ptr_ptr       A NULL-terminated array of paths to search.
- *                            Paths that start with "~/" or "${HOME}" will be
- *                            expanded with getenv("HOME"). (Not implemented to
- *                            support further variables - yet).
+ * @param paths_ptr_ptr       A NULL-terminated array of paths to search. Paths
+ *                            starting with "~/" will be expanded as described
+ *                            by @ref bs_file_join_realpath.
  * @param mode                Optional, indicates to only consider these types
  *                            of the file. Matches the `st_mode` field of stat.
  * @param lookedup_path_ptr   See the `joined_realpath_ptr` to @ref
