@@ -129,21 +129,9 @@ char *bs_file_lookup(const char *fname_ptr,
                      int mode,
                      char *lookedup_path_ptr)
 {
-    char full_path[PATH_MAX];
     for (; NULL != *paths_ptr_ptr; ++paths_ptr_ptr) {
-        const char *path_ptr = *paths_ptr_ptr;
-        if (bs_str_startswith(path_ptr, "~/")) {
-            if (NULL == getenv("HOME")) {
-                bs_log(BS_WARNING, "Failed getenv(\"HOME\") for path %s",
-                       path_ptr);
-                continue;
-            }
-            snprintf(full_path, PATH_MAX, "%s/%s", getenv("HOME"), path_ptr+2);
-            path_ptr = &full_path[0];
-        }
-
         char *resolved_path_ptr = _bs_file_join_realpath_log_severity(
-            BS_DEBUG, path_ptr, fname_ptr, lookedup_path_ptr);
+            BS_DEBUG, *paths_ptr_ptr, fname_ptr, lookedup_path_ptr);
         if (NULL == resolved_path_ptr) continue;
 
         // Found something and not needed to check type? We have it.
