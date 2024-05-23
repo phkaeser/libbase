@@ -57,6 +57,21 @@ size_t bs_vstrappendf(
 }
 
 /* ------------------------------------------------------------------------- */
+size_t bs_strappend(
+    char *buf,
+    size_t buf_size,
+    size_t buf_pos,
+    const char *str_ptr)
+{
+    if (buf_pos >= buf_size) return buf_size;
+    size_t len = strlen(str_ptr);
+    if (buf_pos + len + 1 >= buf_size) len = buf_size - buf_pos - 1;
+    memmove(buf + buf_pos, str_ptr, len);
+    buf[buf_pos + len] = '\0';
+    return buf_pos + strlen(str_ptr);;
+}
+
+/* ------------------------------------------------------------------------- */
 bool bs_strconvert_uint64(
     const char *string_ptr,
     uint64_t *value_ptr,
@@ -117,6 +132,14 @@ void test_strappend(bs_test_t *test_ptr)
     BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwer");
 
     in = out;
+    out = bs_strappendf(buf, sizeof(buf), in, "j");
+    BS_TEST_VERIFY_EQ(test_ptr, out, 9);
+    BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwerj");
+
+    out = bs_strappendf(buf, sizeof(buf), in, "jk");
+    BS_TEST_VERIFY_EQ(test_ptr, out, 10);
+    BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwerj");
+
     out = bs_strappendf(buf, sizeof(buf), in, "jkl");
     BS_TEST_VERIFY_EQ(test_ptr, out, 11);
     BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwerj");
@@ -125,6 +148,28 @@ void test_strappend(bs_test_t *test_ptr)
     out = bs_strappendf(buf, sizeof(buf), in, "uiop");
     BS_TEST_VERIFY_EQ(test_ptr, out, 11);
     BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwerj");
+
+    in = 0;
+    out = bs_strappend(buf, sizeof(buf), in, "asdf");
+    BS_TEST_VERIFY_EQ(test_ptr, out, 4);
+    BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdf");
+
+    in = out;
+    out = bs_strappend(buf, sizeof(buf), in, "qwer");
+    BS_TEST_VERIFY_EQ(test_ptr, out, 8);
+    BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwer");
+
+    out = bs_strappend(buf, sizeof(buf), 8, "g");
+    BS_TEST_VERIFY_EQ(test_ptr, out, 9);
+    BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwerg");
+
+    out = bs_strappend(buf, sizeof(buf), 8, "gh");
+    BS_TEST_VERIFY_EQ(test_ptr, out, 10);
+    BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwerg");
+
+    out = bs_strappend(buf, sizeof(buf), 8, "ghv");
+    BS_TEST_VERIFY_EQ(test_ptr, out, 11);
+    BS_TEST_VERIFY_STREQ(test_ptr, buf, "asdfqwerg");
 }
 
 /* -- Convert uint64_t ----------------------------------------------------- */
