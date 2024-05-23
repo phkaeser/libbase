@@ -34,7 +34,7 @@ extern "C" {
 
 /**
  * Reads the contents from |fname_ptr| into |buf_ptr|, up to |buf_len|-1 bytes.
- * It will att a trailing NUL character to buf_ptr, for convenience.
+ * It will add a trailing NUL character to buf_ptr, for convenience.
  *
  * @param fname_ptr
  * @param buf_ptr
