@@ -38,6 +38,10 @@ static char *_bs_file_join_realpath_log_severity(
     const char *path_ptr,
     const char *fname_ptr,
     char *joined_realpath_ptr);
+static char *_bs_file_realpath_log_severity(
+    bs_log_severity_t severity,
+    const char *path_ptr,
+    char *joined_realpath_ptr);
 
 /* == Exported methods ===================================================== */
 
@@ -114,16 +118,6 @@ ssize_t bs_file_write_buffer(
 }
 
 /* ------------------------------------------------------------------------- */
-char *bs_file_join_realpath(
-    const char *path_ptr,
-    const char *fname_ptr,
-    char *joined_realpath_ptr)
-{
-    return _bs_file_join_realpath_log_severity(
-        BS_ERROR, path_ptr, fname_ptr, joined_realpath_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
 char *bs_file_lookup(const char *fname_ptr,
                      const char **paths_ptr_ptr,
                      int mode,
@@ -153,73 +147,107 @@ char *bs_file_lookup(const char *fname_ptr,
     return NULL;
 }
 
+/* ------------------------------------------------------------------------- */
+char *bs_file_join_realpath(
+    const char *path_ptr,
+    const char *fname_ptr,
+    char *resolved_realpath_ptr)
+{
+    return _bs_file_join_realpath_log_severity(
+        BS_ERROR, path_ptr, fname_ptr, resolved_realpath_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+char *bs_file_realpath(
+    const char *path_ptr,
+    char *resolved_path_ptr)
+{
+    return _bs_file_realpath_log_severity(
+        BS_ERROR, path_ptr, resolved_path_ptr);
+}
+
 /* == Static (local) functions ============================================= */
 
 /* ------------------------------------------------------------------------- */
-/** @ref bs_file_join_realpath. Logs realpath(3) errors with |severity|. */
 char *_bs_file_join_realpath_log_severity(
     bs_log_severity_t severity,
     const char *path_ptr,
     const char *fname_ptr,
     char *joined_realpath_ptr)
 {
-    const char *prefix_dir_ptr = NULL;
+    char path[PATH_MAX];
+    size_t pos = bs_strappend(path, PATH_MAX, 0, path_ptr);
+    pos = bs_strappend(path, PATH_MAX, pos, "/");
+    pos = bs_strappend(path, PATH_MAX, pos, fname_ptr);
+    if (pos > PATH_MAX) {
+        bs_log(BS_ERROR, "Path too long: %s/%s", path_ptr, fname_ptr);
+        return NULL;
+    }
+
+    return _bs_file_realpath_log_severity(severity, path, joined_realpath_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+/** @ref bs_file_realpath. Logs realpath(3) errors with |severity|. */
+char *_bs_file_realpath_log_severity(
+    bs_log_severity_t severity,
+    const char *path_ptr,
+    char *resolved_realpath_ptr)
+{
+    char expanded_path[PATH_MAX];
     if (bs_str_startswith(path_ptr, "~/")) {
-        prefix_dir_ptr = getenv("HOME");
-        if (NULL != prefix_dir_ptr) {
-            path_ptr += 2;
-        } else {
+        const char *home_dir_ptr = getenv("HOME");
+        if (NULL == home_dir_ptr) {
             bs_log(BS_WARNING, "Failed getenv(\"HOME\") for path %s",
                    path_ptr);
+        } else {
+            size_t i = bs_strappend(expanded_path, PATH_MAX, 0, home_dir_ptr);
+            i = bs_strappend(expanded_path, PATH_MAX, i, "/");
+            i = bs_strappend(expanded_path, PATH_MAX, i, path_ptr + 2);
+            if (i >= PATH_MAX) {
+                bs_log(BS_ERROR, "Path too long: %s/%s for %s",
+                       home_dir_ptr, path_ptr + 2, path_ptr);
+                return NULL;
+            }
+            path_ptr = &expanded_path[0];
         }
     }
-    if (NULL == prefix_dir_ptr) prefix_dir_ptr = "";
 
-    char joined_path[PATH_MAX + 1];
-    int written_bytes = snprintf(
-        joined_path, sizeof(joined_path),
-        "%s%s/%s", prefix_dir_ptr, path_ptr, fname_ptr);
-    if (sizeof(joined_path) < (size_t)written_bytes) {
-        bs_log(BS_ERROR, "Exceeds PATH_MAX (%d): %s%s/%s",
-               PATH_MAX, prefix_dir_ptr, path_ptr, fname_ptr);
-        return NULL;
-    }
-
-    char *resolved_path_ptr = realpath(joined_path, joined_realpath_ptr);
-    if (NULL == resolved_path_ptr) {
+    char *result_ptr = realpath(path_ptr, resolved_realpath_ptr);
+    if (NULL == result_ptr) {
         bs_log(severity | BS_ERRNO, "Failed realpath(%s, %p)",
-               joined_path, joined_realpath_ptr);
+               path_ptr, resolved_realpath_ptr);
         return NULL;
     }
 
-    return resolved_path_ptr;
+    return result_ptr;
 }
 
 /* == Test Functions ======================================================= */
 
-static void test_join_realpath(bs_test_t *test_ptr);
+static void test_realpath(bs_test_t *test_ptr);
 static void test_lookup(bs_test_t *test_ptr);
 
 const bs_test_case_t bs_file_test_cases[] = {
-    { 1, "join_realpath", test_join_realpath },
+    { 1, "realpath", test_realpath },
     { 1, "lookup", test_lookup },
     { 0, NULL, NULL }  // sentinel.
 };
 
 /* ------------------------------------------------------------------------- */
-void test_join_realpath(bs_test_t *test_ptr)
+void test_realpath(bs_test_t *test_ptr)
 {
     char *p;
 
-    p = bs_file_join_realpath("/proc/self/cwd", "libbase_test", NULL);
+    p = bs_file_realpath("/proc/self/cwd/libbase_test", NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
     free(p);
 
     char path[PATH_MAX];
-    p = bs_file_join_realpath("/proc/self/cwd", "libbase_test", path);
+    p = bs_file_realpath("/proc/self/cwd/libbase_test", path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
 
-    p = bs_file_join_realpath("~/", "", path);
+    p = bs_file_realpath("~/", path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
 }
 
@@ -248,7 +276,7 @@ void test_lookup(bs_test_t *test_ptr)
 
     paths[0] = "~/";
     paths[1] = NULL;
-    p = bs_file_lookup("", paths, S_IFDIR, NULL);
+    p = bs_file_lookup("", paths, S_IFDIR, path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
 }
 
