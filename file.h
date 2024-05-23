@@ -34,7 +34,7 @@ extern "C" {
 
 /**
  * Reads the contents from |fname_ptr| into |buf_ptr|, up to |buf_len|-1 bytes.
- * It will att a trailing NUL character to buf_ptr, for convenience.
+ * It will add a trailing NUL character to buf_ptr, for convenience.
  *
  * @param fname_ptr
  * @param buf_ptr
@@ -63,21 +63,36 @@ ssize_t bs_file_write_buffer(
     const char *buf_ptr,
     size_t buf_len);
 
-
 /**
- * Joins `path_ptr` and `fname_ptr` and resolves the real path to it.
+ * Resolves the real path to `path_ptr`, with home directory expansion.
  *
  * @param path_ptr            Path to join from. Paths that start with "~/"
  *                            will be expanded with getenv("HOME").
- * @param fname_ptr
- * @param joined_realpath_ptr If specified as NULL; then bs_file_join_realpath
- *                            will allocate a buffer of suitable length, and
- *                            return the pointer to it. The caller then needs
- *                            to release that buffer by calling free(3).
+ * @param resolved_realpath_ptr If specified as NULL, this method will allocate
+ *                            a buffer of suitable length, and return the
+ *                            pointer to it. The caller then needs to release
+ *                            that buffer by calling free(3).
+ *                            Otherwise, the resolved path is stored here.
  *
- * @return NULL if the joined path is too long, or the file cannot be resolved.
- *     Upon success, a pointer to the path is returned. If joined_realpath_ptr
- *     was NULL, it must be released by calling free(3).
+ * @return NULL if the expanded path is too long, or if the file cannot be
+ *     resolved. Upon success, a pointer to the path is returned. If
+ *     joined_realpath_ptr was NULL, it must be released by calling free(3).
+ */
+char *bs_file_realpath(
+    const char *path_ptr,
+    char *resolved_realpath_ptr);
+
+/**
+ * Joins `path_ptr` and `fname_ptr`, with home directory expansion.
+ *
+ * @param path_ptr            Path to use for joining. Paths that start with
+ *                            "~/" will be expanded with getenv("HOME").
+ * @param fname_ptr           Filename to join the path on.
+ * @param joined_realpath_ptr See the `resolved_path_ptr` argument to @ref
+ *                            bs_file_realpath.
+ *
+ * @return NULL if the joined path was too long. For other cases, see
+ *     @ref bs_file_realpath.
  */
 char *bs_file_join_realpath(
     const char *path_ptr,
@@ -93,8 +108,8 @@ char *bs_file_join_realpath(
  *                            by @ref bs_file_join_realpath.
  * @param mode                Optional, indicates to only consider these types
  *                            of the file. Matches the `st_mode` field of stat.
- * @param lookedup_path_ptr   See the `joined_realpath_ptr` to @ref
- *                            bs_file_join_realpath.
+ * @param lookedup_path_ptr   See the `resolved_path_ptr` argument to @ref
+ *                            bs_file_realpath.
  *
  * @return NULL if no suitable file was found. Upon success, a pointer to the
  *     resolved real path is returned. If `lookedup_path_ptr` was NULL; the

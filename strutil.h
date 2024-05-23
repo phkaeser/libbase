@@ -49,7 +49,7 @@ extern "C" {
  * @return The position of where the trailining NUL character was written to.
  *     The number of written characters is `buf_size` minus the return value.
  *     If the buffer was too small for holding all output (including the NUL
- *     terminator), the return value will be larger than buf_size.
+ *     terminator), the return value will be larger or equal than buf_size.
  *     It is undefined by how much larger the return value is.
  */
 size_t bs_strappendf(
@@ -65,6 +65,13 @@ size_t bs_vstrappendf(
     size_t buf_pos,
     const char *fmt_ptr,
     va_list ap) __ARG_PRINTF__(4, 0);
+
+/** Appends a non-formatted string. See @ref bs_strappendf for arguments. */
+size_t bs_strappend(
+    char *buf,
+    size_t buf_size,
+    size_t buf_pos,
+    const char *str_ptr);
 
 /**
  * Converts a uint64_t from |string_ptr| with |base| and stores it in
