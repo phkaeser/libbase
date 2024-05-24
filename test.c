@@ -357,8 +357,14 @@ const char *bs_test_resolve_path(const char *fname_ptr)
     // POSIX doesn't really say whether the terminating NUL would fit.
     // Add a spare byte for that.
     static thread_local char resolved_path[PATH_MAX + 1];
-    return bs_file_join_realpath(
+    const char *resolved_path_ptr = bs_file_join_resolve_path(
         bs_test_data_dir_ptr, fname_ptr, resolved_path);
+    if (NULL == resolved_path_ptr) {
+        bs_log(BS_ERROR | BS_ERRNO,
+               "Failed bs_file_join_resolve_path(%s, %s, %p)",
+               bs_test_data_dir_ptr, fname_ptr, resolved_path);
+    }
+    return resolved_path_ptr;
 }
 /* == Static (Local) Functions ============================================= */
 
