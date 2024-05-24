@@ -68,57 +68,62 @@ ssize_t bs_file_write_buffer(
  *
  * @param path_ptr            Path to join from. Paths that start with "~/"
  *                            will be expanded with getenv("HOME").
- * @param resolved_realpath_ptr If specified as NULL, this method will allocate
+ * @param resolved_path_buf_ptr If specified as NULL, this method will allocate
  *                            a buffer of suitable length, and return the
  *                            pointer to it. The caller then needs to release
  *                            that buffer by calling free(3).
  *                            Otherwise, the resolved path is stored here.
  *
- * @return NULL if the expanded path is too long, or if the file cannot be
- *     resolved. Upon success, a pointer to the path is returned. If
- *     joined_realpath_ptr was NULL, it must be released by calling free(3).
+ * @return Upon success, a pointer to the path is returned. If
+ *     resolved_realpath_ptr was NULL, it must be released by calling free(3).
+ *     NULL is returned if the the path resolution (realpath) failed, or if
+ *     the expanded path was too long. errno will be set appropriately in both
+ *     cases (See realpath(3) for the former; ENAMETOOLONG for the latter).
  */
-char *bs_file_realpath(
+char *bs_file_resolve_path(
     const char *path_ptr,
-    char *resolved_realpath_ptr);
+    char *resolved_path_buf_ptr);
 
 /**
- * Joins `path_ptr` and `fname_ptr`, with home directory expansion.
+ * Joins and resolves `path_ptr` and `fname_ptr`, with home dir expansion.
  *
  * @param path_ptr            Path to use for joining. Paths that start with
  *                            "~/" will be expanded with getenv("HOME").
  * @param fname_ptr           Filename to join the path on.
- * @param joined_realpath_ptr See the `resolved_path_ptr` argument to @ref
- *                            bs_file_realpath.
+ * @param resolved_path_buf_ptr See the `resolved_path_buf_ptr` argument to
+ *                            @ref bs_file_resolve_path.
  *
- * @return NULL if the joined path was too long. For other cases, see
- *     @ref bs_file_realpath.
+ * @return Upon success, a pointer to the joined, expanded and resolved path,
+ *     of NULL on error. See @ref bs_file_resolve_path for details.
  */
-char *bs_file_join_realpath(
+char *bs_file_join_resolve_path(
     const char *path_ptr,
     const char *fname_ptr,
-    char *joined_realpath_ptr);
+    char *resolved_path_buf_ptr);
 
 /**
- * Looks up a file from the set of provided paths.
+ * Looks up a file from the set of provided paths, with path resolutio and
+ * home directory expansion..
  *
  * @param fname_ptr           Name of the file that shall be looked up.
  * @param paths_ptr_ptr       A NULL-terminated array of paths to search. Paths
  *                            starting with "~/" will be expanded as described
- *                            by @ref bs_file_join_realpath.
+ *                            by @ref bs_file_join_resolve_path.
  * @param mode                Optional, indicates to only consider these types
  *                            of the file. Matches the `st_mode` field of stat.
- * @param lookedup_path_ptr   See the `resolved_path_ptr` argument to @ref
- *                            bs_file_realpath.
+ * @param resolved_path_buf_ptr See the `resolved_path_buf_ptr` argument to
+ *                            @ref bs_file_resolve_path.
  *
- * @return NULL if no suitable file was found. Upon success, a pointer to the
- *     resolved real path is returned. If `lookedup_path_ptr` was NULL; the
- *     returned value must be released by calling free(3).
+ * @return Upon success, a pointer to the joined, expanded and resolved path of
+ *     the first file found from a path & file name combination.
+ *     Otherwise, NULL on error, with errno set appropriately and for the last
+ *     of the attempted paths. See @ref bs_file_resolve_path for details.
  */
-char *bs_file_lookup(const char *fname_ptr,
-                     const char **paths_ptr_ptr,
-                     int mode,
-                     char *lookedup_path_ptr);
+char *bs_file_resolve_and_lookup_from_paths(
+    const char *fname_ptr,
+    const char **paths_ptr_ptr,
+    int mode,
+    char *resolved_path_buf_ptr);
 
 /** Unit tests. */
 extern const bs_test_case_t   bs_file_test_cases[];
