@@ -99,6 +99,33 @@ bool bs_strconvert_uint64(
 }
 
 /* ------------------------------------------------------------------------- */
+bool bs_strconvert_int64(
+    const char *string_ptr,
+    int64_t *value_ptr,
+    int base)
+{
+    long long                 tmp_value;
+    char                      *invalid_ptr;
+
+    invalid_ptr = NULL;
+    errno = 0;
+    tmp_value = strtoll(string_ptr, &invalid_ptr, base);
+    if (0 != errno) {
+        bs_log(BS_ERROR | BS_ERRNO, "Failed strtoll for value \"%s\"",
+               string_ptr);
+        return false;
+    }
+    if ('\0' != *invalid_ptr && !isspace(*invalid_ptr))  {
+        bs_log(BS_ERROR, "Failed strtoll for value \"%s\" at \"%s\"",
+               string_ptr, invalid_ptr);
+        return false;
+    }
+
+    *value_ptr = tmp_value;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
 bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr)
 {
     return 0 == strncmp(string_ptr, prefix_ptr, strlen(prefix_ptr));
@@ -108,11 +135,13 @@ bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr)
 
 static void test_strappend(bs_test_t *test_ptr);
 static void strconvert_uint64_test(bs_test_t *test_ptr);
+static void strconvert_int64_test(bs_test_t *test_ptr);
 static void test_startswith(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_strutil_test_cases[] = {
     { 1, "strappend", test_strappend },
     { 1, "strconvert_uint64", strconvert_uint64_test },
+    { 1, "strconvert_int64", strconvert_int64_test },
     { 1, "startswith", test_startswith },
     { 0, NULL, NULL }
 };
@@ -201,6 +230,27 @@ void strconvert_uint64_test(bs_test_t *test_ptr)
         bs_strconvert_uint64("18446744073709551616", &value, 10));
 
     BS_TEST_VERIFY_FALSE(test_ptr, bs_strconvert_uint64("42x", &value, 10));
+}
+
+/* ------------------------------------------------------------------------- */
+void strconvert_int64_test(bs_test_t *test_ptr)
+{
+    int64_t                   value;
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_strconvert_int64("0", &value, 10));
+    BS_TEST_VERIFY_EQ(test_ptr, value, 0);
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_strconvert_int64("9223372036854775807", &value, 10));
+    BS_TEST_VERIFY_EQ(test_ptr, value, INT64_MAX);
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_strconvert_int64("-9223372036854775808", &value, 10));
+    BS_TEST_VERIFY_EQ(test_ptr, value, INT64_MIN);
+
+    BS_TEST_VERIFY_FALSE(
+        test_ptr,
+        bs_strconvert_int64("18446744073709551615", &value, 10));
 }
 
 /* ------------------------------------------------------------------------- */
