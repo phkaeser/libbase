@@ -80,6 +80,11 @@ bool bs_strconvert_uint64(
     unsigned long long        tmp_value;
     char                      *invalid_ptr;
 
+    if ('-' == *string_ptr) {
+        bs_log(BS_ERROR, "Unexpected negative value \"%s\"", string_ptr);
+        return false;
+    }
+
     invalid_ptr = NULL;
     errno = 0;
     tmp_value = strtoull(string_ptr, &invalid_ptr, base);
@@ -230,6 +235,7 @@ void strconvert_uint64_test(bs_test_t *test_ptr)
         bs_strconvert_uint64("18446744073709551616", &value, 10));
 
     BS_TEST_VERIFY_FALSE(test_ptr, bs_strconvert_uint64("42x", &value, 10));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_strconvert_uint64("-42", &value, 10));
 }
 
 /* ------------------------------------------------------------------------- */

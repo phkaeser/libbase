@@ -78,7 +78,8 @@ size_t bs_strappend(
  * |value_ptr|.
  *
  * The string is considered valid if it is fully consumed, or if the conversion
- * ends parsing at a whitespace character.
+ * ends parsing at a whitespace character. Unlike stroull(3), a leading minus
+ * sign is detected and returned as failure.
  *
  * @param string_ptr
  * @param value_ptr
