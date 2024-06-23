@@ -205,12 +205,18 @@ const char *bs_test_resolve_path(const char *fname_ptr);
 /* == Verification macros ================================================== */
 
 /**
- * Reports the test as failed, at current position .
+ * Reports the test as failed, at current position.
  *
  * @param _test
  */
 #define BS_TEST_FAIL(_test, ...) {                                      \
         bs_test_fail_at((_test), __FILE__, __LINE__, __VA_ARGS__);      \
+    }
+
+/** Verifies that _expr is true, and returns (stops tests) if not. */
+#define BS_TEST_VERIFY_TRUE_OR_RETURN(_test, _expr) { \
+        BS_TEST_VERIFY_TRUE(_test, _expr);            \
+        if (bs_test_failed(test_ptr)) return;         \
     }
 
 /**
@@ -226,6 +232,12 @@ const char *bs_test_resolve_path(const char *fname_ptr);
         }                                                               \
     }
 
+/** Verifies that _expr is false, and reutrns (stop tests) if not. */
+#define BS_TEST_VERIFY_FALSE_OR_RETURN(_test, _expr) {  \
+        BS_TEST_VERIFY_FALSE(_test, _expr);             \
+        if (bs_test_failed(test_ptr)) return;           \
+    }
+
 /**
  * Verifies that _expr is false.
  *
@@ -237,6 +249,12 @@ const char *bs_test_resolve_path(const char *fname_ptr);
             bs_test_fail_at((_test), __FILE__, __LINE__,                \
                             "%s not false.", #_expr);                   \
         }                                                               \
+    }
+
+/** Verifies that _a == _b, and reutrns (stop tests) if not. */
+#define BS_TEST_VERIFY_EQ_OR_RETURN(_test, _a, _b) {    \
+        BS_TEST_VERIFY_EQ(_test, _a, _b);               \
+        if (bs_test_failed(test_ptr)) return;           \
     }
 
 /**
@@ -253,6 +271,12 @@ const char *bs_test_resolve_path(const char *fname_ptr);
         }                                                               \
     }
 
+/** Verifies that _a != _b, and reutrns (stop tests) if not. */
+#define BS_TEST_VERIFY_NEQ_OR_RETURN(_test, _a, _b) { \
+        BS_TEST_VERIFY_NEQ(_test, _a, _b);            \
+        if (bs_test_failed(test_ptr)) return;         \
+    }
+
 /**
  * Verifies that _a != _b
  *
@@ -267,6 +291,12 @@ const char *bs_test_resolve_path(const char *fname_ptr);
         }                                                               \
     }
 
+/** Verifies that the strings _a == _b. Returns (stop test) if not. */
+#define BS_TEST_VERIFY_STREQ_OR_RETURN(_test, _a, _b) { \
+        BS_TEST_VERIFY_STREQ(_test, _a, _b);            \
+        if (bs_test_failed(test_ptr)) return;           \
+    }
+
 /**
  * Verifies that the strings _a == _b.
  *
@@ -279,6 +309,12 @@ const char *bs_test_resolve_path(const char *fname_ptr);
             (_test), __FILE__, __LINE__, _a, #_a, _b, #_b);             \
     }
 
+/** Verifies that the string _a matches _regex.. Returns (stop test) if not. */
+#define BS_TEST_VERIFY_STRMATCH_OR_RETURN(_test, _a, _regex) { \
+        BS_TEST_VERIFY_STRMATCH(_test, _a, _regex);            \
+        if (bs_test_failed(test_ptr)) return;                  \
+    }
+
 /**
  * Verifies that the string _a matches the regular expression _regex.
  *
@@ -289,6 +325,12 @@ const char *bs_test_resolve_path(const char *fname_ptr);
 #define BS_TEST_VERIFY_STRMATCH(_test, _a, _regex) {                    \
         bs_test_verify_strmatch_at(                                     \
             (_test), __FILE__, __LINE__, _a, #_a, _regex);              \
+    }
+
+/** Verifies that the memory buffers _a == _b. Returns (stop tests) if not. */
+#define BS_TEST_VERIFY_MEMEQ_OR_RETURN(_test, _a, _b, _size) {  \
+        BS_TEST_VERIFY_MEMEQ(_test, _a, _b, _size);             \
+        if (bs_test_failed(test_ptr)) return;                   \
     }
 
 /**
