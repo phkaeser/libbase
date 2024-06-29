@@ -85,7 +85,7 @@ bool bs_ptr_vector_erase(bs_ptr_vector_t *ptr_vector_ptr,
     if (pos + 1 < ptr_vector_ptr->consumed) {
         memmove(ptr_vector_ptr->elements_ptr + pos,
                 ptr_vector_ptr->elements_ptr + pos + 1,
-                (ptr_vector_ptr->consumed - pos) * sizeof(void*));
+                (ptr_vector_ptr->consumed - pos - 1) * sizeof(void*));
     }
     --ptr_vector_ptr->consumed;
     return true;
@@ -172,7 +172,14 @@ void large_test(bs_test_t *test_ptr)
     }
 
     for (size_t i = 0; i < 2 * INITIAL_SIZE; ++i) {
+        BS_TEST_VERIFY_EQ(test_ptr, &e[i], bs_ptr_vector_at(&vec, 0));
         BS_TEST_VERIFY_TRUE(test_ptr, bs_ptr_vector_erase(&vec, 0));
+        if (0 < bs_ptr_vector_size(&vec)) {
+            BS_TEST_VERIFY_EQ(
+                test_ptr,
+                &e[2 * INITIAL_SIZE - 1],
+                bs_ptr_vector_at(&vec, bs_ptr_vector_size(&vec) - 1));
+        }
     }
 
     bs_ptr_vector_fini(&vec);
