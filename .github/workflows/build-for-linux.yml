@@ -20,6 +20,7 @@ jobs:
       run: |
         apt-get update
         apt-get install -y \
+          clang \
           cmake \
           doxygen \
           git \
