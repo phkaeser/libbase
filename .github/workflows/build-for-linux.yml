@@ -7,7 +7,10 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build_matrix:
+    strategy:
+      matrix:
+        compiler: [ "gcc", "clang" ]
     runs-on: ubuntu-latest
     container:
       image: debian:bookworm
@@ -17,6 +20,7 @@ jobs:
       run: |
         apt-get update
         apt-get install -y \
+          clang \
           cmake \
           doxygen \
           git \
@@ -28,10 +32,12 @@ jobs:
 
     - name: Configure libbase through CMake.
       run: |
+        export CC="${{ matrix.compiler }}"
         cmake -B ${{github.workspace}}/build
 
     - name: Build libbase.
       run: |
+        export CC="${{ matrix.compiler }}"
         cmake --build ${{github.workspace}}/build
 
     - name: Build documentation.
