@@ -69,7 +69,7 @@ typedef struct {
     /** The human-readable string of the enum. */
     const char                *name_ptr;
     /** Correspnding numeric value. */
-    uint32_t                  value;
+    int                       value;
 } bs_arg_enum_table_t;
 
 /** Holds the specification for a string argument. */
@@ -98,8 +98,8 @@ typedef struct {
     const char                *default_name_ptr;
     /** Lookup table. */
     const bs_arg_enum_table_t *lookup_table;
-    /** Points to the uint32_t that will hold the value. */
-    uint32_t                  *value_ptr;
+    /** Points to the int that will hold the value. */
+    int                        *value_ptr;
 } bs_arg_enum_t;
 
 /** Holds specification for one argument. */
