@@ -83,7 +83,7 @@ static bool is_name_valid(const char *name_ptr);
 
 static bool lookup_enum(const bs_arg_enum_table_t *lookup_table,
                         const char *name_ptr,
-                        uint32_t *value_ptr);
+                        int *value_ptr);
 
 /* == Data ================================================================= */
 
@@ -649,7 +649,7 @@ bool is_name_valid(const char *name_ptr)
 /* ------------------------------------------------------------------------- */
 bool lookup_enum(const bs_arg_enum_table_t *lookup_table,
                  const char *name_ptr,
-                 uint32_t *value_ptr)
+                 int *value_ptr)
 {
     for (;
          NULL != lookup_table->name_ptr;
@@ -854,7 +854,7 @@ void bs_arg_test_parse_arg_for_uint32(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void bs_arg_test_parse_arg_for_enum(bs_test_t *test_ptr)
 {
-    static uint32_t           value;
+    static int                value;
     static const bs_arg_t     arg = BS_ARG_ENUM(
         "e", "d", "alpha", enum_test_table, &value);
 
@@ -873,7 +873,7 @@ void bs_arg_test_set_defaults(bs_test_t *test_ptr)
 {
     static bool               value_bool;
     static uint32_t           value_uint32;
-    static uint32_t           value_enum;
+    static int                value_enum;
     static const bs_arg_t     args[] = {
         BS_ARG_BOOL("b", "d", true, &value_bool),
         BS_ARG_UINT32("u32", "d", 42, 0, UINT32_MAX, &value_uint32),
@@ -896,7 +896,7 @@ void bs_arg_test_parse(bs_test_t *test_ptr)
 {
     static bool               value_bool;
     static uint32_t           value_uint32;
-    static uint32_t           value_enum;
+    static int                value_enum;
     static char               *value_string = NULL;
     static const bs_arg_t     args[] = {
         BS_ARG_BOOL("b", "d", true, &value_bool),
@@ -972,7 +972,7 @@ static void bs_arg_test_check_arg(bs_test_t *test_ptr)
 {
     static bool               value_bool;
     static uint32_t           value_uint32;
-    static uint32_t           value_enum;
+    static int                value_enum;
     static char               *value_string;
 
     // A NULL name.
