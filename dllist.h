@@ -94,6 +94,9 @@ bs_dllist_node_t *bs_dllist_find(
 /**
  * Runs |func()| for each of the nodes in |list_ptr|.
  *
+ * The list iterator is kept safe, so it is permitted to remove the called-back
+ * node from the list: Useful for eg. destroying all list elements.
+ *
  * @param list_ptr
  * @param func
  * @param ud_ptr
