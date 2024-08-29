@@ -24,6 +24,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -93,7 +94,7 @@ bool bs_strconvert_uint64(
                string_ptr);
         return false;
     }
-    if ('\0' != *invalid_ptr && !isspace(*invalid_ptr))  {
+    if ('\0' != *invalid_ptr && !isspace(*invalid_ptr)) {
         bs_log(BS_ERROR, "Failed strtoull for value \"%s\" at \"%s\"",
                string_ptr, invalid_ptr);
         return false;
@@ -120,9 +121,32 @@ bool bs_strconvert_int64(
                string_ptr);
         return false;
     }
-    if ('\0' != *invalid_ptr && !isspace(*invalid_ptr))  {
+    if ('\0' != *invalid_ptr && !isspace(*invalid_ptr)) {
         bs_log(BS_ERROR, "Failed strtoll for value \"%s\" at \"%s\"",
                string_ptr, invalid_ptr);
+        return false;
+    }
+
+    *value_ptr = tmp_value;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bs_strconvert_double(
+    const char *string_ptr,
+    double *value_ptr)
+{
+    char *invalid_ptr = NULL;
+    errno = 0;
+    double tmp_value = strtod(string_ptr, &invalid_ptr);
+    if (0 != errno) {
+        bs_log(BS_ERROR | BS_ERRNO, "Failed strtod(\"%s\", %p)",
+               string_ptr, &invalid_ptr);
+        return false;
+    }
+    if ('\0' != *invalid_ptr && !isspace(*invalid_ptr)) {
+        bs_log(BS_ERROR, "Failed strtod(\"%s\", %p) at \"%s\"",
+               string_ptr, &invalid_ptr, invalid_ptr);
         return false;
     }
 
@@ -141,12 +165,14 @@ bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr)
 static void test_strappend(bs_test_t *test_ptr);
 static void strconvert_uint64_test(bs_test_t *test_ptr);
 static void strconvert_int64_test(bs_test_t *test_ptr);
+static void strconvert_double_test(bs_test_t *test_ptr);
 static void test_startswith(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_strutil_test_cases[] = {
     { 1, "strappend", test_strappend },
     { 1, "strconvert_uint64", strconvert_uint64_test },
     { 1, "strconvert_int64", strconvert_int64_test },
+    { 1, "strconvert_double", strconvert_double_test },
     { 1, "startswith", test_startswith },
     { 0, NULL, NULL }
 };
@@ -257,6 +283,24 @@ void strconvert_int64_test(bs_test_t *test_ptr)
     BS_TEST_VERIFY_FALSE(
         test_ptr,
         bs_strconvert_int64("18446744073709551615", &value, 10));
+}
+
+/* ------------------------------------------------------------------------- */
+void strconvert_double_test(bs_test_t *test_ptr)
+{
+    double                    value;
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_strconvert_double("0", &value));
+    BS_TEST_VERIFY_EQ(test_ptr, value, 0);
+
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_strconvert_double("2.2250738585072014e-308", &value));
+    BS_TEST_VERIFY_EQ(test_ptr, value, DBL_MIN);
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_strconvert_double("1.7976931348623158e+308", &value));
+    BS_TEST_VERIFY_EQ(test_ptr, value, DBL_MAX);
 }
 
 /* ------------------------------------------------------------------------- */

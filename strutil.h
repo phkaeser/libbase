@@ -110,6 +110,21 @@ bool bs_strconvert_int64(
     int64_t *value_ptr,
     int base);
 
+/**
+ * Converts a double from |string_ptr| and stores it in |value_ptr|.
+ *
+ * The string is considered valid if it is fully consumed, or if the conversion
+ * ends parsing at a whitespace character.
+ *
+ * @param string_ptr
+ * @param value_ptr
+ *
+ * @return true on success
+ */
+bool bs_strconvert_double(
+    const char *string_ptr,
+    double *value_ptr);
+
 /** @return Whether `string_ptr` starts with `prefix_ptr`. */
 bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr);
 
