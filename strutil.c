@@ -301,6 +301,9 @@ void strconvert_double_test(bs_test_t *test_ptr)
         test_ptr,
         bs_strconvert_double("1.7976931348623158e+308", &value));
     BS_TEST_VERIFY_EQ(test_ptr, value, DBL_MAX);
+
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_strconvert_double("badvalue", &value));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_strconvert_double("1e+400", &value));
 }
 
 /* ------------------------------------------------------------------------- */
