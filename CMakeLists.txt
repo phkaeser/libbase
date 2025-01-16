@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Suggested configuration:
+#   cmake -B build -Dconfig_WERROR=ON
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.13)
 PROJECT(libbase VERSION 1.0
@@ -42,6 +45,7 @@ ENDIF(NOT CURSES_FOUND)
 OPTION(config_DEBUG "Include debugging information" ON)
 OPTION(config_OPTIM "Optimizations" OFF)
 OPTION(config_COVERAGE "Build with test coverage" OFF)
+OPTION(config_WERROR "Make all compiler warnings into errors." OFF)
 
 # Toplevel compile options, for Clang and GCC.
 IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
@@ -55,6 +59,10 @@ IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     ADD_COMPILE_OPTIONS(-O0)
   ENDIF(config_OPTIM)
   ADD_COMPILE_OPTIONS(-Wall -Wextra)
+
+  IF(config_WERROR)
+    ADD_COMPILE_OPTIONS(-Werror)
+  ENDIF(config_WERROR)
 
   # CMake provides absolute paths to GCC, hence the __FILE__ macro includes the
   # full path. This option resets it to a path relative to project source.
