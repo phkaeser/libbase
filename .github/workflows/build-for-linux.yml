@@ -33,7 +33,7 @@ jobs:
     - name: Configure libbase through CMake.
       run: |
         export CC="${{ matrix.compiler }}"
-        cmake -B ${{github.workspace}}/build
+        cmake -B ${{github.workspace}}/build -Dconfig_WERROR=ON
 
     - name: Build libbase.
       run: |
