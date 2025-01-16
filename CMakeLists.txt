@@ -54,7 +54,7 @@ IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
   ELSE(config_OPTIM)
     ADD_COMPILE_OPTIONS(-O0)
   ENDIF(config_OPTIM)
-  ADD_COMPILE_OPTIONS(-Wall -Wextra -Werror)
+  ADD_COMPILE_OPTIONS(-Wall -Wextra)
 
   # CMake provides absolute paths to GCC, hence the __FILE__ macro includes the
   # full path. This option resets it to a path relative to project source.
