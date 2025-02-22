@@ -161,12 +161,7 @@ char *bs_file_resolve_and_lookup_from_paths(
     for (; NULL != *paths_ptr_ptr; ++paths_ptr_ptr) {
         char *resolved_path_ptr = bs_file_join_resolve_path(
             *paths_ptr_ptr, fname_ptr, resolved_path_buf_ptr);
-        if (NULL == resolved_path_ptr) {
-            bs_log(BS_ERROR, "FIXME: not resolved %s on %s", *paths_ptr_ptr, fname_ptr);
-            continue;
-        }
-        bs_log(BS_ERROR, "FIXME: resolved %s (from %s on %s)",
-               resolved_path_ptr, *paths_ptr_ptr, fname_ptr);
+        if (NULL == resolved_path_ptr) continue;
 
         // Found something and not needed to check type? We have it.
         if (0 == mode) return resolved_path_ptr;
@@ -177,9 +172,6 @@ char *bs_file_resolve_and_lookup_from_paths(
             if ((stat_buf.st_mode & S_IFMT) == (mode & S_IFMT)) {
                 return resolved_path_ptr;
             }
-            bs_log(BS_ERROR, "FIXME: stat_buf.st_mode 0x%d", stat_buf.st_mode);
-        } else {
-            bs_log(BS_ERROR | BS_ERRNO, "FIXME: stat failed.");
         }
         if (NULL == resolved_path_buf_ptr) free(resolved_path_ptr);
     }
