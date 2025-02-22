@@ -1,0 +1,27 @@
+name: Build for Free BSD 14.2
+
+on: [pull_request, push_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code, including git submodules.
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Configure, build and test libbase through CMake.
+      uses: cross-platform-actions/action@v0.26.0
+      with:
+        operating_system: freebsd
+        version: '14.2'
+        run: |
+          sudo sed -i '' 's/quarterly/latest/' /etc/pkg/FreeBSD.conf
+          sudo pkg install -y \
+            devel/cmake-core \
+            devel/pkgconf \
+            graphics/cairo
+          cmake -B build/ -Dconfig_WERROR=ON
+          cmake --build build/
+          ctest --test-dir build/ --build-run-dir build/ -V
