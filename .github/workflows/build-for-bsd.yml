@@ -1,6 +1,6 @@
 name: Build for Free BSD 14.2
 
-on: [pull_request, push_request]
+on: [pull_request, push]
 
 jobs:
   test:
