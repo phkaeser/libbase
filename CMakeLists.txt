@@ -15,7 +15,7 @@
 # Suggested configuration:
 #   cmake -B build -Dconfig_WERROR=ON
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.13)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 PROJECT(libbase VERSION 1.0
   DESCRIPTION "A small standard library for C"
   LANGUAGES C)
@@ -67,6 +67,11 @@ IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
   # CMake provides absolute paths to GCC, hence the __FILE__ macro includes the
   # full path. This option resets it to a path relative to project source.
   ADD_COMPILE_OPTIONS(-fmacro-prefix-map=${PROJECT_SOURCE_DIR}=.)
+
+  # Target system.
+  IF(LINUX)
+    ADD_COMPILE_OPTIONS(-D__LIBBASE_LINUX)
+  ENDIF(LINUX)
 ENDIF()
 SET(CMAKE_C_STANDARD 11)
 

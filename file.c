@@ -161,7 +161,12 @@ char *bs_file_resolve_and_lookup_from_paths(
     for (; NULL != *paths_ptr_ptr; ++paths_ptr_ptr) {
         char *resolved_path_ptr = bs_file_join_resolve_path(
             *paths_ptr_ptr, fname_ptr, resolved_path_buf_ptr);
-        if (NULL == resolved_path_ptr) continue;
+        if (NULL == resolved_path_ptr) {
+            bs_log(BS_ERROR, "FIXME: not resolved %s on %s", *paths_ptr_ptr, fname_ptr);
+            continue;
+        }
+        bs_log(BS_ERROR, "FIXME: resolved %s (from %s on %s)",
+               resolved_path_ptr, *paths_ptr_ptr, fname_ptr);
 
         // Found something and not needed to check type? We have it.
         if (0 == mode) return resolved_path_ptr;
@@ -172,6 +177,9 @@ char *bs_file_resolve_and_lookup_from_paths(
             if ((stat_buf.st_mode & S_IFMT) == (mode & S_IFMT)) {
                 return resolved_path_ptr;
             }
+            bs_log(BS_ERROR, "FIXME: stat_buf.st_mode 0x%d", stat_buf.st_mode);
+        } else {
+            bs_log(BS_ERROR | BS_ERRNO, "FIXME: stat failed.");
         }
         if (NULL == resolved_path_buf_ptr) free(resolved_path_ptr);
     }
@@ -187,10 +195,9 @@ static void test_join_resolve_path(bs_test_t *test_ptr);
 static void test_lookup(bs_test_t *test_ptr);
 
 const bs_test_case_t bs_file_test_cases[] = {
-    // TODO(kaeser@gubbe.ch): Re-enable tests, once they work on BSD.
-    { 0, "resolve_path", test_resolve_path },
-    { 0, "join_resolve_path", test_join_resolve_path },
-    { 0, "lookup", test_lookup },
+    { 1, "resolve_path", test_resolve_path },
+    { 1, "join_resolve_path", test_join_resolve_path },
+    { 1, "lookup", test_lookup },
     { 0, NULL, NULL }  // sentinel.
 };
 
@@ -199,13 +206,14 @@ void test_resolve_path(bs_test_t *test_ptr)
 {
     char *p;
 
-    p = bs_file_resolve_path("/proc/self/cwd/libbase_test", NULL);
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+    p = bs_file_resolve_path("/etc/../etc/passwd", NULL);
+    BS_TEST_VERIFY_STREQ(test_ptr, "/etc/passwd", p);
     free(p);
 
     char path[PATH_MAX];
-    p = bs_file_resolve_path("/proc/self/cwd/libbase_test", path);
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+    p = bs_file_resolve_path("/etc/../etc/passwd", path);
+    BS_TEST_VERIFY_STREQ(test_ptr, "/etc/passwd", p);
+    BS_TEST_VERIFY_EQ(test_ptr, p, &path[0]);
 
     p = bs_file_resolve_path("~/", path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
@@ -215,7 +223,7 @@ void test_resolve_path(bs_test_t *test_ptr)
 void test_join_resolve_path(bs_test_t *test_ptr)
 {
     char *p;
-    p = bs_file_join_resolve_path("/proc/self/cwd", "libbase_test", NULL);
+    p = bs_file_join_resolve_path("/etc/../etc", "passwd", NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
     free(p);
 }
@@ -223,8 +231,14 @@ void test_join_resolve_path(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_lookup(bs_test_t *test_ptr)
 {
-    const char *paths[] = { "/anywhere", "/proc/self/cwd", NULL };
+    const char *paths[] = { NULL, NULL, NULL };
+    char path[PATH_MAX];
     char *p;
+
+#if defined(__LIBBASE_LINUX)
+    // The '/proc/self' moniker works only on Linux.
+    paths[0] = "/anywhere";
+    paths[1] = "/proc/self/cwd";
 
     p = bs_file_resolve_and_lookup_from_paths(
         "libbase_test", paths, 0, NULL);
@@ -239,7 +253,7 @@ void test_lookup(bs_test_t *test_ptr)
         "does_not_exist", paths, 0, NULL);
     BS_TEST_VERIFY_EQ(test_ptr, NULL, p);
 
-    char path[PATH_MAX];
+    // Lookup into provided |path| arg.
     p = bs_file_resolve_and_lookup_from_paths(
         "libbase_test", paths, 0, path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
@@ -247,6 +261,7 @@ void test_lookup(bs_test_t *test_ptr)
     p = bs_file_resolve_and_lookup_from_paths(
         "libbase_test", paths, S_IFREG, path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+#endif  // __LIBBASE_LINUX
 
     paths[0] = "~/";
     paths[1] = NULL;
