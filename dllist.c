@@ -212,19 +212,31 @@ bs_dllist_node_t *bs_dllist_find(
 }
 
 /* ------------------------------------------------------------------------- */
-bool bs_dllist_for_each(
+void bs_dllist_for_each(
     const bs_dllist_t *list_ptr,
-    bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
+    void (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
     void *ud_ptr)
 {
-    bool rv = true;
     bs_dllist_node_t *dlnode_ptr = list_ptr->head_ptr;
     while (NULL != dlnode_ptr) {
         bs_dllist_node_t *current_dlnode_ptr = dlnode_ptr;
         dlnode_ptr = dlnode_ptr->next_ptr;
-        if (!func(current_dlnode_ptr, ud_ptr)) rv = false;
+        func(current_dlnode_ptr, ud_ptr);
     }
-    return rv;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bs_dllist_all(
+    const bs_dllist_t *list_ptr,
+    bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
+    void *ud_ptr)
+{
+    for (bs_dllist_node_t *dlnode_ptr = list_ptr->head_ptr;
+         dlnode_ptr != NULL;
+         dlnode_ptr = dlnode_ptr->next_ptr) {
+        if (!func(dlnode_ptr, ud_ptr)) return false;
+    }
+    return true;
 }
 
 /* == Local methods ======================================================== */
@@ -289,6 +301,7 @@ static void bs_dllist_test_insert(bs_test_t *test_ptr);
 static void bs_dllist_test_find(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each_dtor(bs_test_t *test_ptr);
+static void bs_dllist_test_all(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_dllist_test_cases[] = {
     { 1, "push/pop back", bs_dllist_test_back },
@@ -298,6 +311,7 @@ const bs_test_case_t          bs_dllist_test_cases[] = {
     { 1, "find", bs_dllist_test_find },
     { 1, "for_each", bs_dllist_test_for_each },
     { 1, "for_each_dtor", bs_dllist_test_for_each_dtor },
+    { 1, "all", bs_dllist_test_all },
     { 0, NULL, NULL }
 };
 
@@ -500,12 +514,11 @@ void bs_dllist_test_find(bs_test_t *test_ptr)
 
 /* ------------------------------------------------------------------------- */
 /** Function to use in the test for @ref bs_dllist_for_each. */
-static bool test_for_each(
+static void test_for_each(
     __UNUSED__ bs_dllist_node_t *dlnode_ptr,
     void *ud_ptr)
 {
     *((int*)ud_ptr) += 1;
-    return *((int*)ud_ptr) == 1;
 }
 
 /** Tests @ref bs_dllist_for_each. */
@@ -520,34 +533,26 @@ void bs_dllist_test_for_each(bs_test_t *test_ptr)
     memset(&n2, 0, sizeof(bs_dllist_node_t));
 
     outcome = 0;
-    BS_TEST_VERIFY_TRUE(
-        test_ptr,
-        bs_dllist_for_each(&list, test_for_each, &outcome));
+    bs_dllist_for_each(&list, test_for_each, &outcome);
     BS_TEST_VERIFY_EQ(test_ptr, 0, outcome);
 
     bs_dllist_push_back(&list, &n1);
     outcome = 0;
-    BS_TEST_VERIFY_TRUE(
-        test_ptr,
-        bs_dllist_for_each(&list, test_for_each, &outcome));
+    bs_dllist_for_each(&list, test_for_each, &outcome);
     BS_TEST_VERIFY_EQ(test_ptr, 1, outcome);
 
     bs_dllist_push_back(&list, &n2);
     outcome = 0;
-    BS_TEST_VERIFY_FALSE(
-        test_ptr,
-        bs_dllist_for_each(&list, test_for_each, &outcome));
+    bs_dllist_for_each(&list, test_for_each, &outcome);
     BS_TEST_VERIFY_EQ(test_ptr, 2, outcome);
 }
 
 /* ------------------------------------------------------------------------- */
 /** Helper: dtor for the allocated @ref bs_dllist_node_t. */
-static bool test_for_each_dtor(bs_dllist_node_t *dlnode_ptr,
-                               __UNUSED__ void *ud_ptr)
+static void test_for_each_dtor(bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
 {
     bs_dllist_remove(ud_ptr, dlnode_ptr);
     free(dlnode_ptr);
-    return true;
 }
 
 /** Runs bs_dllist_for_each with a dtor, ensuring no invalid access. */
@@ -562,11 +567,42 @@ void bs_dllist_test_for_each_dtor(bs_test_t *test_ptr)
     }
     BS_TEST_VERIFY_EQ(test_ptr, 5, bs_dllist_size(&list));
 
-    BS_TEST_VERIFY_TRUE(
-        test_ptr,
-        bs_dllist_for_each(&list, test_for_each_dtor, &list));
+    bs_dllist_for_each(&list, test_for_each_dtor, &list);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_empty(&list));
 }
 
+/* ------------------------------------------------------------------------- */
+/** Callback for @ref bs_dllist_all. */
+static bool test_all(__UNUSED__ bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
+{
+    int *i_ptr = ud_ptr;
+    *i_ptr += 1;
+    return *i_ptr != 2;
+}
+
+/** Tests @ref bs_dllist_all. */
+void bs_dllist_test_all(bs_test_t *test_ptr)
+{
+    bs_dllist_t list = {};
+    bs_dllist_node_t n1 = {}, n2 = {}, n3 = {};
+    int calls = 0;
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_all(&list, test_all, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, calls);
+
+    bs_dllist_push_back(&list, &n1);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_all(&list, test_all, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 1, calls);
+
+    bs_dllist_push_back(&list, &n2);
+    calls = 0;
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_all(&list, test_all, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, calls);
+
+    bs_dllist_push_back(&list, &n3);
+    calls = 0;
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_all(&list, test_all, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, calls);
+}
 
 /* == End of dllist.c ===================================================== */

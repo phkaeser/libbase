@@ -66,7 +66,7 @@ bs_dllist_node_t * bs_dllist_pop_front(bs_dllist_t *list_ptr);
 /** Removes the node from the list. */
 void bs_dllist_remove(bs_dllist_t *list_ptr, bs_dllist_node_t *node_ptr);
 
-/** Inserts `new_node_ptr` into the list, before `reference_node_ptr`. */
+/** Inserts |new_node_ptr| into the list, before |reference_node_ptr|. */
 void bs_dllist_insert_node_before(
     bs_dllist_t *list_ptr,
     bs_dllist_node_t *reference_node_ptr,
@@ -100,10 +100,24 @@ bs_dllist_node_t *bs_dllist_find(
  * @param list_ptr
  * @param func
  * @param ud_ptr
- *
- * @return true if all calls to func() returned true, or if the list was empty.
  */
-bool bs_dllist_for_each(
+void bs_dllist_for_each(
+    const bs_dllist_t *list_ptr,
+    void (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
+    void *ud_ptr);
+
+/**
+ * Runs |func()| and returns whether it is true for all nodes in |list_ptr|.
+ *
+ * Returns on the first |func()| call that returned false.
+ *
+ * @param list_ptr
+ * @param func
+ * @param ud_ptr
+ *
+ * @return Whether |func()| was true for all, or if |list_ptr| was empty.
+ */
+bool bs_dllist_all(
     const bs_dllist_t *list_ptr,
     bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
     void *ud_ptr);
