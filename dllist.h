@@ -100,10 +100,12 @@ bs_dllist_node_t *bs_dllist_find(
  * @param list_ptr
  * @param func
  * @param ud_ptr
+ *
+ * @return true if all calls to func() returned true, or if the list was empty.
  */
-void bs_dllist_for_each(
+bool bs_dllist_for_each(
     const bs_dllist_t *list_ptr,
-    void (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
+    bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
     void *ud_ptr);
 
 /** Unit tests. */
