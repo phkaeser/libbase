@@ -321,13 +321,8 @@ const bs_test_case_t          bs_dllist_test_cases[] = {
  */
 void bs_dllist_test_back(bs_test_t *test_ptr)
 {
-    bs_dllist_t               list1;
-    bs_dllist_node_t          node1, node2, node3;
-
-    memset(&list1, 0, sizeof(bs_dllist_t));
-    memset(&node1, 0, sizeof(bs_dllist_node_t));
-    memset(&node2, 0, sizeof(bs_dllist_node_t));
-    memset(&node3, 0, sizeof(bs_dllist_node_t));
+    bs_dllist_t               list1 = {};
+    bs_dllist_node_t          node1 = {}, node2 = {}, node3 = {};
 
     bs_dllist_push_back(&list1, &node1);
     bs_dllist_push_back(&list1, &node2);
@@ -362,13 +357,8 @@ void bs_dllist_test_back(bs_test_t *test_ptr)
  */
 void bs_dllist_test_front(bs_test_t *test_ptr)
 {
-    bs_dllist_t               list1;
-    bs_dllist_node_t          node1, node2, node3;
-
-    memset(&list1, 0, sizeof(bs_dllist_t));
-    memset(&node1, 0, sizeof(bs_dllist_node_t));
-    memset(&node2, 0, sizeof(bs_dllist_node_t));
-    memset(&node3, 0, sizeof(bs_dllist_node_t));
+    bs_dllist_t               list1 = {};
+    bs_dllist_node_t          node1 = {}, node2 = {}, node3 = {};
 
     bs_dllist_push_front(&list1, &node3);
     bs_dllist_push_front(&list1, &node2);
@@ -400,14 +390,8 @@ void bs_dllist_test_front(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void bs_dllist_test_remove(bs_test_t *test_ptr)
 {
-    bs_dllist_t               list;
-    bs_dllist_node_t          node1, node2, node3, node4;
-
-    memset(&list, 0, sizeof(bs_dllist_t));
-    memset(&node1, 0, sizeof(bs_dllist_node_t));
-    memset(&node2, 0, sizeof(bs_dllist_node_t));
-    memset(&node3, 0, sizeof(bs_dllist_node_t));
-    memset(&node4, 0, sizeof(bs_dllist_node_t));
+    bs_dllist_t               list = {};
+    bs_dllist_node_t          node1 = {}, node2 = {}, node3 = {}, node4 = {};
 
     BS_TEST_VERIFY_TRUE(test_ptr, node_orphaned(&node1));
 
@@ -456,14 +440,8 @@ void bs_dllist_test_remove(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void bs_dllist_test_insert(bs_test_t *test_ptr)
 {
-    bs_dllist_t               list;
-    bs_dllist_node_t          node1, node2, node3, node4;
-
-    memset(&list, 0, sizeof(bs_dllist_t));
-    memset(&node1, 0, sizeof(bs_dllist_node_t));
-    memset(&node2, 0, sizeof(bs_dllist_node_t));
-    memset(&node3, 0, sizeof(bs_dllist_node_t));
-    memset(&node4, 0, sizeof(bs_dllist_node_t));
+    bs_dllist_t               list = {};
+    bs_dllist_node_t          node1 = {}, node2 = {}, node3 = {};
 
     BS_TEST_VERIFY_TRUE(test_ptr, node_orphaned(&node1));
 
@@ -490,12 +468,8 @@ static bool test_find(bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
 /* ------------------------------------------------------------------------- */
 void bs_dllist_test_find(bs_test_t *test_ptr)
 {
-    bs_dllist_t               list;
-    bs_dllist_node_t          n1, n2;
-
-    memset(&list, 0, sizeof(bs_dllist_t));
-    memset(&n1, 0, sizeof(bs_dllist_node_t));
-    memset(&n2, 0, sizeof(bs_dllist_node_t));
+    bs_dllist_t               list = {};
+    bs_dllist_node_t          n1 = {}, n2 = {};
 
     BS_TEST_VERIFY_EQ(test_ptr, NULL, bs_dllist_find(&list, test_find, &n1));
     BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_contains(&list, &n1));
@@ -524,15 +498,10 @@ static void test_for_each(
 /** Tests @ref bs_dllist_for_each. */
 void bs_dllist_test_for_each(bs_test_t *test_ptr)
 {
-    bs_dllist_t               list;
-    bs_dllist_node_t          n1, n2;
-    int                       outcome;
+    bs_dllist_t               list = {};
+    bs_dllist_node_t          n1 = {}, n2 = {};
+    int                       outcome = 0;
 
-    memset(&list, 0, sizeof(bs_dllist_t));
-    memset(&n1, 0, sizeof(bs_dllist_node_t));
-    memset(&n2, 0, sizeof(bs_dllist_node_t));
-
-    outcome = 0;
     bs_dllist_for_each(&list, test_for_each, &outcome);
     BS_TEST_VERIFY_EQ(test_ptr, 0, outcome);
 
