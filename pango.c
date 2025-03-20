@@ -15,7 +15,7 @@ void draw_text(bs_gfxbuf_t *gfxbuf_ptr, cairo_t *cairo_ptr)
     layout_ptr = pango_cairo_create_layout(cairo_ptr);
 
     pango_layout_set_text(layout_ptr, "Example Text gg", -1);
-    PangoFontDescription *fd_ptr = pango_font_description_from_string("Sans Bold 30");
+    PangoFontDescription *fd_ptr = pango_font_description_from_string("Classic Console 30");  // Sans Bold 30");
     pango_layout_set_font_description(layout_ptr, fd_ptr);
     pango_font_description_free(fd_ptr);
 
@@ -64,6 +64,27 @@ int main(void)
     bs_gfxbuf_t *gfxbuf_ptr = bs_gfxbuf_create(1024, 768);
     if (NULL == gfxbuf_ptr) return EXIT_FAILURE;
     bs_gfxbuf_clear(gfxbuf_ptr, 0xff0000c0);
+
+
+    // FreeType? PangoFontMap *fm_ptr = pango_ft2_font_map_new();
+//     PangoFontFamily *f_ptr;
+//    int n;
+
+    PangoFontMap *fm_cairo_ptr = pango_cairo_font_map_new();
+
+    PangoFontFamily **family_ptr = NULL;
+    int n = 0;
+    pango_font_map_list_families(fm_cairo_ptr, &family_ptr, &n);
+    bs_log(BS_WARNING, "pango_font_map_list_families gave %d", n);
+    for (int i = 0; i < n; ++i) {
+        bs_log(BS_WARNING, "Family %d: %s",
+               i, pango_font_family_get_name(family_ptr[i]));
+    }
+
+    g_free(family_ptr);
+
+
+    g_object_unref(fm_cairo_ptr);
 
     cairo_t *cairo_ptr = cairo_create_from_bs_gfxbuf(gfxbuf_ptr);
     if (NULL == cairo_ptr) return EXIT_FAILURE;
