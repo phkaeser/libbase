@@ -180,6 +180,12 @@ IF(CMAKE_PROJECT_NAME STREQUAL libbase)
   ENDIF()
 ENDIF()
 
+# FIXME --
+PKG_CHECK_MODULES(pangocairo REQUIRED IMPORTED_TARGET pangocairo>=1.50)
+ADD_EXECUTABLE(pango pango.c)
+TARGET_INCLUDE_DIRECTORIES(pango PUBLIC ${PANGOCAIRO_INCLUDE_DIRS})
+TARGET_LINK_LIBRARIES(pango base PkgConfig::pangocairo)
+
 # Adds 'doc' target, if doxygen is installed.
 FIND_PACKAGE(Doxygen)
 IF(DOXYGEN_FOUND)
