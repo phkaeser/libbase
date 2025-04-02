@@ -21,7 +21,7 @@
 /// kill(2) is a POSIX extension, and we can't do IPC without it.
 #define _POSIX_C_SOURCE 200809L
 
-#include "subprocess.h"
+#include <libbase/subprocess.h>
 
 #include <inttypes.h>
 #include <limits.h>
@@ -34,10 +34,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "assert.h"
-#include "log.h"
-#include "log_wrappers.h"
-#include "sock.h"
+#include <libbase/assert.h>
+#include <libbase/log.h>
+#include <libbase/log_wrappers.h>
+#include <libbase/sock.h>
 
 #undef _POSIX_C_SOURCE
 

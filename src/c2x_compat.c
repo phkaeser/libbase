@@ -18,9 +18,8 @@
  * limitations under the License.
  */
 
-#include "c2x_compat.h"
-
-#include "log_wrappers.h"
+#include <libbase/c2x_compat.h>
+#include <libbase/log_wrappers.h>
 
 #include <stdlib.h>
 #include <string.h>

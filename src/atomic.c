@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#include "atomic.h"
-#include "test.h"
+#include <libbase/atomic.h>
+#include <libbase/test.h>
 
 #if defined(__cplusplus) || defined(__clang__)
 

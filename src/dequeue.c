@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "dequeue.h"
+#include <libbase/dequeue.h>
 
 /* == Tests =============================================================== */
 

@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "file.h"
+#include <libbase/file.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -28,8 +28,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "log.h"
-#include "strutil.h"
+#include <libbase/log.h>
+#include <libbase/strutil.h>
 
 /* == Declarations ========================================================= */
 

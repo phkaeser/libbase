@@ -18,10 +18,10 @@
  * limitations under the License.
  */
 
-#include "thread.h"
+#include <libbase/thread.h>
 
-#include "assert.h"
-#include "log.h"
+#include <libbase/assert.h>
+#include <libbase/log.h>
 
 #include <errno.h>
 #include <sys/time.h>
