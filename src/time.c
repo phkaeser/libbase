@@ -23,9 +23,9 @@
 /// gettimeofday(2) is a XSI extension, needing _XOPEN_SOURCE 500.
 #define _XOPEN_SOURCE 500
 
-#include "log.h"
-#include "time.h"
-#include "test.h"
+#include <libbase/log.h>
+#include <libbase/time.h>
+#include <libbase/test.h>
 
 #include <stdio.h>
 #include <stdlib.h>

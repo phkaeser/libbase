@@ -18,18 +18,19 @@
  * limitations under the License.
  */
 
-#include "file.h"
+#include <libbase/file.h>
 
 #include <errno.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "log.h"
-#include "strutil.h"
+#include <libbase/log.h>
+#include <libbase/strutil.h>
 
 /* == Declarations ========================================================= */
 
@@ -229,8 +230,13 @@ void test_lookup(bs_test_t *test_ptr)
 
 #if defined(__LIBBASE_LINUX)
     // The '/proc/self' moniker works only on Linux.
+
     paths[0] = "/anywhere";
-    paths[1] = "/proc/self/cwd";
+
+    char self_path[PATH_MAX];
+    p = realpath("/proc/self/exe", self_path);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+    paths[1] = dirname(p);
 
     p = bs_file_resolve_and_lookup_from_paths(
         "libbase_test", paths, 0, NULL);

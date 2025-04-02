@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#include "avltree.h"
-#include "assert.h"
+#include <libbase/avltree.h>
+#include <libbase/assert.h>
 
 #include <string.h>
 #include <time.h>

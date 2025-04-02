@@ -21,7 +21,7 @@
 /// kill(2) is a POSIX extension, and we can't do IPC without it.
 #define _POSIX_C_SOURCE 200809L
 
-#include "subprocess.h"
+#include <libbase/subprocess.h>
 
 #include <inttypes.h>
 #include <limits.h>
@@ -34,10 +34,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "assert.h"
-#include "log.h"
-#include "log_wrappers.h"
-#include "sock.h"
+#include <libbase/assert.h>
+#include <libbase/log.h>
+#include <libbase/log_wrappers.h>
+#include <libbase/sock.h>
 
 #undef _POSIX_C_SOURCE
 
@@ -839,28 +839,18 @@ bool _is_variable_assignment(
 
 static void test_is_variable_assignment(bs_test_t *test_ptr);
 static void test_split_command(bs_test_t *test_ptr);
-static void test_failure(bs_test_t *test_ptr);
 static void test_hang(bs_test_t *test_ptr);
 static void test_nonexisting(bs_test_t *test_ptr);
-static void test_sigpipe(bs_test_t *test_ptr);
-static void test_success(bs_test_t *test_ptr);
-static void test_success_cmdline(bs_test_t *test_ptr);
-static void test_success_twice(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_subprocess_test_cases[] = {
     { 1, "is_variable_assignment", test_is_variable_assignment },
     { 1, "split_command", test_split_command },
-    { 1, "failure", test_failure },
     { 1, "hang", test_hang },
     { 1, "nonexisting", test_nonexisting },
-    { 1, "sigpipe", test_sigpipe },
-    { 1, "success", test_success },
-    { 1, "success_cmdline", test_success_cmdline },
-    { 1, "success_twice", test_success_twice },
     { 0, NULL, NULL }
 };
 
-const char                    *test_args[] = { "alpha", NULL };
+static const char             *test_args[] = { "alpha", NULL };
 
 /* ------------------------------------------------------------------------- */
 /** Helper: Verify two NULL-terminated pointer string lists are equal. */
@@ -992,24 +982,6 @@ void test_split_command(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-void test_failure(bs_test_t *test_ptr)
-{
-    bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        "./subprocess_test_failure", test_args, NULL);
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
-
-    int exit_status, signal_number;
-    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
-        // Don't busy-loop -- just wait a little.
-        poll(NULL, 0, 10);
-    }
-    BS_TEST_VERIFY_EQ(test_ptr, 42, exit_status);
-    BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
-    bs_subprocess_destroy(sp_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
 void test_hang(bs_test_t *test_ptr)
 {
     bs_subprocess_t *sp_ptr = bs_subprocess_create(
@@ -1049,104 +1021,6 @@ void test_nonexisting(bs_test_t *test_ptr)
     BS_TEST_VERIFY_STRMATCH(
         test_ptr, bs_subprocess_stderr(sp_ptr),
         ".*ERROR.*Failed execvp\\(\\./subprocess_test_does_not_exist");
-    bs_subprocess_destroy(sp_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-void test_sigpipe(bs_test_t *test_ptr)
-{
-    bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        "./subprocess_test_sigpipe", test_args, NULL);
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
-
-    int exit_status, signal_number;
-    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
-        // Don't busy-loop -- just wait a little.
-        poll(NULL, 0, 10);
-    }
-    BS_TEST_VERIFY_EQ(test_ptr, INT_MIN, exit_status);
-    BS_TEST_VERIFY_EQ(test_ptr, SIGPIPE, signal_number);
-    bs_subprocess_destroy(sp_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-void test_success(bs_test_t *test_ptr)
-{
-    const bs_subprocess_environment_variable_t envs[] = {
-        { "SUBPROCESS_ENV", "WORKS" },
-        { NULL, NULL }
-    };
-    bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        "./subprocess_test_success", test_args, envs);
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
-
-    int exit_status, signal_number;
-    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
-        // Don't busy-loop -- just wait a little.
-        poll(NULL, 0, 10);
-    }
-    BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
-    BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
-    BS_TEST_VERIFY_STREQ(
-        test_ptr, "test stdout: ./subprocess_test_success\nenv: WORKS\n",
-        bs_subprocess_stdout(sp_ptr));
-    BS_TEST_VERIFY_STREQ(
-        test_ptr, "test stderr: alpha\n",
-        bs_subprocess_stderr(sp_ptr));
-    bs_subprocess_destroy(sp_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-void test_success_cmdline(bs_test_t *test_ptr)
-{
-    bs_subprocess_t *sp_ptr = bs_subprocess_create_cmdline(
-        "SUBPROCESS_ENV=CMD ./subprocess_test_success alpha");
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
-
-    int exit_status, signal_number;
-    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
-        // Don't busy-loop -- just wait a little.
-        poll(NULL, 0, 10);
-    }
-    BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
-    BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
-    BS_TEST_VERIFY_STREQ(
-        test_ptr, "test stdout: ./subprocess_test_success\nenv: CMD\n",
-        bs_subprocess_stdout(sp_ptr));
-    BS_TEST_VERIFY_STREQ(
-        test_ptr, "test stderr: alpha\n",
-        bs_subprocess_stderr(sp_ptr));
-    bs_subprocess_destroy(sp_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-void test_success_twice(bs_test_t *test_ptr)
-{
-    bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        "./subprocess_test_success", test_args, NULL);
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
-
-    for (int i = 0; i < 2; ++i) {
-        // Verify that starting the process again works.
-        BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
-
-        int exit_status, signal_number;
-        while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
-            // Don't busy-loop -- just wait a little.
-            poll(NULL, 0, 10);
-        }
-        BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
-        BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
-        BS_TEST_VERIFY_STREQ(
-            test_ptr, "test stdout: ./subprocess_test_success\nenv: (null)\n",
-            bs_subprocess_stdout(sp_ptr));
-        BS_TEST_VERIFY_STREQ(
-            test_ptr, "test stderr: alpha\n",
-            bs_subprocess_stderr(sp_ptr));
-    }
     bs_subprocess_destroy(sp_ptr);
 }
 

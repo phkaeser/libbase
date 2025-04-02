@@ -66,7 +66,7 @@ IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
 
   # CMake provides absolute paths to GCC, hence the __FILE__ macro includes the
   # full path. This option resets it to a path relative to project source.
-  ADD_COMPILE_OPTIONS(-fmacro-prefix-map=${PROJECT_SOURCE_DIR}=.)
+  ADD_COMPILE_OPTIONS(-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/src=.)
 
   # Target system.
   IF(LINUX)
@@ -78,71 +78,10 @@ SET(CMAKE_C_STANDARD 11)
 FIND_PACKAGE(PkgConfig REQUIRED)
 PKG_CHECK_MODULES(CAIRO REQUIRED IMPORTED_TARGET cairo>=1.16.0)
 
-SET(PUBLIC_HEADER_FILES
-  arg.h
-  assert.h
-  atomic.h
-  avltree.h
-  c2x_compat.h
-  def.h
-  dequeue.h
-  dllist.h
-  file.h
-  gfxbuf.h
-  gfxbuf_xpm.h
-  libbase.h
-  log.h
-  log_wrappers.h
-  ptr_set.h
-  ptr_stack.h
-  ptr_vector.h
-  sock.h
-  strutil.h
-  subprocess.h
-  test.h
-  thread.h
-  time.h
-  vector.h)
-
-SET(SOURCES
-  arg.c
-  atomic.c
-  avltree.c
-  c2x_compat.c
-  dequeue.c
-  dllist.c
-  file.c
-  gfxbuf.c
-  gfxbuf_xpm.c
-  log.c
-  ptr_set.c
-  ptr_stack.c
-  ptr_vector.c
-  sock.c
-  strutil.c
-  subprocess.c
-  test.c
-  thread.c
-  time.c)
-
-ADD_LIBRARY(base STATIC)
-TARGET_SOURCES(base PRIVATE ${SOURCES})
-TARGET_INCLUDE_DIRECTORIES(base PRIVATE ${CURSES_INCLUDE_DIRS})
-TARGET_INCLUDE_DIRECTORIES(base PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
-TARGET_LINK_LIBRARIES(base PRIVATE ${CURSES_LIBRARIES})
-SET_TARGET_PROPERTIES(
-  base PROPERTIES
-  VERSION 1.0
-  PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
-
-IF(CAIRO_FOUND)
-  TARGET_COMPILE_DEFINITIONS(base PUBLIC HAVE_CAIRO)
-  TARGET_INCLUDE_DIRECTORIES(base PUBLIC ${CAIRO_INCLUDE_DIRS})
-  TARGET_LINK_LIBRARIES(base PUBLIC PkgConfig::CAIRO)
-ENDIF(CAIRO_FOUND)
-
 # Create pkg-config file from the template.
 CONFIGURE_FILE(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)
+
+ADD_SUBDIRECTORY(src)
 
 # Add 'install' target, but only if we're the toplevel project.
 IF(CMAKE_PROJECT_NAME STREQUAL libbase)
@@ -159,20 +98,7 @@ ENDIF()
 
 # Add test target, but only if we're the toplevel project.
 IF(CMAKE_PROJECT_NAME STREQUAL libbase)
-  ADD_EXECUTABLE(libbase_test libbase_test.c)
-  TARGET_LINK_LIBRARIES(libbase_test base)
-  # Refer to the source path for relative testdata.
-  TARGET_COMPILE_DEFINITIONS(
-    libbase_test PUBLIC BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-
-
-  ADD_EXECUTABLE(libbase_benchmark libbase_benchmark.c)
-  TARGET_LINK_LIBRARIES(libbase_benchmark base)
-
-  ADD_EXECUTABLE(subprocess_test_hang subprocess_test_hang.c)
-  ADD_EXECUTABLE(subprocess_test_failure subprocess_test_failure.c)
-  ADD_EXECUTABLE(subprocess_test_sigpipe subprocess_test_sigpipe.c)
-  ADD_EXECUTABLE(subprocess_test_success subprocess_test_success.c)
+  ADD_SUBDIRECTORY(tests)
 
   INCLUDE(CTest)
   IF(BUILD_TESTING)

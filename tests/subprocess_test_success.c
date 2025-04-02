@@ -1,6 +1,7 @@
 /* ========================================================================= */
 /**
- * @file c2x_compat.c
+ * @file subprocess_test_success.c
+ * Test executable for subprocess module: Exit successfully, with stdout/err.
  *
  * @copyright
  * Copyright 2023 Google LLC
@@ -18,21 +19,22 @@
  * limitations under the License.
  */
 
-#include "c2x_compat.h"
-
-#include "log_wrappers.h"
-
+#include <libgen.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-/* ------------------------------------------------------------------------- */
-char *strdup(const char *str) {
-    size_t len = strlen(str);
-    char *new_ptr = logged_malloc(len + 1);
-    if (NULL == new_ptr) return NULL;
-    new_ptr[len] = '\0';
-    memcpy(new_ptr, str, len);
-    return new_ptr;
+/** A test program that returns a successful code, if args were all correct. */
+int main(int argc, char** argv) {
+    if (2 != argc) {
+        fprintf(stderr, "Expecting 1 arguments.\n");
+        return EXIT_FAILURE;
+    }
+
+    const char *value_ptr = getenv("SUBPROCESS_ENV");
+    fprintf(stdout, "test stdout: %s\nenv: %s\n",
+            basename(argv[0]), value_ptr ? value_ptr : "(null)");
+    fprintf(stderr, "test stderr: %s\n", argv[1]);
+    return EXIT_SUCCESS;
 }
 
-/* == End of c2x_compat.c ================================================== */
+/* == End of subprocess_test_success.c ===================================== */

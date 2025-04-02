@@ -18,12 +18,12 @@
  * limitations under the License.
  */
 
-#include "gfxbuf_xpm.h"
+#include <libbase/gfxbuf_xpm.h>
 
 #include <ctype.h>
 
-#include "avltree.h"
-#include "strutil.h"
+#include <libbase/avltree.h>
+#include <libbase/strutil.h>
 
 /* == Declarations ========================================================= */
 

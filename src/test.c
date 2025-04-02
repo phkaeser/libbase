@@ -28,12 +28,12 @@
 #include <term.h>
 #include <threads.h>
 
-#include "arg.h"
-#include "assert.h"
-#include "dllist.h"
-#include "file.h"
-#include "log_wrappers.h"
-#include "test.h"
+#include <libbase/arg.h>
+#include <libbase/assert.h>
+#include <libbase/dllist.h>
+#include <libbase/file.h>
+#include <libbase/log_wrappers.h>
+#include <libbase/test.h>
 
 /** Information on current test case. */
 struct _bs_test_t {

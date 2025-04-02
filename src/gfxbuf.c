@@ -18,16 +18,16 @@
  * limitations under the License.
  */
 
-#include "gfxbuf.h"
+#include <libbase/gfxbuf.h>
 
 #include <inttypes.h>
 #include <libgen.h>
 #include <limits.h>
 #include <math.h>
 
-#include "log_wrappers.h"
-#include "test.h"
-#include "time.h"
+#include <libbase/log_wrappers.h>
+#include <libbase/test.h>
+#include <libbase/time.h>
 
 /* == Declarations ========================================================= */
 
@@ -428,7 +428,7 @@ void test_equals_png(bs_test_t *test_ptr)
     bs_gfxbuf_clear(buf, 0xff804020);
     bs_test_gfxbuf_equals_png_at(
         test_ptr, __FILE__, __LINE__, buf,
-        bs_test_resolve_path("testdata/gfxbuf_equals.png"));
+        bs_test_resolve_path("data/gfxbuf_equals.png"));
     bs_gfxbuf_destroy(buf);
 }
 #endif  // HAVE_CAIRO
