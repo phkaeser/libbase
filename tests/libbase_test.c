@@ -21,6 +21,20 @@
 
 #include <libbase/libbase.h>
 
+#include <inttypes.h>
+#include <limits.h>
+#include <poll.h>
+#include <signal.h>
+
+#if !defined(BS_TEST_DATA_DIR)
+/** Directory root for looking up test data. See @ref bs_test_resolve_path. */
+#define BS_TEST_DATA_DIR "./"
+#endif  // BS_TEST_DATA_DIR
+
+#if !defined(BS_TEST_BINARY_DIR)
+#define BS_TEST_BINARY_DIR "."
+#endif  // BS_TEST_BINARY_DIR
+
 static void test_assert(bs_test_t *test_ptr);
 static void test_def(bs_test_t *test_ptr);
 
@@ -28,6 +42,22 @@ static void test_def(bs_test_t *test_ptr);
 static const bs_test_case_t bs_header_only_test_cases[] = {
     { 1, "assert", test_assert },
     { 1, "def", test_def },
+    { 0, NULL, NULL }
+};
+
+static void test_failure(bs_test_t *test_ptr);
+static void test_sigpipe(bs_test_t *test_ptr);
+static void test_success(bs_test_t *test_ptr);
+static void test_success_cmdline(bs_test_t *test_ptr);
+static void test_success_twice(bs_test_t *test_ptr);
+
+static const char             *test_args[] = { "alpha", NULL };
+const bs_test_case_t          bs_subprocess_extra_test_cases[] = {
+    { 1, "failure", test_failure },
+    { 1, "sigpipe", test_sigpipe },
+    { 1, "success", test_success },
+    { 1, "success_cmdline", test_success_cmdline },
+    { 1, "success_twice", test_success_twice },
     { 0, NULL, NULL }
 };
 
@@ -47,6 +77,7 @@ const bs_test_set_t           libbase_tests[] = {
     { 1, "ptr_stack", bs_ptr_stack_test_cases },
     { 1, "ptr_vector", bs_ptr_vector_test_cases },
     { 1, "subprocess", bs_subprocess_test_cases },
+    { 1, "subprocess_extra", bs_subprocess_extra_test_cases },
     { 1, "strutil", bs_strutil_test_cases },
     { 1, "test", bs_test_test_cases },
     { 1, "time", bs_time_test_cases },
@@ -69,10 +100,121 @@ void test_def(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ(test_ptr, 2, BS_MAX(1, 2));
 }
 
-#if !defined(BS_TEST_DATA_DIR)
-/** Directory root for looking up test data. See @ref bs_test_resolve_path. */
-#define BS_TEST_DATA_DIR "./"
-#endif  // BS_TEST_DATA_DIR
+/* ------------------------------------------------------------------------- */
+ void test_failure(bs_test_t *test_ptr)
+{
+    bs_subprocess_t *sp_ptr = bs_subprocess_create(
+        BS_TEST_BINARY_DIR "/subprocess_test_failure", test_args, NULL);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
+
+    int exit_status, signal_number;
+    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
+        // Don't busy-loop -- just wait a little.
+        poll(NULL, 0, 10);
+    }
+    BS_TEST_VERIFY_EQ(test_ptr, 42, exit_status);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
+    bs_subprocess_destroy(sp_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+void test_sigpipe(bs_test_t *test_ptr)
+{
+    bs_subprocess_t *sp_ptr = bs_subprocess_create(
+        BS_TEST_BINARY_DIR "/subprocess_test_sigpipe", test_args, NULL);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
+
+    int exit_status, signal_number;
+    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
+        // Don't busy-loop -- just wait a little.
+        poll(NULL, 0, 10);
+    }
+    BS_TEST_VERIFY_EQ(test_ptr, INT_MIN, exit_status);
+    BS_TEST_VERIFY_EQ(test_ptr, SIGPIPE, signal_number);
+    bs_subprocess_destroy(sp_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+void test_success(bs_test_t *test_ptr)
+{
+    const bs_subprocess_environment_variable_t envs[] = {
+        { "SUBPROCESS_ENV", "WORKS" },
+        { NULL, NULL }
+    };
+    bs_subprocess_t *sp_ptr = bs_subprocess_create(
+        BS_TEST_BINARY_DIR "/subprocess_test_success", test_args, envs);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
+
+    int exit_status, signal_number;
+    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
+        // Don't busy-loop -- just wait a little.
+        poll(NULL, 0, 10);
+    }
+    BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
+    BS_TEST_VERIFY_STREQ(
+        test_ptr, "test stdout: subprocess_test_success\nenv: WORKS\n",
+        bs_subprocess_stdout(sp_ptr));
+    BS_TEST_VERIFY_STREQ(
+        test_ptr, "test stderr: alpha\n",
+        bs_subprocess_stderr(sp_ptr));
+    bs_subprocess_destroy(sp_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+void test_success_cmdline(bs_test_t *test_ptr)
+{
+    bs_subprocess_t *sp_ptr = bs_subprocess_create_cmdline(
+        "SUBPROCESS_ENV=CMD " BS_TEST_BINARY_DIR "/subprocess_test_success alpha");
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
+
+    int exit_status, signal_number;
+    while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
+        // Don't busy-loop -- just wait a little.
+        poll(NULL, 0, 10);
+    }
+    BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
+    BS_TEST_VERIFY_STREQ(
+        test_ptr, "test stdout: subprocess_test_success\nenv: CMD\n",
+        bs_subprocess_stdout(sp_ptr));
+    BS_TEST_VERIFY_STREQ(
+        test_ptr, "test stderr: alpha\n",
+        bs_subprocess_stderr(sp_ptr));
+    bs_subprocess_destroy(sp_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+void test_success_twice(bs_test_t *test_ptr)
+{
+    bs_subprocess_t *sp_ptr = bs_subprocess_create(
+        BS_TEST_BINARY_DIR "/subprocess_test_success", test_args, NULL);
+    BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
+
+    for (int i = 0; i < 2; ++i) {
+        // Verify that starting the process again works.
+        BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
+
+        int exit_status, signal_number;
+        while (!bs_subprocess_terminated(sp_ptr, &exit_status, &signal_number)) {
+            // Don't busy-loop -- just wait a little.
+            poll(NULL, 0, 10);
+        }
+        BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
+        BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
+        BS_TEST_VERIFY_STREQ(
+            test_ptr, "test stdout: subprocess_test_success\nenv: (null)\n",
+            bs_subprocess_stdout(sp_ptr));
+        BS_TEST_VERIFY_STREQ(
+            test_ptr, "test stderr: alpha\n",
+            bs_subprocess_stderr(sp_ptr));
+    }
+    bs_subprocess_destroy(sp_ptr);
+}
 
 /* ========================================================================= */
 /** Main program, runs all unit tests. */

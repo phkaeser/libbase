@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -31,7 +32,7 @@ int main(int argc, char** argv) {
 
     const char *value_ptr = getenv("SUBPROCESS_ENV");
     fprintf(stdout, "test stdout: %s\nenv: %s\n",
-            argv[0], value_ptr ? value_ptr : "(null)");
+            basename(argv[0]), value_ptr ? value_ptr : "(null)");
     fprintf(stderr, "test stderr: %s\n", argv[1]);
     return EXIT_SUCCESS;
 }
