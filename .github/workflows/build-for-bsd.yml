@@ -23,6 +23,7 @@ jobs:
         run: |
           sudo sed -i '' 's/quarterly/latest/' /etc/pkg/FreeBSD.conf
           sudo pkg install -y \
+            devel/bison \
             devel/cmake-core \
             devel/pkgconf \
             graphics/cairo
