@@ -32,6 +32,7 @@ IF(EXISTS "${LOCATION_PATH}")
 ENDIF()
 
 # Defaults to /usr/local/lib for installation.
+INCLUDE(CTest)
 INCLUDE(GNUInstallDirs)
 INCLUDE(FindCurses)
 
@@ -82,6 +83,7 @@ PKG_CHECK_MODULES(CAIRO REQUIRED IMPORTED_TARGET cairo>=1.16.0)
 CONFIGURE_FILE(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)
 
 ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(src/plist)
 
 # Add 'install' target, but only if we're the toplevel project.
 IF(CMAKE_PROJECT_NAME STREQUAL libbase)
@@ -99,11 +101,6 @@ ENDIF()
 # Add test target, but only if we're the toplevel project.
 IF(CMAKE_PROJECT_NAME STREQUAL libbase)
   ADD_SUBDIRECTORY(tests)
-
-  INCLUDE(CTest)
-  IF(BUILD_TESTING)
-    ADD_TEST(NAME libbase_test COMMAND libbase_test)
-  ENDIF()
 ENDIF()
 
 # Adds 'doc' target, if doxygen is installed.
