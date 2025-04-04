@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ADD_EXECUTABLE(libbase_test libbase_test.c)
-TARGET_LINK_LIBRARIES(libbase_test base)
+TARGET_LINK_LIBRARIES(libbase_test libbase)
 # Refer to the source path for relative testdata.
 TARGET_COMPILE_DEFINITIONS(
   libbase_test PUBLIC BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
@@ -22,7 +22,7 @@ TARGET_COMPILE_DEFINITIONS(
   libbase_test PUBLIC BS_TEST_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
 ADD_EXECUTABLE(libbase_benchmark libbase_benchmark.c)
-TARGET_LINK_LIBRARIES(libbase_benchmark base)
+TARGET_LINK_LIBRARIES(libbase_benchmark libbase)
 
 ADD_EXECUTABLE(subprocess_test_hang subprocess_test_hang.c)
 ADD_EXECUTABLE(subprocess_test_failure subprocess_test_failure.c)
@@ -30,7 +30,7 @@ ADD_EXECUTABLE(subprocess_test_sigpipe subprocess_test_sigpipe.c)
 ADD_EXECUTABLE(subprocess_test_success subprocess_test_success.c)
 
 ADD_EXECUTABLE(plist_test plist_test.c)
-TARGET_LINK_LIBRARIES(plist_test base plist)
+TARGET_LINK_LIBRARIES(plist_test libbase libbase_plist)
 TARGET_INCLUDE_DIRECTORIES(plist_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/)
 TARGET_COMPILE_DEFINITIONS(
   plist_test PUBLIC TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
