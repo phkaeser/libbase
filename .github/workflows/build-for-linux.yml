@@ -20,9 +20,11 @@ jobs:
       run: |
         apt-get update
         apt-get install -y \
+          bison \
           clang \
           cmake \
           doxygen \
+          flex \
           git \
           libcairo2-dev \
           libncurses-dev
