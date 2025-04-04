@@ -24,6 +24,7 @@ jobs:
           clang \
           cmake \
           doxygen \
+          flex \
           git \
           libcairo2-dev \
           libncurses-dev
