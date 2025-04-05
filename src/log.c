@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-#include <bits/types/struct_tm.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <libbase/assert.h>
