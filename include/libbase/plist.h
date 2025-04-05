@@ -30,9 +30,11 @@
 extern "C" {
 #endif  // __cplusplus
 
+// IWYU pragma: begin_exports
 #include "plist/decode.h"
 #include "plist/model.h"
 #include "plist/parse.h"
+// IWYU pragma: end_exports
 
 #ifdef __cplusplus
 }  // extern "C"

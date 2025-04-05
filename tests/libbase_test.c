@@ -20,11 +20,10 @@
  */
 
 #include <libbase/libbase.h>
-
-#include <inttypes.h>
 #include <limits.h>
 #include <poll.h>
 #include <signal.h>
+#include <stddef.h>
 
 #if !defined(BS_TEST_DATA_DIR)
 /** Directory root for looking up test data. See @ref bs_test_resolve_path. */

@@ -18,15 +18,19 @@
  * limitations under the License.
  */
 
-#include <libbase/strutil.h>
-
-#include <libbase/log.h>
-
 #include <ctype.h>
 #include <errno.h>
 #include <float.h>
+#include <libbase/def.h>
+#include <libbase/log.h>
+#include <libbase/strutil.h>
+#include <libbase/test.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* == Exported methods ===================================================== */
 

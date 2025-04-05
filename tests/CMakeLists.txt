@@ -37,3 +37,15 @@ TARGET_COMPILE_DEFINITIONS(
 
 ADD_TEST(NAME libbase_test COMMAND libbase_test)
 ADD_TEST(NAME plist_test COMMAND plist_test)
+
+IF(iwyu_path_and_options)
+  SET_TARGET_PROPERTIES(
+    libbase_test PROPERTIES
+    C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
+  SET_TARGET_PROPERTIES(
+    libbase_benchmark PROPERTIES
+    C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
+  SET_TARGET_PROPERTIES(
+    plist_test PROPERTIES
+    C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
+ENDIF(iwyu_path_and_options)

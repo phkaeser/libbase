@@ -18,11 +18,14 @@
  * limitations under the License.
  */
 
-#include <libbase/plist.h>
-
 #include "grammar.h"
 #include "analyzer.h"
+
 #include "parser_context.h"
+#include <libbase/libbase.h>
+#include <libbase/plist.h>
+#include <stdint.h>
+#include <stdio.h>
 
 /* == Declarations ========================================================= */
 

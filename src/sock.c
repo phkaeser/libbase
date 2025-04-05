@@ -18,18 +18,16 @@
  * limitations under the License.
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <inttypes.h>
 #include <libbase/def.h>
 #include <libbase/log.h>
 #include <libbase/sock.h>
 #include <libbase/time.h>
-
-#include <errno.h>
-#include <fcntl.h>
-#include <inttypes.h>
-#include <limits.h>
 #include <poll.h>
+#include <stdbool.h>
 #include <unistd.h>
-#include <sys/types.h>
 
 /* == Methods ============================================================== */
 

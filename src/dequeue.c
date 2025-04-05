@@ -19,6 +19,9 @@
  */
 
 #include <libbase/dequeue.h>
+#include <libbase/test.h>
+#include <stddef.h>
+#include <string.h>
 
 /* == Tests =============================================================== */
 

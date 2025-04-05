@@ -18,10 +18,13 @@
  * limitations under the License.
  */
 
-#include <libbase/ptr_stack.h>
-
 #include <libbase/assert.h>
+#include <libbase/log.h>
 #include <libbase/log_wrappers.h>
+#include <libbase/ptr_stack.h>
+#include <libbase/test.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 /* == Declarations ========================================================= */
 

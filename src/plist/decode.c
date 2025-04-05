@@ -18,7 +18,13 @@
  * limitations under the License.
  */
 
+#include <inttypes.h>
+#include <libbase/libbase.h>
 #include <libbase/plist.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* == Declarations ========================================================= */
 

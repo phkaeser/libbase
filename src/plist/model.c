@@ -20,6 +20,9 @@
 
 #include <libbase/libbase.h>
 #include <libbase/plist.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* == Declarations ========================================================= */
 

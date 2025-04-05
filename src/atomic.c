@@ -21,6 +21,7 @@
 
 #include <libbase/atomic.h>
 #include <libbase/test.h>
+#include <stddef.h>
 
 #if defined(__cplusplus) || defined(__clang__)
 

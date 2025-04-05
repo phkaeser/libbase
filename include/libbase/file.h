@@ -22,10 +22,7 @@
 #ifndef __LIBBASE_FILE_H__
 #define __LIBBASE_FILE_H__
 
-#include <stddef.h>
-
 #include <sys/types.h>
-
 #include "test.h"
 
 #ifdef __cplusplus

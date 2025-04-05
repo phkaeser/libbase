@@ -50,3 +50,8 @@ SET_TARGET_PROPERTIES(
   libbase_plist
   PROPERTIES VERSION 1.0
   PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
+IF(iwyu_path_and_options)
+  SET_TARGET_PROPERTIES(
+    libbase_plist PROPERTIES
+    C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
+ENDIF(iwyu_path_and_options)
