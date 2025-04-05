@@ -26,6 +26,7 @@ jobs:
           doxygen \
           flex \
           git \
+          iwyu \
           libcairo2-dev \
           libncurses-dev
     
