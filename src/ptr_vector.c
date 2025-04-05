@@ -20,10 +20,13 @@
  * limitations under the License.
  */
 
-#include <libbase/ptr_vector.h>
-
 #include <libbase/assert.h>
 #include <libbase/log.h>
+#include <libbase/ptr_vector.h>
+#include <libbase/test.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* == Declarations ========================================================= */
 

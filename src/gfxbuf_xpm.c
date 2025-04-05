@@ -18,12 +18,19 @@
  * limitations under the License.
  */
 
-#include <libbase/gfxbuf_xpm.h>
-
 #include <ctype.h>
-
+#include <inttypes.h>
+#include <libbase/assert.h>
 #include <libbase/avltree.h>
+#include <libbase/gfxbuf.h>
+#include <libbase/gfxbuf_xpm.h>
+#include <libbase/log.h>
 #include <libbase/strutil.h>
+#include <libbase/test.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* == Declarations ========================================================= */
 

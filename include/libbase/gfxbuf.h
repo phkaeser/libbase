@@ -20,16 +20,13 @@
 #ifndef __LIBBASE_GFXBUF_H__
 #define __LIBBASE_GFXBUF_H__
 
-#include <stdint.h>
-
-#include "assert.h"
+#include <inttypes.h>
+#include <libbase/assert.h>
+#include <libbase/test.h>
 
 #ifdef HAVE_CAIRO
 #include <cairo.h>
 #endif  // HAVE_CAIRO
-
-
-#include "test.h"
 
 #ifdef __cplusplus
 extern "C" {

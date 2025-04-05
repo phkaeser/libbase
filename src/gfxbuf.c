@@ -18,16 +18,22 @@
  * limitations under the License.
  */
 
-#include <libbase/gfxbuf.h>
-
 #include <inttypes.h>
-#include <libgen.h>
-#include <limits.h>
-#include <math.h>
-
+#include <libbase/assert.h>
+#include <libbase/def.h>
+#include <libbase/gfxbuf.h>
+#include <libbase/log.h>
 #include <libbase/log_wrappers.h>
 #include <libbase/test.h>
 #include <libbase/time.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef HAVE_CAIRO
+#include <cairo.h>
+#endif  // HAVE_CAIRO
 
 /* == Declarations ========================================================= */
 

@@ -21,7 +21,8 @@
 #ifndef __GFXBUF_XPM_H__
 #define __GFXBUF_XPM_H__
 
-#include "gfxbuf.h"
+#include "libbase/gfxbuf.h"
+#include "libbase/test.h"
 
 #ifdef __cplusplus
 extern "C" {

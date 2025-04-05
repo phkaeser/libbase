@@ -19,21 +19,25 @@
  */
 
 #include <curses.h>
-#include <stdarg.h>
 #include <fnmatch.h>
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <term.h>
-#include <threads.h>
-
 #include <libbase/arg.h>
 #include <libbase/assert.h>
+#include <libbase/def.h>
 #include <libbase/dllist.h>
 #include <libbase/file.h>
+#include <libbase/log.h>
 #include <libbase/log_wrappers.h>
 #include <libbase/test.h>
+#include <limits.h>
+#include <regex.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <term.h>
+#include <threads.h>
+#include <unistd.h>
 
 /** Information on current test case. */
 struct _bs_test_t {

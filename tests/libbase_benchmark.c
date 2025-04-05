@@ -20,6 +20,7 @@
  */
 
 #include <libbase/libbase.h>
+#include <stddef.h>
 
 /** Unit tests. */
 const bs_test_set_t           libbase_benchmarks[] = {

@@ -18,18 +18,18 @@
  * limitations under the License.
  */
 
+#include <ctype.h>
+#include <inttypes.h>
 #include <libbase/arg.h>
 #include <libbase/assert.h>
 #include <libbase/avltree.h>
-#include <libbase/c2x_compat.h>
+#include <libbase/def.h>
 #include <libbase/log.h>
+#include <libbase/test.h>
 #include <libbase/strutil.h>
-
-#include <ctype.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* == Declarations ========================================================= */

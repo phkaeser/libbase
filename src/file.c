@@ -18,19 +18,18 @@
  * limitations under the License.
  */
 
-#include <libbase/file.h>
-
 #include <errno.h>
 #include <fcntl.h>
+#include <libbase/file.h>
+#include <libbase/log.h>
+#include <libbase/strutil.h>
+#include <libbase/test.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
-
-#include <libbase/log.h>
-#include <libbase/strutil.h>
 
 /* == Declarations ========================================================= */
 

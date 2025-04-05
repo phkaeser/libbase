@@ -21,12 +21,12 @@
 #ifndef __LIBBASE_STRUTIL_H__
 #define __LIBBASE_STRUTIL_H__
 
+#include "libbase/def.h"
+#include "libbase/test.h"
 #include <inttypes.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <sys/types.h>
-
-#include "def.h"
-#include "test.h"
 
 #ifdef __cplusplus
 extern "C" {

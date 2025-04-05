@@ -18,12 +18,12 @@
  * limitations under the License.
  */
 
-#include <string.h>
-
 #include <libbase/assert.h>
-
+#include <libbase/def.h>
 #include <libbase/dllist.h>
 #include <libbase/test.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 static bool find_is(bs_dllist_node_t *dlnode_ptr, void *ud_ptr);
 static void assert_consistency(const bs_dllist_t *list_ptr);

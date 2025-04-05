@@ -20,11 +20,13 @@
  * limitations under the License.
  */
 
-#include <libbase/ptr_set.h>
-
 #include <libbase/avltree.h>
 #include <libbase/def.h>
 #include <libbase/log_wrappers.h>
+#include <libbase/ptr_set.h>
+#include <libbase/test.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 /* == Declarations ========================================================= */
 

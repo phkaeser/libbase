@@ -24,13 +24,12 @@
 #define _XOPEN_SOURCE 500
 
 #include <libbase/log.h>
-#include <libbase/time.h>
 #include <libbase/test.h>
-
+#include <libbase/time.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 
 #undef _XOPEN_SOURCE
 
