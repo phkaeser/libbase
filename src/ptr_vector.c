@@ -1,6 +1,6 @@
 /* ========================================================================= */
 /**
- * @file ptr_vector.h
+ * @file ptr_vector.c
  *
  * Interface for a simple vector to store pointers.
  *
