@@ -29,7 +29,7 @@
 /* == Declarations ========================================================= */
 
 /** A pointer of type `value_type`, at `offset` behind `base_ptr`. */
-#define BS_VALUE_AT(_value_type, _base_ptr, _offset) \
+#define BS_VALUE_AT(_value_type, _base_ptr, _offset)    \
     ((_value_type*)((uint8_t*)(_base_ptr) + (_offset)))
 
 static bool _bspl_init_defaults(
@@ -159,6 +159,23 @@ bool bspl_decode_dict(
                 obj_ptr,
                 BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset));
             break;
+        case BSPL_TYPE_ARRAY:
+            if (BSPL_ARRAY == bspl_object_type(obj_ptr)) {
+                bspl_array_t *array_ptr = bspl_array_from_object(obj_ptr);
+                rv = true;
+                for (size_t i = 0; i < bspl_array_size(array_ptr); ++i) {
+                    if (!iter_desc_ptr->v.v_array.decode(
+                            bspl_array_at(array_ptr, i),
+                            i,
+                            BS_VALUE_AT(
+                                void *,
+                                dest_ptr,
+                                iter_desc_ptr->field_offset))) {
+                        rv = false;
+                    }
+                }
+            }
+            break;
         default:
             bs_log(BS_ERROR, "Unsupported type %d.", iter_desc_ptr->type);
             rv = false;
@@ -208,6 +225,14 @@ void bspl_decoded_destroy(
                     BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset));
             }
             break;
+
+        case BSPL_TYPE_ARRAY:
+            if (NULL != iter_desc_ptr->v.v_array.fini) {
+                iter_desc_ptr->v.v_array.fini(
+                    BS_VALUE_AT(void *, dest_ptr, iter_desc_ptr->field_offset));
+            }
+            break;
+
         default:
             // Nothing.
             break;
@@ -255,7 +280,7 @@ bool bspl_enum_value_to_name(
  * @param dest_ptr
  */
 bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
-                           void *dest_ptr)
+                         void *dest_ptr)
 {
     char **str_ptr_ptr;
     char *str_ptr;
@@ -332,6 +357,14 @@ bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
         case BSPL_TYPE_CUSTOM:
             if (NULL != iter_desc_ptr->v.v_custom.init &&
                 !iter_desc_ptr->v.v_custom.init(
+                    BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset))) {
+                return false;
+            }
+            break;
+
+        case BSPL_TYPE_ARRAY:
+            if (NULL != iter_desc_ptr->v.v_array.init &&
+                !iter_desc_ptr->v.v_array.init(
                     BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset))) {
                 return false;
             }
@@ -496,8 +529,15 @@ const bs_test_case_t bspl_decode_test_cases[] = {
 };
 
 static bool _bspl_test_custom_decode(bspl_object_t *o_ptr, void *dst_ptr);
+static void _bspl_test_array_item_destroy(
+    bs_dllist_node_t *dlnode_ptr,
+    void *ud_ptr);
 static bool _bspl_test_custom_init(void *dst_ptr);
 static void _bspl_test_custom_fini(void *dst_ptr);
+static bool _bspl_test_array_decode(
+    bspl_object_t *obj_ptr, size_t i, void *dst_ptr);
+static bool _bspl_test_array_init(void *dst_ptr);
+static void _bspl_test_array_fini(void *dst_ptr);
 
 /** Structure with test values. */
 typedef struct {
@@ -519,8 +559,17 @@ typedef struct {
     char                      v_charbuf[10];
     _test_subdict_value_t     subdict;
     void                      *v_custom_ptr;
+    bs_dllist_t               *dllist_ptr;
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 } _test_value_t;
+
+/** A decoded array item. */
+typedef struct {
+    /** Node of _test_value_t::dllist_ptr. */
+    bs_dllist_node_t          dlnode;
+    /** the character of the item. */
+    char                      c;
+} _test_array_item_t;
 
 /** An enum descriptor. */
 static const bspl_enum_desc_t _test_enum_desc[] = {
@@ -532,7 +581,7 @@ static const bspl_enum_desc_t _test_enum_desc[] = {
 /** Descriptor of a contained dict. */
 static const bspl_desc_t _bspl_decode_test_subdesc[] = {
     BSPL_DESC_STRING("string", true, _test_subdict_value_t, value,
-                       "Other String"),
+                     "Other String"),
     BSPL_DESC_SENTINEL(),
 };
 
@@ -547,11 +596,15 @@ static const bspl_desc_t _bspl_decode_test_desc[] = {
     BSPL_DESC_STRING("string", true, _test_value_t, v_string, "The String"),
     BSPL_DESC_CHARBUF("charbuf", true, _test_value_t, v_charbuf, 10, "CharBuf"),
     BSPL_DESC_DICT("subdict", true, _test_value_t, subdict,
-                     _bspl_decode_test_subdesc),
+                   _bspl_decode_test_subdesc),
     BSPL_DESC_CUSTOM("custom", true, _test_value_t, v_custom_ptr,
-                       _bspl_test_custom_decode,
-                       _bspl_test_custom_init,
-                       _bspl_test_custom_fini),
+                     _bspl_test_custom_decode,
+                     _bspl_test_custom_init,
+                     _bspl_test_custom_fini),
+    BSPL_DESC_ARRAY("array", true, _test_value_t, dllist_ptr,
+                    _bspl_test_array_decode,
+                    _bspl_test_array_init,
+                    _bspl_test_array_fini),
     BSPL_DESC_SENTINEL(),
 };
 
@@ -559,7 +612,7 @@ static const bspl_desc_t _bspl_decode_test_desc[] = {
 /* ------------------------------------------------------------------------- */
 /** A custom decoding function. Here: just decode a string. */
 bool _bspl_test_custom_decode(bspl_object_t *o_ptr,
-                                void *dst_ptr)
+                              void *dst_ptr)
 {
     char** str_ptr_ptr = dst_ptr;
     _bspl_test_custom_fini(dst_ptr);
@@ -588,6 +641,59 @@ void _bspl_test_custom_fini(void *dst_ptr)
     if (NULL != *str_ptr_ptr) {
         free(*str_ptr_ptr);
         *str_ptr_ptr = NULL;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+/** Deocde method for array item. */
+bool _bspl_test_array_decode(
+    bspl_object_t *obj_ptr,
+    __UNUSED__ size_t i,
+    void *dst_ptr)
+{
+    bs_dllist_t **dllist_ptr_ptr = dst_ptr;
+
+    _test_array_item_t *item_ptr = logged_calloc(1, sizeof(_test_array_item_t));
+    if (NULL == item_ptr) return false;
+
+    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
+    if (NULL == string_ptr) {
+        free(item_ptr);
+        return false;
+    }
+
+    item_ptr->c = bspl_string_value(string_ptr)[0];
+    bs_dllist_push_back(*dllist_ptr_ptr, &item_ptr->dlnode);
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+void _bspl_test_array_item_destroy(
+    bs_dllist_node_t *dlnode_ptr,
+    __UNUSED__ void *ud_ptr)
+{
+    _test_array_item_t *item_ptr = BS_CONTAINER_OF(
+        dlnode_ptr, _test_array_item_t, dlnode);
+    free(item_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+bool _bspl_test_array_init(void *dst_ptr)
+{
+    bs_dllist_t **dllist_ptr_ptr = dst_ptr;
+    *dllist_ptr_ptr = logged_calloc(1, sizeof(bs_dllist_t));
+    if (NULL == *dllist_ptr_ptr) return false;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+void _bspl_test_array_fini(void *dst_ptr)
+{
+    bs_dllist_t **dllist_ptr_ptr = dst_ptr;
+    bs_dllist_for_each(*dllist_ptr_ptr, _bspl_test_array_item_destroy, NULL);
+    if (NULL != *dllist_ptr_ptr) {
+        free(*dllist_ptr_ptr);
+        *dllist_ptr_ptr = NULL;
     }
 }
 
@@ -648,6 +754,7 @@ void test_decode_dict(bs_test_t *test_ptr)
                                     "string = TestString;"
                                     "charbuf = TestBuf;"
                                     "subdict = { string = OtherTestString };"
+                                    "array = (a, b);"
                                     "custom = CustomThing"
                                     "}");
     bspl_dict_t *dict_ptr;
@@ -667,6 +774,14 @@ void test_decode_dict(bs_test_t *test_ptr)
     BS_TEST_VERIFY_STREQ(test_ptr, "TestString", val.v_string);
     BS_TEST_VERIFY_STREQ(test_ptr, "TestBuf", val.v_charbuf);
     BS_TEST_VERIFY_STREQ(test_ptr, "CustomThing", val.v_custom_ptr);
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, val.dllist_ptr);
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 2, bs_dllist_size(val.dllist_ptr));
+    _test_array_item_t *item_ptr = BS_CONTAINER_OF(
+        val.dllist_ptr->head_ptr, _test_array_item_t, dlnode);
+    BS_TEST_VERIFY_EQ(test_ptr, 'a', item_ptr->c);
+    item_ptr = BS_CONTAINER_OF(
+        item_ptr->dlnode.next_ptr, _test_array_item_t, dlnode);
+    BS_TEST_VERIFY_EQ(test_ptr, 'b', item_ptr->c);
     bspl_dict_unref(dict_ptr);
     bspl_decoded_destroy(_bspl_decode_test_desc, &val);
 
