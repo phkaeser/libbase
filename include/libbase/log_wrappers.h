@@ -44,7 +44,7 @@ static inline void *_logged_calloc(
 
 /** Calls calloc(3) and logs error with ERROR severity. */
 #define logged_calloc(nmemb, size)                      \
-    _logged_calloc(__FILE__, __LINE__, nmemb, size);
+    _logged_calloc(__FILE__, __LINE__, nmemb, size)
 
 /** Helper: Calls malloc(3) and logs errors for given file & line. */
 static inline void *_logged_malloc(
