@@ -60,7 +60,7 @@ static inline void *_logged_malloc(
 
 /** Calls malloc(3) and logs error with ERROR severity. */
 #define logged_malloc(size)                     \
-    _logged_malloc(__FILE__, __LINE__, size);
+    _logged_malloc(__FILE__, __LINE__, size)
 
 /** Helper: Calls strdup(3) and logs errors for given file & line. */
 static inline char *_logged_strdup(
@@ -76,7 +76,7 @@ static inline char *_logged_strdup(
 
 /** Calls strdup(3) and logs error with ERROR severity. */
 #define logged_strdup(str)                      \
-    _logged_strdup(__FILE__, __LINE__, str);
+    _logged_strdup(__FILE__, __LINE__, str)
 
 
 #ifdef __cplusplus
