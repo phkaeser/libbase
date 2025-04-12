@@ -1,6 +1,6 @@
 /* ========================================================================= */
 /**
- * @file plist.c
+ * @file parse.c
  *
  * @copyright
  * Copyright 2024 Google LLC

@@ -59,6 +59,7 @@ typedef enum {
     BSPL_TYPE_CHARBUF,
     BSPL_TYPE_DICT,
     BSPL_TYPE_CUSTOM,
+    BSPL_TYPE_ARRAY,
 } bspl_decode_type_t;
 
 /** A signed 64-bit integer. */
@@ -113,9 +114,19 @@ typedef struct {
     const char                *default_value_ptr;
 } bspl_desc_charbuf_t;
 
+/** An array, with a decoder for each item. */
+typedef struct {
+    /** Decoding method, for item at position `i`. */
+    bool (*decode)(bspl_object_t *obj_ptr, size_t i, void *dest_ptr);
+    /** Initializer method: Allocate or prepare `dest_ptr`. May be NULL. */
+    bool (*init)(void *dest_ptr);
+    /** Cleanup method: Frees `dest_ptr`. May be NULL.. */
+    void (*fini)(void *dest_ptr);
+} bspl_desc_array_t;
+
 /** A custom decoder. */
 typedef struct {
-    /** Decoding method: From obhect into `dest_ptr`. */
+    /** Decoding method: From object into `dest_ptr`. */
     bool (*decode)(bspl_object_t *obj_ptr, void *dest_ptr);
     /** Initializer method: Allocate or prepare `dest_ptr`. May be NULL. */
     bool (*init)(void *dest_ptr);
@@ -145,6 +156,7 @@ struct _bspl_desc_t {
         bspl_desc_charbuf_t v_charbuf;
         const bspl_desc_t   *v_dict_desc_ptr;
         bspl_desc_custom_t  v_custom;
+        bspl_desc_array_t   v_array;
     } v;
 };
 
@@ -152,8 +164,8 @@ struct _bspl_desc_t {
 #define BSPL_DESC_SENTINEL() { .key_ptr = NULL }
 
 /** Descriptor for an unsigned int64. */
-#define BSPL_DESC_UINT64(_key, _required, _base, _field, _default) {  \
-        .type = BSPL_TYPE_UINT64,                                     \
+#define BSPL_DESC_UINT64(_key, _required, _base, _field, _default) {    \
+        .type = BSPL_TYPE_UINT64,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -161,8 +173,8 @@ struct _bspl_desc_t {
     }
 
 /** Descriptor for an signed int64. */
-#define BSPL_DESC_INT64(_key, _required, _base, _field, _default) {   \
-        .type = BSPL_TYPE_INT64,                                      \
+#define BSPL_DESC_INT64(_key, _required, _base, _field, _default) {     \
+        .type = BSPL_TYPE_INT64,                                        \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -170,8 +182,8 @@ struct _bspl_desc_t {
     }
 
 /** Descriptor for a floating point value. */
-#define BSPL_DESC_DOUBLE(_key, _required, _base, _field, _default) {  \
-        .type = BSPL_TYPE_DOUBLE,                                     \
+#define BSPL_DESC_DOUBLE(_key, _required, _base, _field, _default) {    \
+        .type = BSPL_TYPE_DOUBLE,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -179,8 +191,8 @@ struct _bspl_desc_t {
     }
 
 /** Descriptor for an ARGB32 value. */
-#define BSPL_DESC_ARGB32(_key, _required, _base, _field, _default) {  \
-        .type = BSPL_TYPE_ARGB32,                                     \
+#define BSPL_DESC_ARGB32(_key, _required, _base, _field, _default) {    \
+        .type = BSPL_TYPE_ARGB32,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -188,8 +200,8 @@ struct _bspl_desc_t {
     }
 
 /** Descriptor for a bool value. */
-#define BSPL_DESC_BOOL(_key, _required, _base, _field, _default) {    \
-        .type = BSPL_TYPE_BOOL,                                       \
+#define BSPL_DESC_BOOL(_key, _required, _base, _field, _default) {      \
+        .type = BSPL_TYPE_BOOL,                                         \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -199,7 +211,7 @@ struct _bspl_desc_t {
 /** Descriptor for an enum value. */
 #define BSPL_DESC_ENUM(_key, _required, _base, _field, _default, _desc_ptr) \
     {                                                                   \
-        .type = BSPL_TYPE_ENUM,                                       \
+        .type = BSPL_TYPE_ENUM,                                         \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -208,8 +220,8 @@ struct _bspl_desc_t {
     }
 
 /** Descriptor for a string value value. */
-#define BSPL_DESC_STRING(_key, _required, _base, _field, _default) {  \
-        .type = BSPL_TYPE_STRING,                                     \
+#define BSPL_DESC_STRING(_key, _required, _base, _field, _default) {    \
+        .type = BSPL_TYPE_STRING,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -218,7 +230,7 @@ struct _bspl_desc_t {
 
 /** Descriptor for a char buffer. */
 #define BSPL_DESC_CHARBUF(_key, _required, _base, _field, _len, _default) { \
-        .type = BSPL_TYPE_CHARBUF,                                    \
+        .type = BSPL_TYPE_CHARBUF,                                      \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -227,8 +239,8 @@ struct _bspl_desc_t {
     }
 
 /** Descriptor for a dict sub-value. */
-#define BSPL_DESC_DICT(_key, _required, _base, _field, _desc) {       \
-        .type = BSPL_TYPE_DICT,                                       \
+#define BSPL_DESC_DICT(_key, _required, _base, _field, _desc) {         \
+        .type = BSPL_TYPE_DICT,                                         \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
@@ -236,14 +248,25 @@ struct _bspl_desc_t {
     }
 
 /** Descriptor for a custom object decoder. */
-#define BSPL_DESC_CUSTOM(_key, _required, _base, _field, _d ,_i, _f) { \
-        .type = BSPL_TYPE_CUSTOM,                                     \
+#define BSPL_DESC_CUSTOM(_key, _required, _base, _field, _d ,_i, _f) {  \
+        .type = BSPL_TYPE_CUSTOM,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
         .field_offset = offsetof(_base, _field),                        \
         .v.v_custom.decode = _d,                                        \
         .v.v_custom.init = _i,                                          \
         .v.v_custom.fini = _f,                                          \
+    }
+
+/** Descriptor for an array, with an item-decoder. */
+#define BSPL_DESC_ARRAY(_key, _required, _base, _field, _d, _i, _f) {   \
+        .type = BSPL_TYPE_ARRAY,                                        \
+        .key_ptr = (_key),                                              \
+        .required = _required,                                          \
+        .field_offset = offsetof(_base, _field),                        \
+        .v.v_array.decode = _d,                                         \
+        .v.v_array.init = _i,                                           \
+        .v.v_array.fini = _f,                                           \
     }
 
 /**
