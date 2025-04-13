@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # Suggested configuration:
-#   cmake -B build -Dconfig_WERROR=ON
+#   cmake -B build -Dconfig_WERROR=ON -Dconfig_DEBUG=ON
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 PROJECT(libbase VERSION 1.0
   DESCRIPTION "A small standard library for C"
