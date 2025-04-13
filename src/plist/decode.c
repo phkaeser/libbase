@@ -109,55 +109,55 @@ bool bspl_decode_dict(
         case BSPL_TYPE_UINT64:
             rv = _bspl_decode_uint64(
                 obj_ptr,
-                BS_VALUE_AT(uint64_t, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(uint64_t, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_INT64:
             rv = _bspl_decode_int64(
                 obj_ptr,
-                BS_VALUE_AT(int64_t, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(int64_t, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_DOUBLE:
             rv = _bspl_decode_double(
                 obj_ptr,
-                BS_VALUE_AT(double, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(double, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_ARGB32:
             rv = _bspl_decode_argb32(
                 obj_ptr,
-                BS_VALUE_AT(uint32_t, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(uint32_t, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_BOOL:
             rv = _bspl_decode_bool(
                 obj_ptr,
-                BS_VALUE_AT(bool, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(bool, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_ENUM:
             rv = _bspl_decode_enum(
                 obj_ptr,
                 iter_desc_ptr->v.v_enum.desc_ptr,
-                BS_VALUE_AT(int, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(int, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_STRING:
             rv = _bspl_decode_string(
                 obj_ptr,
-                BS_VALUE_AT(char*, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(char*, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_CHARBUF:
             rv = _bspl_decode_charbuf(
                 obj_ptr,
-                BS_VALUE_AT(char, dest_ptr, iter_desc_ptr->field_offset),
+                BS_VALUE_AT(char, dest_ptr, iter_desc_ptr->field_ofs),
                 iter_desc_ptr->v.v_charbuf.len);
             break;
         case BSPL_TYPE_DICT:
             rv = bspl_decode_dict(
                 bspl_dict_from_object(obj_ptr),
                 iter_desc_ptr->v.v_dict_desc_ptr,
-                BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_CUSTOM:
             rv = iter_desc_ptr->v.v_custom.decode(
                 obj_ptr,
-                BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset));
+                BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_ofs));
             break;
         case BSPL_TYPE_ARRAY:
             if (BSPL_ARRAY == bspl_object_type(obj_ptr)) {
@@ -170,7 +170,7 @@ bool bspl_decode_dict(
                             BS_VALUE_AT(
                                 void *,
                                 dest_ptr,
-                                iter_desc_ptr->field_offset))) {
+                                iter_desc_ptr->field_ofs))) {
                         rv = false;
                     }
                 }
@@ -205,7 +205,7 @@ void bspl_decoded_destroy(
         switch (iter_desc_ptr->type) {
         case BSPL_TYPE_STRING:
             str_ptr_ptr = BS_VALUE_AT(
-                char*, dest_ptr, iter_desc_ptr->field_offset);
+                char*, dest_ptr, iter_desc_ptr->field_ofs);
             if (NULL != *str_ptr_ptr) {
                 free(*str_ptr_ptr);
                 *str_ptr_ptr = NULL;
@@ -216,20 +216,20 @@ void bspl_decoded_destroy(
             bspl_decoded_destroy(
                 iter_desc_ptr->v.v_dict_desc_ptr,
                 BS_VALUE_AT(
-                    void*, dest_ptr, iter_desc_ptr->field_offset));
+                    void*, dest_ptr, iter_desc_ptr->field_ofs));
             break;
 
         case BSPL_TYPE_CUSTOM:
             if (NULL != iter_desc_ptr->v.v_custom.fini) {
                 iter_desc_ptr->v.v_custom.fini(
-                    BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset));
+                    BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_ofs));
             }
             break;
 
         case BSPL_TYPE_ARRAY:
             if (NULL != iter_desc_ptr->v.v_array.fini) {
                 iter_desc_ptr->v.v_array.fini(
-                    BS_VALUE_AT(void *, dest_ptr, iter_desc_ptr->field_offset));
+                    BS_VALUE_AT(void *, dest_ptr, iter_desc_ptr->field_ofs));
             }
             break;
 
@@ -290,38 +290,38 @@ bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
          ++iter_desc_ptr) {
         switch (iter_desc_ptr->type) {
         case BSPL_TYPE_UINT64:
-            *BS_VALUE_AT(uint64_t, dest_ptr, iter_desc_ptr->field_offset) =
+            *BS_VALUE_AT(uint64_t, dest_ptr, iter_desc_ptr->field_ofs) =
                 iter_desc_ptr->v.v_uint64.default_value;
             break;
 
         case BSPL_TYPE_INT64:
-            *BS_VALUE_AT(int64_t, dest_ptr, iter_desc_ptr->field_offset) =
+            *BS_VALUE_AT(int64_t, dest_ptr, iter_desc_ptr->field_ofs) =
                 iter_desc_ptr->v.v_int64.default_value;
             break;
 
         case BSPL_TYPE_DOUBLE:
-            *BS_VALUE_AT(double, dest_ptr, iter_desc_ptr->field_offset) =
+            *BS_VALUE_AT(double, dest_ptr, iter_desc_ptr->field_ofs) =
                 iter_desc_ptr->v.v_double.default_value;
             break;
 
         case BSPL_TYPE_ARGB32:
-            *BS_VALUE_AT(uint32_t, dest_ptr, iter_desc_ptr->field_offset) =
+            *BS_VALUE_AT(uint32_t, dest_ptr, iter_desc_ptr->field_ofs) =
                 iter_desc_ptr->v.v_argb32.default_value;
             break;
 
         case BSPL_TYPE_BOOL:
-            *BS_VALUE_AT(bool, dest_ptr, iter_desc_ptr->field_offset) =
+            *BS_VALUE_AT(bool, dest_ptr, iter_desc_ptr->field_ofs) =
                 iter_desc_ptr->v.v_bool.default_value;
             break;
 
         case BSPL_TYPE_ENUM:
-            *BS_VALUE_AT(int, dest_ptr, iter_desc_ptr->field_offset) =
+            *BS_VALUE_AT(int, dest_ptr, iter_desc_ptr->field_ofs) =
                 iter_desc_ptr->v.v_enum.default_value;
             break;
 
         case BSPL_TYPE_STRING:
             str_ptr_ptr = BS_VALUE_AT(
-                char*, dest_ptr, iter_desc_ptr->field_offset);
+                char*, dest_ptr, iter_desc_ptr->field_ofs);
             if (NULL != *str_ptr_ptr) free(*str_ptr_ptr);
             *str_ptr_ptr = logged_strdup(
                 iter_desc_ptr->v.v_string.default_value_ptr);
@@ -330,7 +330,7 @@ bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
 
         case BSPL_TYPE_CHARBUF:
             str_ptr = BS_VALUE_AT(
-                char, dest_ptr, iter_desc_ptr->field_offset);
+                char, dest_ptr, iter_desc_ptr->field_ofs);
             if (NULL == iter_desc_ptr->v.v_charbuf.default_value_ptr) break;
 
             if (iter_desc_ptr->v.v_charbuf.len <
@@ -349,7 +349,7 @@ bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
             if (!_bspl_init_defaults(
                     iter_desc_ptr->v.v_dict_desc_ptr,
                     BS_VALUE_AT(void*, dest_ptr,
-                                iter_desc_ptr->field_offset))) {
+                                iter_desc_ptr->field_ofs))) {
                 return false;
             }
             break;
@@ -357,7 +357,7 @@ bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
         case BSPL_TYPE_CUSTOM:
             if (NULL != iter_desc_ptr->v.v_custom.init &&
                 !iter_desc_ptr->v.v_custom.init(
-                    BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset))) {
+                    BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_ofs))) {
                 return false;
             }
             break;
@@ -365,7 +365,7 @@ bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
         case BSPL_TYPE_ARRAY:
             if (NULL != iter_desc_ptr->v.v_array.init &&
                 !iter_desc_ptr->v.v_array.init(
-                    BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_offset))) {
+                    BS_VALUE_AT(void*, dest_ptr, iter_desc_ptr->field_ofs))) {
                 return false;
             }
             break;

@@ -143,7 +143,13 @@ struct _bspl_desc_t {
     /** Whether the field is required. */
     bool                      required;
     /** Offset of the field where to store the value. */
-    size_t                    field_offset;
+    size_t                    field_ofs;
+    /**
+     * Offset of the field (boolean) where to store whether this field had been
+     * set. If @ref bspl_desc_t::presence_ofs == @ref bspl_desc_t::field_ofs,
+     * presence will not be recorded.
+     */
+    size_t                    presence_ofs;
     /** And the descriptor of the value. */
     union {
         bspl_desc_int64_t   v_int64;
@@ -168,7 +174,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_UINT64,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_uint64.default_value = _default                            \
     }
 
@@ -177,7 +183,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_INT64,                                        \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_int64.default_value = _default                             \
     }
 
@@ -186,7 +192,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_DOUBLE,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_double.default_value = _default                            \
     }
 
@@ -195,7 +201,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_ARGB32,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_argb32.default_value = _default                            \
     }
 
@@ -204,7 +210,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_BOOL,                                         \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_bool.default_value = _default                              \
     }
 
@@ -214,7 +220,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_ENUM,                                         \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_enum.default_value = _default,                             \
         .v.v_enum.desc_ptr = _desc_ptr                                  \
     }
@@ -224,7 +230,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_STRING,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_string.default_value_ptr = _default,                       \
     }
 
@@ -233,7 +239,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_CHARBUF,                                      \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_charbuf.len = _len,                                        \
         .v.v_charbuf.default_value_ptr = _default,                      \
     }
@@ -243,7 +249,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_DICT,                                         \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_dict_desc_ptr = _desc                                      \
     }
 
@@ -252,7 +258,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_CUSTOM,                                       \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_custom.decode = _d,                                        \
         .v.v_custom.init = _i,                                          \
         .v.v_custom.fini = _f,                                          \
@@ -263,7 +269,7 @@ struct _bspl_desc_t {
         .type = BSPL_TYPE_ARRAY,                                        \
         .key_ptr = (_key),                                              \
         .required = _required,                                          \
-        .field_offset = offsetof(_base, _field),                        \
+        .field_ofs = offsetof(_base, _field),                        \
         .v.v_array.decode = _d,                                         \
         .v.v_array.init = _i,                                           \
         .v.v_array.fini = _f,                                           \
