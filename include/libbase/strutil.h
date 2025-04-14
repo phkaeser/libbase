@@ -138,7 +138,7 @@ bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr);
  *     character. Must be released by calling free(). Upon error, NULL is
  *     returned.
  */
-char *bs_strdupf(const char *fmt_ptr, ...);
+char *bs_strdupf(const char *fmt_ptr, ...) __ARG_PRINTF__(1, 2);
 
 /** Test cases. */
 extern const bs_test_case_t   bs_strutil_test_cases[];
