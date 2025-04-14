@@ -128,6 +128,18 @@ bool bs_strconvert_double(
 /** @return Whether `string_ptr` starts with `prefix_ptr`. */
 bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr);
 
+/**
+ * Creates a new string holding the format string and outputs.
+ *
+ * @param fmt_ptr
+ * @param ...                 Further arguments.
+ *
+ * @return A pointer to a string of appropriate size, including terminating NUL
+ *     character. Must be released by calling free(). Upon error, NULL is
+ *     returned.
+ */
+char *bs_strdupf(const char *fmt_ptr, ...);
+
 /** Test cases. */
 extern const bs_test_case_t   bs_strutil_test_cases[];
 
