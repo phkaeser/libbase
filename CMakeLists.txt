@@ -78,7 +78,7 @@ IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
   IF(iwyu_executable)
     SET(iwyu_path_and_options
       ${iwyu_executable}
-      -Xiwyu --error=1 -Xiwyu --transitive_includes_only)
+      -Xiwyu --error=1 -Xiwyu --transitive_includes_only -Xiwyu --mapping_file=${PROJECT_SOURCE_DIR}/iwyu-mappings.imp)
   ENDIF(iwyu_executable)
 ENDIF()
 SET(CMAKE_C_STANDARD 11)
