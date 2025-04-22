@@ -23,10 +23,10 @@
 /* == Prologue ============================================================= */
 %{
 
-#include "grammar.h"
-#include "analyzer.h"
+#include "grammar.h"  // IWYU pragma: keep
+#include "analyzer.h"  // IWYU pragma: keep
 
-#include <libbase/libbase.h>
+#include <libbase/libbase.h>  // IWYU pragma: keep
 #include <libbase/plist.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -50,6 +50,8 @@
 
 %code requires {
 #include "parser_context.h"
+
+struct YYLTYPE;  // For IWYU.
 }
 
 %code provides {

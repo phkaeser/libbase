@@ -22,8 +22,11 @@
 
 %{
 #include <libbase/libbase.h>
+#include <unistd.h>  // IWYU pragma: keep
 
 #include "grammar.h"
+
+struct yyguts_t;  // For IWYU.
 
 /** Addresses valgrind unitialized memory warnings. */
 #define YY_USER_INIT do {                               \
@@ -32,8 +35,8 @@
 } while (0);
 
 /** Permits location tracking, for positioned error reports. */
-#define YY_USER_ACTION					\
-do {							\
+#define YY_USER_ACTION                                  \
+do {                                                    \
   yylloc->first_line = yylloc->last_line = yylineno;    \
   yylloc->first_column = yycolumn - 1;                  \
   yylloc->last_column = yycolumn + yyleng - 1;          \
