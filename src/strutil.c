@@ -23,6 +23,7 @@
 #include <float.h>
 #include <libbase/def.h>
 #include <libbase/log.h>
+#include <libbase/log_wrappers.h>
 #include <libbase/strutil.h>
 #include <libbase/test.h>
 #include <stdarg.h>
@@ -164,6 +165,33 @@ bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr)
     return 0 == strncmp(string_ptr, prefix_ptr, strlen(prefix_ptr));
 }
 
+/* ------------------------------------------------------------------------- */
+char *bs_strdupf(const char *fmt_ptr, ...)
+{
+    size_t size = 1;
+    while (true) {
+        char *str = logged_malloc(size);
+        if (NULL == str) return NULL;
+
+        va_list ap;
+        va_start(ap, fmt_ptr);
+        int rv = vsnprintf(str, size, fmt_ptr, ap);
+        va_end(ap);
+
+        if (0 > rv) {
+            bs_log(BS_WARNING, "Failed vsnprintf(%p, %zu, \"%s\", ...)",
+                   str, size,  fmt_ptr);
+            free(str);
+            return NULL;
+        }
+        if ((size_t)rv < size) return str;
+
+        free(str);
+        size = (size_t)rv + 1;
+    }
+    return NULL;
+}
+
 /* == Test functions ======================================================= */
 
 static void test_strappend(bs_test_t *test_ptr);
@@ -171,6 +199,7 @@ static void strconvert_uint64_test(bs_test_t *test_ptr);
 static void strconvert_int64_test(bs_test_t *test_ptr);
 static void strconvert_double_test(bs_test_t *test_ptr);
 static void test_startswith(bs_test_t *test_ptr);
+static void test_strdupf(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_strutil_test_cases[] = {
     { 1, "strappend", test_strappend },
@@ -178,6 +207,7 @@ const bs_test_case_t          bs_strutil_test_cases[] = {
     { 1, "strconvert_int64", strconvert_int64_test },
     { 1, "strconvert_double", strconvert_double_test },
     { 1, "startswith", test_startswith },
+    { 1, "strdupf", test_strdupf },
     { 0, NULL, NULL }
 };
 
@@ -318,6 +348,15 @@ void test_startswith(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_TRUE(test_ptr, bs_str_startswith("asdf", ""));
     BS_TEST_VERIFY_FALSE(test_ptr, bs_str_startswith("", "asdf"));
+}
+
+/* ------------------------------------------------------------------------- */
+void test_strdupf(bs_test_t *test_ptr)
+{
+    char *s = bs_strdupf("%d%s", 1, "a");
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, s);
+    BS_TEST_VERIFY_STREQ(test_ptr, "1a", s);
+    free(s);
 }
 
 /* == End of strutil.c ===================================================== */

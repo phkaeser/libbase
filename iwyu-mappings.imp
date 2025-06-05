@@ -1,0 +1,7 @@
+# -*- mode: python; -*-
+[
+    # Weird iwyu complaint to add "#include <bits/types/struct_tm.h>  // for tm"
+    { "symbol": ["tm", "public", "<sys/time.h>", "public" ]},
+    # Otherwise iwyu is asking for glibc-only <features.h>
+    { "symbol": ["__GLIBC__", "public", "\"analyzer.h\"", "public" ]},
+]
