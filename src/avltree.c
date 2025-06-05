@@ -318,6 +318,8 @@ void bs_avltree_flush(bs_avltree_t *tree_ptr)
     bs_avltree_node_t         *parent_ptr;
 
     node_ptr = tree_ptr->root_ptr;
+    // Already mark the tree as inaccessible.
+    tree_ptr->root_ptr = NULL;
     while (NULL != node_ptr) {
 
         /* walk tree downwards as far as possible */
@@ -351,7 +353,6 @@ void bs_avltree_flush(bs_avltree_t *tree_ptr)
         node_ptr = parent_ptr;
     }
 
-    tree_ptr->root_ptr = NULL;
     BS_ASSERT(0 == tree_ptr->nodes);
 }
 
