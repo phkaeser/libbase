@@ -164,10 +164,10 @@ int bs_test(
     const char **argv,
     const bs_test_param_t *param_ptr)
 {
-    struct bs_test_report     report;
+    struct bs_test_report     report = {};
     int                       i;
     bool                      run_set;
-    bs_dllist_t               failed_tests;
+    bs_dllist_t               failed_tests = {};
 
     if (NULL == test_sets) return 0;
     if (!bs_arg_parse(bs_test_args, BS_ARG_MODE_NO_EXTRA, &argc, argv)) {
@@ -184,8 +184,6 @@ int bs_test(
 
     bs_test_tcode_init();
 
-    memset(&report, 0, sizeof(report));
-    memset(&failed_tests, 0, sizeof(failed_tests));
     /** List of all failed tests. */
     while (NULL != test_sets->name_ptr) {
 
@@ -394,7 +392,7 @@ void bs_test_tcode_init(void)
     }
     BS_ASSERT(0 < tgetent(tc_buf, term_ptr));
 
-    memset(&bs_test_tcode, 0, sizeof(struct _bs_test_tcode));
+    bs_test_tcode = (struct _bs_test_tcode){};
     code_buf_ptr = bs_test_tcode.all_codes;
 
     // https://pubs.opengroup.org/onlinepubs/007908799/xcurses/terminfo.html.
@@ -520,14 +518,13 @@ int bs_test_set(const bs_test_set_t *set_ptr,
 {
     const bs_test_case_t      *case_ptr;
     struct bs_test_fail_node  *fnode_ptr;
-    struct bs_test_report     set_report;
+    struct bs_test_report     set_report = {};
     int                       case_idx;
     bs_test_t                 test;
 
     bs_test_puts("%s\n Set: %-73.73s\n",
                  bs_test_report_separator_ptr,
                  set_ptr->name_ptr);
-    memset(&set_report, 0, sizeof(set_report));
 
     /* step through descriptors and run each test */
     for (case_idx = 0;
@@ -585,10 +582,11 @@ void bs_test_case_prepare(bs_test_t *test_ptr,
                           const bs_test_set_t *set_ptr,
                           int case_idx)
 {
-    test_ptr->case_idx = case_idx;
-    test_ptr->case_ptr = set_ptr->case_ptr + case_idx;
-    test_ptr->failed = false;
-    memset(test_ptr->report, 0, sizeof(test_ptr->report));
+    *test_ptr = (bs_test_t){
+        .case_idx = case_idx,
+        .case_ptr = set_ptr->case_ptr + case_idx,
+        .failed = false,
+    };
 }
 
 /* ------------------------------------------------------------------------- */
@@ -724,23 +722,22 @@ void bs_test_test_fail_succeed(bs_test_t *test_ptr)
  */
 void bs_test_test_report(bs_test_t *test_ptr)
 {
-    bs_test_t                 sub_test;
+    bs_test_t                 sub_test = {};
 
-    memset(&sub_test, 0, sizeof(bs_test_t));
     bs_test_test_fail(&sub_test);
     BS_TEST_VERIFY_TRUE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_test_failed(&sub_test));
-    memset(&sub_test, 0, sizeof(bs_test_t));
+    sub_test = (bs_test_t){};
     bs_test_test_succeed(&sub_test);
     BS_TEST_VERIFY_FALSE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_FALSE(test_ptr, bs_test_failed(&sub_test));
 
     /** bs_test_fail takes precedence over bs_test_succeed. */
-    memset(&sub_test, 0, sizeof(bs_test_t));
+    sub_test = (bs_test_t){};
     bs_test_test_succeed_fail(&sub_test);
     BS_TEST_VERIFY_TRUE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_test_failed(&sub_test));
-    memset(&sub_test, 0, sizeof(bs_test_t));
+    sub_test = (bs_test_t){};
     bs_test_test_fail_succeed(&sub_test);
     BS_TEST_VERIFY_TRUE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_test_failed(&sub_test));

@@ -102,9 +102,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
     }
 
     struct timeval tv;
-    if (0 != gettimeofday(&tv, NULL)) {
-        memset(&tv, 0, sizeof(tv));
-    }
+    if (0 != gettimeofday(&tv, NULL)) tv = (struct timeval){};
     struct tm *tm_ptr = localtime(&tv.tv_sec);
     pos = bs_strappendf(
         buf, BS_LOG_MAX_BUF_SIZE, pos,
@@ -180,8 +178,7 @@ void verify_log_output_equals_at(
     int fd,
     const char *expected_str)
 {
-    char buf[BS_LOG_MAX_BUF_SIZE + 1];
-    memset(buf, 0, sizeof(buf));
+    char buf[BS_LOG_MAX_BUF_SIZE + 1] = {};
 
     size_t timestamp_len = strlen("YYYY-MM-DD hh:mm:ss.ccc");
     size_t expected_len = 0;
