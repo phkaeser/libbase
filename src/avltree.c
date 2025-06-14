@@ -25,7 +25,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
 
 /* == Declarations ========================================================= */
 
@@ -334,7 +333,7 @@ void bs_avltree_flush(bs_avltree_t *tree_ptr)
 
         /* store parent node, then clear bottom-most node */
         parent_ptr = node_ptr->parent_ptr;
-        memset(node_ptr, 0, sizeof(bs_avltree_node_t));
+        *node_ptr = (bs_avltree_node_t){};
         if (NULL != tree_ptr->destroy) {
             tree_ptr->destroy(node_ptr);
         }
@@ -364,8 +363,8 @@ void bs_avltree_node_replace(bs_avltree_t *tree_ptr,
                              bs_avltree_node_t *old_node_ptr,
                              bs_avltree_node_t *new_node_ptr)
 {
-    memcpy(new_node_ptr, old_node_ptr, sizeof(bs_avltree_node_t));
-    memset(old_node_ptr, 0, sizeof(bs_avltree_node_t));
+    *new_node_ptr = *old_node_ptr;
+    *old_node_ptr = (bs_avltree_node_t){};
     if (NULL != tree_ptr->destroy) {
         tree_ptr->destroy(old_node_ptr);
     }
@@ -451,9 +450,9 @@ void bs_avltree_node_exchange(bs_avltree_t *tree_ptr,
         pos2 = 1;
     }
 
-    memcpy(&tmp_node, node1_ptr, sizeof(bs_avltree_node_t));
-    memcpy(node1_ptr, node2_ptr, sizeof(bs_avltree_node_t));
-    memcpy(node2_ptr, &tmp_node, sizeof(bs_avltree_node_t));
+    tmp_node = *node1_ptr;
+    *node1_ptr = *node2_ptr;
+    *node2_ptr = tmp_node;
 
     /* Catch the case where we just exchanged direct neighbors */
     if (node1_ptr->parent_ptr == node1_ptr) {
@@ -534,7 +533,7 @@ void bs_avltree_node_delete(bs_avltree_t *tree_ptr,
     if (NULL == node_ptr->parent_ptr) {
         tree_ptr->root_ptr = NULL;
         tree_ptr->nodes--;
-        memset(node_ptr, 0, sizeof(bs_avltree_node_t));
+        *node_ptr = (bs_avltree_node_t){};
         return;
     }
 
@@ -548,7 +547,7 @@ void bs_avltree_node_delete(bs_avltree_t *tree_ptr,
     } else {
         parent_ptr->right_ptr = NULL;
     }
-    memset(node_ptr, 0, sizeof(bs_avltree_node_t));
+    *node_ptr = (bs_avltree_node_t){};
 
     do {
         // Adjust balance according to which side the removal happened.
@@ -830,8 +829,8 @@ const bs_test_case_t          bs_avltree_test_cases[] = {
 /* ------------------------------------------------------------------------- */
 void bs_avltree_test_random(bs_test_t *test_ptr)
 {
-    char                      test_flag[BS_AVLTREE_TEST_VALUE_MAX];
-    int                       random_values[BS_AVLTREE_TEST_VALUES];
+    char                      test_flag[BS_AVLTREE_TEST_VALUE_MAX] = {};
+    int                       random_values[BS_AVLTREE_TEST_VALUES] = {};
     bs_avltree_test_node_t    *node_ptr;
     bs_avltree_t              *tree_ptr;
     int                       value_idx, value;
@@ -842,7 +841,6 @@ void bs_avltree_test_random(bs_test_t *test_ptr)
 
     /* setup BS_AVLTREE_TEST_NUM random values. Multiple occurrences OK */
     srand(12345);
-    memset(&random_values, 0, sizeof(random_values));
     max_value = 0;
     min_value = BS_AVLTREE_TEST_VALUE_MAX;
     for (value_idx = 0; value_idx < BS_AVLTREE_TEST_VALUES; value_idx++) {
@@ -859,7 +857,6 @@ void bs_avltree_test_random(bs_test_t *test_ptr)
 
     /* run through all random values and add each one to the tree */
     nodes = 0;
-    memset(&test_flag, 0, sizeof(test_flag));
     for (value_idx = 0; value_idx < BS_AVLTREE_TEST_VALUES; value_idx++) {
         value = random_values[value_idx];
 

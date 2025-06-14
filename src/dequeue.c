@@ -21,7 +21,6 @@
 #include <libbase/dequeue.h>
 #include <libbase/test.h>
 #include <stddef.h>
-#include <string.h>
 
 /* == Tests =============================================================== */
 
@@ -40,10 +39,8 @@ const bs_test_case_t          bs_dequeue_test_cases[] = {
  */
 void bs_dequeue_front_test(bs_test_t *test_ptr)
 {
-    bs_dequeue_t              queue;
+    bs_dequeue_t              queue = {};
     bs_dequeue_node_t         node1, node2;
-
-    memset(&queue, 0, sizeof(bs_dequeue_t));
 
     BS_TEST_VERIFY_EQ(test_ptr, bs_dequeue_pop(&queue), NULL);
 
@@ -70,10 +67,8 @@ void bs_dequeue_front_test(bs_test_t *test_ptr)
  */
 void bs_dequeue_back_test(bs_test_t *test_ptr)
 {
-    bs_dequeue_t              queue;
+    bs_dequeue_t              queue = {};
     bs_dequeue_node_t         node1, node2, node3;
-
-    memset(&queue, 0, sizeof(bs_dequeue_t));
 
     bs_dequeue_push_back(&queue, &node1);
     bs_dequeue_push_back(&queue, &node2);
