@@ -122,6 +122,42 @@ bool bs_dllist_all(
     bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
     void *ud_ptr);
 
+/**
+ * Defines an iterator for the node.
+ *
+ * @param dlnode_ptr
+ *
+ * @return The next node from iterating, or NULL if there are no more.
+ */
+typedef bs_dllist_node_t *(*bs_dllist_node_iterator_t)(
+    bs_dllist_node_t *dlnode_ptr);
+
+/**
+ * NULL-safe forward iterator: Returns `dlnode_ptr->next_ptr`.
+ *
+ * @param dlnode_ptr
+ *
+ * @return @ref bs_dllist_node_t::next_ptr for `dlnode_ptr` or NULL if
+ *     dlnode_ptr is NULL.
+ */
+static inline bs_dllist_node_t *bs_dllist_node_iterator_forward(
+    bs_dllist_node_t *dlnode_ptr) {
+    return dlnode_ptr ? dlnode_ptr->next_ptr : dlnode_ptr;
+}
+
+/**
+ * NULL-safe backward iterator: Returns `dlnode_ptr->prev_ptr`.
+ *
+ * @param dlnode_ptr
+ *
+ * @return @ref bs_dllist_node_t::prev_ptr for `dlnode_ptr` or NULL if
+ *     dlnode_ptr is NULL.
+ */
+static inline bs_dllist_node_t *bs_dllist_node_iterator_backward(
+    bs_dllist_node_t *dlnode_ptr) {
+    return dlnode_ptr ? dlnode_ptr->prev_ptr : dlnode_ptr;
+}
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_dllist_test_cases[];
 
