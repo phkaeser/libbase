@@ -302,6 +302,7 @@ static void bs_dllist_test_find(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each_dtor(bs_test_t *test_ptr);
 static void bs_dllist_test_all(bs_test_t *test_ptr);
+static void bs_dllist_test_iterator(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_dllist_test_cases[] = {
     { 1, "push/pop back", bs_dllist_test_back },
@@ -312,6 +313,7 @@ const bs_test_case_t          bs_dllist_test_cases[] = {
     { 1, "for_each", bs_dllist_test_for_each },
     { 1, "for_each_dtor", bs_dllist_test_for_each_dtor },
     { 1, "all", bs_dllist_test_all },
+    { 1, "iterator", bs_dllist_test_iterator },
     { 0, NULL, NULL }
 };
 
@@ -572,6 +574,25 @@ void bs_dllist_test_all(bs_test_t *test_ptr)
     calls = 0;
     BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_all(&list, test_all, &calls));
     BS_TEST_VERIFY_EQ(test_ptr, 2, calls);
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_dllist_test_iterator(bs_test_t *test_ptr)
+{
+    bs_dllist_t list = {};
+    bs_dllist_node_t n1 = {}, n2 = {};
+    bs_dllist_push_back(&list, &n1);
+    bs_dllist_push_back(&list, &n2);
+
+    bs_dllist_node_iterator_t it = bs_dllist_node_iterator_forward;
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, it(NULL));
+    BS_TEST_VERIFY_EQ(test_ptr, &n2, it(&n1));
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, it(&n2));
+
+    it = bs_dllist_node_iterator_backward;
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, it(NULL));
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, it(&n1));
+    BS_TEST_VERIFY_EQ(test_ptr, &n1, it(&n2));
 }
 
 /* == End of dllist.c ===================================================== */
