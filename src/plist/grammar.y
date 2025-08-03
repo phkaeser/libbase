@@ -62,15 +62,15 @@ struct YYLTYPE;  // For IWYU.
         const char* msg_ptr);
 }
 
-%token TK_LPAREN
-%token TK_RPAREN
-%token TK_LBRACE
-%token TK_RBRACE
-%token TK_COMMA
-%token TK_EQUAL
-%token TK_SEMICOLON
-%token <string> TK_STRING
-%token <string> TK_QUOTED_STRING
+%token TK_LPAREN "("
+%token TK_RPAREN ")"
+%token TK_LBRACE "{"
+%token TK_RBRACE "}"
+%token TK_COMMA ","
+%token TK_EQUAL "="
+%token TK_SEMICOLON ";"
+%token <string> TK_IDENTIFIER_STRING "identifier string"
+%token <string> TK_QUOTED_STRING "quoted string"
 
 %destructor { free($$); } <string>
 
@@ -84,7 +84,7 @@ object:         string
                 | dict
                 | array;
 
-string:         TK_STRING {
+string:         TK_IDENTIFIER_STRING {
     bspl_string_t *string_ptr = bspl_string_create($1);
     free($1);
     bs_ptr_stack_push(&ctx_ptr->object_stack,
@@ -92,8 +92,14 @@ string:         TK_STRING {
                 | TK_QUOTED_STRING {
     size_t len = strlen($1);
     BS_ASSERT(2 <= len);  // It is supposed to be quoted.
-    $1[len - 1] = '\0';
-    bspl_string_t *string_ptr = bspl_string_create($1 + 1);
+    // Un-escape the escaped backslash and double quotes.
+    char *dest_ptr = $1;
+    for (size_t i = 1; i < len - 1; ++i, ++dest_ptr) {
+        if ($1[i] == '\\') ++i;
+        *dest_ptr = $1[i];
+    }
+    *dest_ptr = '\0';
+    bspl_string_t *string_ptr = bspl_string_create($1);
     free($1);
     bs_ptr_stack_push(&ctx_ptr->object_stack,
                       bspl_object_from_string(string_ptr)); };
