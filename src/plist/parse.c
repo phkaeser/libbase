@@ -121,11 +121,13 @@ bspl_object_t *_bspl_create_object_from_plist_scanner(yyscan_t scanner)
 static void test_from_string(bs_test_t *test_ptr);
 static void test_from_file(bs_test_t *test_ptr);
 static void test_from_data(bs_test_t *test_ptr);
+static void test_escaped_string(bs_test_t *test_ptr);
 
 const bs_test_case_t bspl_plist_test_cases[] = {
     { 1, "from_string", test_from_string },
     { 1, "from_file", test_from_file },
     { 1, "from_data", test_from_data },
+    { 1, "escaped_string", test_escaped_string },
     { 0, NULL, NULL }
 };
 
@@ -277,6 +279,20 @@ void test_from_data(bs_test_t *test_ptr)
         "value",
         bspl_string_value(bspl_string_from_object(object_ptr)));
     bspl_object_unref(object_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+void test_escaped_string(bs_test_t *test_ptr)
+{
+    bspl_object_t *o;
+    // A string with escaped backslash and double quote.
+    o = bspl_create_object_from_plist_string("\"backslash\\\\dquote\\\"end\"");
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, o);
+    BS_TEST_VERIFY_STREQ(
+        test_ptr,
+        "backslash\\dquote\"end",
+        bspl_string_value(bspl_string_from_object(o)));
+    bspl_object_unref(o);
 }
 
 /* == End of plist.c ======================================================= */
