@@ -70,7 +70,7 @@ ws                  [[:blank:]\r\n]
 \"([^\"]|(\\\")|(\\\\))*\" { yylval->string = logged_strdup(yytext);
                              return TK_QUOTED_STRING; }
 [a-zA-Z0-9_.$]+     { yylval->string = logged_strdup(yytext);
-                      return TK_STRING; }
+                      return TK_IDENTIFIER_STRING; }
 "("                 { return TK_LPAREN; }
 ")"                 { return TK_RPAREN; }
 "{"                 { return TK_LBRACE; }

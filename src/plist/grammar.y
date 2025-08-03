@@ -62,15 +62,15 @@ struct YYLTYPE;  // For IWYU.
         const char* msg_ptr);
 }
 
-%token TK_LPAREN
-%token TK_RPAREN
-%token TK_LBRACE
-%token TK_RBRACE
-%token TK_COMMA
-%token TK_EQUAL
-%token TK_SEMICOLON
-%token <string> TK_STRING
-%token <string> TK_QUOTED_STRING
+%token TK_LPAREN "("
+%token TK_RPAREN ")"
+%token TK_LBRACE "{"
+%token TK_RBRACE "}"
+%token TK_COMMA ","
+%token TK_EQUAL "="
+%token TK_SEMICOLON ";"
+%token <string> TK_IDENTIFIER_STRING "identifier string"
+%token <string> TK_QUOTED_STRING "quoted string"
 
 %destructor { free($$); } <string>
 
@@ -84,7 +84,7 @@ object:         string
                 | dict
                 | array;
 
-string:         TK_STRING {
+string:         TK_IDENTIFIER_STRING {
     bspl_string_t *string_ptr = bspl_string_create($1);
     free($1);
     bs_ptr_stack_push(&ctx_ptr->object_stack,
