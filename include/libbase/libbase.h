@@ -29,6 +29,7 @@
 #include "def.h"
 #include "dequeue.h"
 #include "dllist.h"
+#include "dynbuf.h"
 #include "file.h"
 #include "gfxbuf.h"
 #include "gfxbuf_xpm.h"

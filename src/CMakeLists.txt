@@ -21,6 +21,7 @@ SET(PUBLIC_HEADER_FILES
   def.h
   dequeue.h
   dllist.h
+  dynbuf.h
   file.h
   gfxbuf.h
   gfxbuf_xpm.h
@@ -45,6 +46,7 @@ SET(SOURCES
   c2x_compat.c
   dequeue.c
   dllist.c
+  dynbuf.c
   file.c
   gfxbuf.c
   gfxbuf_xpm.c
