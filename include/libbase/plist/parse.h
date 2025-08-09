@@ -50,6 +50,15 @@ bspl_object_t *bspl_create_object_from_plist_data(
     const uint8_t *data_ptr, size_t data_size);
 
 /**
+ * Parses the plist data from the dynamic buffer.
+ *
+ * @param dynbuf_ptr
+ *
+ * @return The de-serialized object, or NULL on error.
+ */
+bspl_object_t *bspl_create_object_from_dynbuf(bs_dynbuf_t *dynbuf_ptr);
+
+/**
  * Parses the file `fname_ptr` and returns the de-serialized object.
  *
  * @param fname_ptr

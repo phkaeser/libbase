@@ -95,6 +95,14 @@ bspl_object_t *bspl_create_object_from_plist_file(const char *fname_ptr)
     return obj;
 }
 
+/* ------------------------------------------------------------------------- */
+bspl_object_t *bspl_create_object_from_dynbuf(bs_dynbuf_t *dynbuf_ptr)
+{
+    return bspl_create_object_from_plist_data(
+        dynbuf_ptr->data_ptr,
+        dynbuf_ptr->length);
+}
+
 /* == Local (static) methods =============================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -121,15 +129,19 @@ bspl_object_t *_bspl_create_object_from_plist_scanner(yyscan_t scanner)
 static void test_from_string(bs_test_t *test_ptr);
 static void test_from_file(bs_test_t *test_ptr);
 static void test_from_data(bs_test_t *test_ptr);
+static void test_from_dynbuf(bs_test_t *test_ptr);
 static void test_escaped_string(bs_test_t *test_ptr);
 
 const bs_test_case_t bspl_plist_test_cases[] = {
     { 1, "from_string", test_from_string },
     { 1, "from_file", test_from_file },
     { 1, "from_data", test_from_data },
+    { 1, "from_dynbuf", test_from_dynbuf },
     { 1, "escaped_string", test_escaped_string },
     { 0, NULL, NULL }
 };
+
+static const uint8_t _test_data[] = { 'v', 'a', 'l', 'u', 'e' };
 
 /* ------------------------------------------------------------------------- */
 /** Tests plist object creation from string. */
@@ -268,11 +280,27 @@ void test_from_file(bs_test_t *test_ptr)
 /** Tests plist object creation from a sized data buffer. */
 void test_from_data(bs_test_t *test_ptr)
 {
-    const uint8_t data[] = { 'v', 'a', 'l', 'u', 'e' };
-
     // A string.
     bspl_object_t *object_ptr = bspl_create_object_from_plist_data(
-        data, sizeof(data));
+        _test_data, sizeof(_test_data));
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, object_ptr);
+    BS_TEST_VERIFY_STREQ(
+        test_ptr,
+        "value",
+        bspl_string_value(bspl_string_from_object(object_ptr)));
+    bspl_object_unref(object_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests plist object creation from a dynamic data buffer. */
+void test_from_dynbuf(bs_test_t *test_ptr)
+{
+    bs_dynbuf_t dynbuf = {
+        .data_ptr = (void*)_test_data,
+        .length  = sizeof(_test_data)
+    };
+    bspl_object_t *object_ptr = bspl_create_object_from_dynbuf(&dynbuf);
+
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, object_ptr);
     BS_TEST_VERIFY_STREQ(
         test_ptr,
