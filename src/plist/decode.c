@@ -142,6 +142,7 @@ bool bspl_enum_name_to_value(
     const char *name_ptr,
     int *value_ptr)
 {
+    if (NULL == name_ptr) return false;
     for (; NULL != enum_desc_ptr->name_ptr; ++enum_desc_ptr) {
         if (0 == strcmp(enum_desc_ptr->name_ptr, name_ptr)) {
             *value_ptr = enum_desc_ptr->value;
@@ -772,6 +773,7 @@ void test_enum_translate(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_enum_name_to_value(d, "Off", &v));
     BS_TEST_VERIFY_EQ(test_ptr, 0, v);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_enum_name_to_value(d, "Bad", &v));
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_enum_name_to_value(d, NULL, &v));
 
     const char *n_ptr;
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_enum_value_to_name(d, true, &n_ptr));
