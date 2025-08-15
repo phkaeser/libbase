@@ -142,6 +142,12 @@ bspl_string_t *bspl_string_create(const char *value_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+const char *bspl_string_value_from_object(bspl_object_t *object_ptr)
+{
+    return bspl_string_value(bspl_string_from_object(object_ptr));
+}
+
+/* ------------------------------------------------------------------------- */
 const char *bspl_string_value(const bspl_string_t *string_ptr)
 {
     if (NULL == string_ptr) return NULL;  // Guard clause.
