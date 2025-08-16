@@ -24,6 +24,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #if !defined(BS_TEST_DATA_DIR)
 /** Directory root for looking up test data. See @ref bs_test_resolve_path. */
@@ -155,13 +156,27 @@ void test_success(bs_test_t *test_ptr)
     }
     BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
     BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
+
+    int stdout_fd, stderr_fd;
+    bs_subprocess_get_fds(sp_ptr, NULL, &stdout_fd, &stderr_fd);
+    bs_dynbuf_t stdout_buf;
+    bs_dynbuf_init(&stdout_buf, 1024, SIZE_MAX);
+    bs_dynbuf_read(&stdout_buf, stdout_fd);
+    bs_dynbuf_t stderr_buf;
+    bs_dynbuf_init(&stderr_buf, 1024, SIZE_MAX);
+    bs_dynbuf_read(&stderr_buf, stderr_fd);
+
     BS_TEST_VERIFY_STREQ(
-        test_ptr, "test stdout: subprocess_test_success\nenv: WORKS\n",
-        bs_subprocess_stdout(sp_ptr));
+        test_ptr,
+        "test stdout: subprocess_test_success\nenv: WORKS\n",
+        stdout_buf.data_ptr);
     BS_TEST_VERIFY_STREQ(
-        test_ptr, "test stderr: alpha\n",
-        bs_subprocess_stderr(sp_ptr));
+        test_ptr,
+        "test stderr: alpha\n",
+        stderr_buf.data_ptr);
     bs_subprocess_destroy(sp_ptr);
+    bs_dynbuf_fini(&stderr_buf);
+    bs_dynbuf_fini(&stdout_buf);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -179,13 +194,25 @@ void test_success_cmdline(bs_test_t *test_ptr)
     }
     BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
     BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
+
+    int stdout_fd, stderr_fd;
+    bs_subprocess_get_fds(sp_ptr, NULL, &stdout_fd, &stderr_fd);
+    bs_dynbuf_t stdout_buf;
+    bs_dynbuf_init(&stdout_buf, 1024, SIZE_MAX);
+    bs_dynbuf_read(&stdout_buf, stdout_fd);
+    bs_dynbuf_t stderr_buf;
+    bs_dynbuf_init(&stderr_buf, 1024, SIZE_MAX);
+    bs_dynbuf_read(&stderr_buf, stderr_fd);
+
     BS_TEST_VERIFY_STREQ(
         test_ptr, "test stdout: subprocess_test_success\nenv: CMD\n",
-        bs_subprocess_stdout(sp_ptr));
+        stdout_buf.data_ptr);
     BS_TEST_VERIFY_STREQ(
         test_ptr, "test stderr: alpha\n",
-        bs_subprocess_stderr(sp_ptr));
+        stderr_buf.data_ptr);
     bs_subprocess_destroy(sp_ptr);
+    bs_dynbuf_fini(&stderr_buf);
+    bs_dynbuf_fini(&stdout_buf);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -206,12 +233,27 @@ void test_success_twice(bs_test_t *test_ptr)
         }
         BS_TEST_VERIFY_EQ(test_ptr, 0, exit_status);
         BS_TEST_VERIFY_EQ(test_ptr, 0, signal_number);
+
+        int stdout_fd, stderr_fd;
+        bs_subprocess_get_fds(sp_ptr, NULL, &stdout_fd, &stderr_fd);
+        bs_dynbuf_t stdout_buf;
+        bs_dynbuf_init(&stdout_buf, 1024, SIZE_MAX);
+        bs_dynbuf_read(&stdout_buf, stdout_fd);
+        bs_dynbuf_t stderr_buf;
+        bs_dynbuf_init(&stderr_buf, 1024, SIZE_MAX);
+        bs_dynbuf_read(&stderr_buf, stderr_fd);
+
         BS_TEST_VERIFY_STREQ(
-            test_ptr, "test stdout: subprocess_test_success\nenv: (null)\n",
-            bs_subprocess_stdout(sp_ptr));
+            test_ptr,
+            "test stdout: subprocess_test_success\nenv: (null)\n",
+            stdout_buf.data_ptr);
         BS_TEST_VERIFY_STREQ(
-            test_ptr, "test stderr: alpha\n",
-            bs_subprocess_stderr(sp_ptr));
+            test_ptr,
+            "test stderr: alpha\n",
+            stderr_buf.data_ptr);
+
+        bs_dynbuf_fini(&stderr_buf);
+        bs_dynbuf_fini(&stdout_buf);
     }
     bs_subprocess_destroy(sp_ptr);
 }

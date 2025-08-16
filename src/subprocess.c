@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <libbase/assert.h>
+#include <libbase/dynbuf.h>
 #include <libbase/log.h>
 #include <libbase/log_wrappers.h>
 #include <libbase/sock.h>
@@ -77,18 +78,6 @@ struct _bs_subprocess_t {
     int                       stdout_read;
     /** File descriptor for stderr (read) */
     int                       stderr_read;
-    /** Points to the buffer for stdout */
-    char                      *stdout_buf_ptr;
-    /** Position within `stdout_buf_ptr`. */
-    size_t                    stdout_pos;
-    /** Size of `stdout_buf_ptr`. */
-    size_t                    stdout_size;
-    /** Points to the buffer for stderr */
-    char                      *stderr_buf_ptr;
-    /** Position within `stderr_buf_ptr`. */
-    size_t                    stderr_pos;
-    /** Size of `stderr_buf_ptr`. */
-    size_t                    stderr_size;
 };
 
 /** Deterministic Finite Automation transition. */
@@ -105,7 +94,6 @@ static bs_subprocess_t *_subprocess_create_argv(
 static int _waitpid_nointr(bs_subprocess_t *subprocess_ptr, bool wait);
 static void _close_fd(int *fd_ptr);
 static bool _create_pipe_fds(int *read_fd_ptr, int *write_fd_ptr);
-static void _flush_stdout_stderr(bs_subprocess_t *subprocess_ptr);
 static void _subprocess_child(
     bs_subprocess_t *subprocess_ptr,
     int stdin_read, int stdout_write, int stderr_write);
@@ -259,13 +247,6 @@ void bs_subprocess_destroy(bs_subprocess_t *subprocess_ptr)
         bs_subprocess_stop(subprocess_ptr);
     }
 
-    if (NULL != subprocess_ptr->stderr_buf_ptr) {
-        free(subprocess_ptr->stderr_buf_ptr);
-    }
-    if (NULL != subprocess_ptr->stdout_buf_ptr) {
-        free(subprocess_ptr->stdout_buf_ptr);
-    }
-
     if (NULL != subprocess_ptr->env_vars_ptr) {
         _free_env_var_list(subprocess_ptr->env_vars_ptr);
         subprocess_ptr->env_vars_ptr = NULL;
@@ -315,9 +296,6 @@ bool bs_subprocess_start(bs_subprocess_t *subprocess_ptr)
     if (-1 != stdout_write) _close_fd(&stdout_write);
     if (-1 != stderr_write) _close_fd(&stderr_write);
 
-    subprocess_ptr->stdout_pos = 0;
-    subprocess_ptr->stderr_pos = 0;
-
     // All worked -- go ahead.
     if (0 < subprocess_ptr->pid) {
         bs_sock_set_blocking(subprocess_ptr->stdout_read, false);
@@ -361,7 +339,6 @@ void bs_subprocess_stop(bs_subprocess_t *subprocess_ptr)
     }
 
     // Here, the process is gone. Flush stdout & stderr, close sockets.
-    _flush_stdout_stderr(subprocess_ptr);
     _close_fd(&subprocess_ptr->stdin_write);
     _close_fd(&subprocess_ptr->stdout_read);
     _close_fd(&subprocess_ptr->stderr_read);
@@ -373,7 +350,6 @@ bool bs_subprocess_terminated(bs_subprocess_t *subprocess_ptr,
                               int *signal_number_ptr)
 {
     if (0 != subprocess_ptr->pid) {
-        _flush_stdout_stderr(subprocess_ptr);
         if (0 >= _waitpid_nointr(subprocess_ptr, false)) {
             // An error or no signal. Assume it's still up.
             return false;
@@ -413,18 +389,6 @@ pid_t bs_subprocess_pid(bs_subprocess_t *subprocess_ptr)
     return subprocess_ptr->pid;
 }
 
-/* ------------------------------------------------------------------------- */
-const char *bs_subprocess_stdout(const bs_subprocess_t *subprocess_ptr)
-{
-    return subprocess_ptr->stdout_buf_ptr;
-}
-
-/* ------------------------------------------------------------------------- */
-const char *bs_subprocess_stderr(const bs_subprocess_t *subprocess_ptr)
-{
-    return subprocess_ptr->stderr_buf_ptr;
-}
-
 /* == Local methods ======================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -441,23 +405,6 @@ bs_subprocess_t *_subprocess_create_argv(
     subprocess_ptr->file_ptr = argv_ptr[0];
     subprocess_ptr->argv_ptr = argv_ptr;
     subprocess_ptr->env_vars_ptr = env_vars_ptr;
-
-    // A buffer for stdout and stderr. Keep a char for a terminating NUL.
-    size_t buf_size = 4096;
-    subprocess_ptr->stdout_buf_ptr = malloc(buf_size + 1);
-    if (NULL == subprocess_ptr->stdout_buf_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed malloc(%zu)", buf_size + 1);
-        bs_subprocess_destroy(subprocess_ptr);
-        return NULL;
-    }
-    subprocess_ptr->stdout_size = buf_size;
-    subprocess_ptr->stderr_buf_ptr = malloc(buf_size + 1);
-    if (NULL == subprocess_ptr->stderr_buf_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed malloc(%zu)", buf_size + 1);
-        bs_subprocess_destroy(subprocess_ptr);
-        return NULL;
-    }
-    subprocess_ptr->stderr_size = buf_size;
 
     subprocess_ptr->stdin_write = -1;
     subprocess_ptr->stdout_read = -1;
@@ -516,40 +463,6 @@ void _close_fd(int *fd_ptr)
         bs_log(BS_WARNING | BS_ERRNO, "Failed close(%d)", *fd_ptr);
     }
     *fd_ptr = -1;
-}
-
-/* ------------------------------------------------------------------------- */
-/** Helper: Reads all of stdout and stderr into the buffers. */
-void _flush_stdout_stderr(bs_subprocess_t *subprocess_ptr)
-{
-    ssize_t read_bytes;
-
-    read_bytes = read(
-        subprocess_ptr->stdout_read,
-        subprocess_ptr->stdout_buf_ptr + subprocess_ptr->stdout_pos,
-        subprocess_ptr->stdout_size - subprocess_ptr->stdout_pos);
-    if (0 > read_bytes && (EAGAIN != errno || EWOULDBLOCK != errno)) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed read(%d, %p, %zu)",
-               subprocess_ptr->stdout_read,
-               subprocess_ptr->stdout_buf_ptr + subprocess_ptr->stdout_pos,
-               subprocess_ptr->stdout_size - subprocess_ptr->stdout_pos);
-    } else if (0 <= read_bytes) {
-        subprocess_ptr->stdout_pos += read_bytes;
-        subprocess_ptr->stdout_buf_ptr[subprocess_ptr->stdout_pos] = '\0';
-    }
-    read_bytes = read(
-        subprocess_ptr->stderr_read,
-        subprocess_ptr->stderr_buf_ptr + subprocess_ptr->stderr_pos,
-        subprocess_ptr->stderr_size - subprocess_ptr->stderr_pos);
-    if (0 > read_bytes && (EAGAIN != errno || EWOULDBLOCK != errno)) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed read(%d, %p, %zu)",
-               subprocess_ptr->stderr_read,
-               subprocess_ptr->stderr_buf_ptr + subprocess_ptr->stderr_pos,
-               subprocess_ptr->stderr_size - subprocess_ptr->stderr_pos);
-    } else if (0 <= read_bytes) {
-        subprocess_ptr->stderr_pos += read_bytes;
-        subprocess_ptr->stderr_buf_ptr[subprocess_ptr->stderr_pos] = '\0';
-    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1018,9 +931,16 @@ void test_nonexisting(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ(test_ptr, INT_MIN, exit_status);
     BS_TEST_VERIFY_EQ(test_ptr, SIGABRT, signal_number);
 
+    int fd;
+    bs_subprocess_get_fds(sp_ptr, NULL, NULL, &fd);
+    bs_dynbuf_t buf;
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_init(&buf, 1024, SIZE_MAX));
+    bs_dynbuf_read(&buf, fd);
+
     BS_TEST_VERIFY_STRMATCH(
-        test_ptr, bs_subprocess_stderr(sp_ptr),
+        test_ptr, buf.data_ptr,
         ".*ERROR.*Failed execvp\\(\\./subprocess_test_does_not_exist");
+    bs_dynbuf_fini(&buf);
     bs_subprocess_destroy(sp_ptr);
 }
 
