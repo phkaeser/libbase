@@ -301,6 +301,7 @@ bspl_object_t *bspl_array_at(
     bspl_array_t *array_ptr,
     size_t index)
 {
+    if (index >= bs_ptr_vector_size(&array_ptr->object_vector)) return NULL;
     return bs_ptr_vector_at(&array_ptr->object_vector, index);
 }
 
@@ -599,6 +600,7 @@ void test_array(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_EQ(test_ptr, obj0_ptr, bspl_array_at(array_ptr, 0));
     BS_TEST_VERIFY_EQ(test_ptr, obj1_ptr, bspl_array_at(array_ptr, 1));
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, bspl_array_at(array_ptr, 2));
 
     BS_TEST_VERIFY_EQ(
         test_ptr,
