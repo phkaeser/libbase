@@ -148,11 +148,6 @@ void bs_subprocess_get_fds(bs_subprocess_t *subprocess_ptr,
  */
 pid_t bs_subprocess_pid(bs_subprocess_t *subprocess_ptr);
 
-/** Provides a pointer to the stdout buffer for |subprocess_ptr|. */
-const char *bs_subprocess_stdout(const bs_subprocess_t *subprocess_ptr);
-/** Provides a pointer to the stderr buffer for |subprocess_ptr|. */
-const char *bs_subprocess_stderr(const bs_subprocess_t *subprocess_ptr);
-
 /** Unit tests. */
 extern const bs_test_case_t   bs_subprocess_test_cases[];
 
