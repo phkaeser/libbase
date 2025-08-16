@@ -50,21 +50,39 @@ bool bs_dynbuf_init(
         return false;
     }
 
-    dynbuf_ptr->data_ptr = logged_calloc(1, initial_capacity);
+    *dynbuf_ptr = (bs_dynbuf_t){
+        .data_ptr = logged_calloc(1, initial_capacity),
+        .capacity = initial_capacity,
+        .max_capacity = max_capacity,
+        .unmanaged = false
+    };
     if (NULL == dynbuf_ptr->data_ptr) return false;
-    dynbuf_ptr->capacity = initial_capacity;
-    dynbuf_ptr->max_capacity = max_capacity;
-
     return true;
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_dynbuf_init_unmanaged(
+    bs_dynbuf_t *dynbuf_ptr,
+    void *data_ptr,
+    size_t capacity)
+{
+    *dynbuf_ptr = (bs_dynbuf_t){
+        .data_ptr = data_ptr,
+        .length = 0,
+        .capacity = capacity,
+        .max_capacity = capacity,
+        .unmanaged = true
+    };
 }
 
 /* ------------------------------------------------------------------------- */
 void bs_dynbuf_fini(bs_dynbuf_t *dynbuf_ptr)
 {
     if (NULL != dynbuf_ptr->data_ptr) {
-        free(dynbuf_ptr->data_ptr);
+        if (!dynbuf_ptr->unmanaged) free(dynbuf_ptr->data_ptr);
         dynbuf_ptr->data_ptr = NULL;
     }
+    dynbuf_ptr->unmanaged = false;
 
     dynbuf_ptr->capacity = 0;
 }
@@ -191,6 +209,21 @@ void test_dynbuf_read(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 5, d.length);
     BS_TEST_VERIFY_EQ(test_ptr, 0, memcmp("abcd\n", d.data_ptr, d.length));
     bs_dynbuf_fini(&d);
+
+    char buf[6];
+    bs_dynbuf_init_unmanaged(&d, buf, sizeof(buf));
+    fd = open(bs_test_resolve_path("data/abcd.txt"), 0);
+    if (0 >= fd) {
+        BS_TEST_FAIL(test_ptr, "Failed open(\"%s\", 0)",
+                     bs_test_resolve_path("data/string.plist"));
+        return;
+    }
+    BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, 0 == bs_dynbuf_read(&d, fd));
+    close(fd);
+
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 5, d.length);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, memcmp("abcd\n", d.data_ptr, d.length));
+    bs_dynbuf_fini(&d);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -205,6 +238,21 @@ void test_dynbuf_read_capped(bs_test_t *test_ptr)
         return;
     }
     BS_TEST_VERIFY_TRUE(test_ptr, -1 == bs_dynbuf_read(&d, fd));
+    close(fd);
+
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 3, d.length);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, memcmp("abc", d.data_ptr, d.length));
+    bs_dynbuf_fini(&d);
+
+    char buf[3];
+    bs_dynbuf_init_unmanaged(&d, buf, sizeof(buf));
+    fd = open(bs_test_resolve_path("data/abcd.txt"), 0);
+    if (0 >= fd) {
+        BS_TEST_FAIL(test_ptr, "Failed open(\"%s\", 0)",
+                     bs_test_resolve_path("data/string.plist"));
+        return;
+    }
+    BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, -1 == bs_dynbuf_read(&d, fd));
     close(fd);
 
     BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 3, d.length);
