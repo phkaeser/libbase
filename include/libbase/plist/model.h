@@ -87,6 +87,17 @@ bspl_object_t *bspl_object_from_string(bspl_string_t *string_ptr);
 bspl_string_t *bspl_string_from_object(bspl_object_t *object_ptr);
 
 /**
+ * Returns value of the string object.
+ *
+ * Convenience wrapper for bspl_string_value(bspl_string_from_object(...)).
+ *
+ * @param object_ptr
+ *
+ * @return Pointer to the string object's value or NULL it not a string.
+ */
+const char *bspl_string_value_from_object(bspl_object_t *object_ptr);
+
+/**
  * Returns the value of the string.
  *
  * @param string_ptr
