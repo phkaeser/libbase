@@ -40,6 +40,8 @@ typedef struct {
     size_t                    capacity;
     /** Max permitted capacity of the buffer. */
     size_t                    max_capacity;
+    /** Whether it was initialized from an unmanaged data buffer. */
+    bool                      unmanaged;
 } bs_dynbuf_t;
 
 /**
@@ -55,6 +57,18 @@ bool bs_dynbuf_init(
     bs_dynbuf_t *dynbuf_ptr,
     size_t initial_capacity,
     size_t max_capacity);
+
+/**
+ * Initializes the buffer from an unowned and statically-sized data.
+ *
+ * @param dynbuf_ptr
+ * @param data_ptr            Must outlive dynbuf_ptr.
+ * @param capacity
+ */
+void bs_dynbuf_init_unmanaged(
+    bs_dynbuf_t *dynbuf_ptr,
+    void *data_ptr,
+    size_t capacity);
 
 /**
  * Un-initializes the buffer. Frees @ref bs_dynbuf_t::data_ptr.
