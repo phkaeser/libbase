@@ -48,10 +48,9 @@ typedef struct {
  * @param file_ptr Name of the executable file. The subprocess module will
  *     invoke execvp() for execution, hence this will lookup the executable
  *     from PATHs as the shell would.
- * @param argv_ptr Pointer to a NULL-terminated list of args.
- *     Note: Unlike the convention to execvp(), this expects the real sequence
- *     of arguments. file_ptr will be inserted in position [0] when calling
- *     execvp().
+ * @param argv_ptr Pointer to a NULL-terminated list of args. Like execvp(),
+ *     the first element of argv_ptr should point to the filename associated
+ *     with the file being executed.
  * @param env_vars_ptr Points to an array of @ref bs_subprocess_environment_variable_t
  *     describing additional environment variables to set for the sub-process.
  *     The array must be concluded with a sentinel element, where key_ptr is
