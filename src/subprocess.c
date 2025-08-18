@@ -89,6 +89,7 @@ typedef struct {
 } dfa_transition_t;
 
 static bs_subprocess_t *_subprocess_create_argv(
+    const char *file_ptr,
     char **argv_ptr,
     _env_var_t *env_vars_ptr);
 static int _waitpid_nointr(bs_subprocess_t *subprocess_ptr, bool wait);
@@ -177,24 +178,18 @@ bs_subprocess_t *bs_subprocess_create(
     const char *const *argv_ptr,
     const bs_subprocess_environment_variable_t *env_vars_ptr)
 {
-    char **full_argv_ptr;
+    char **copied_argv_ptr;
 
     size_t argv_size = 0;
     while (NULL != argv_ptr[argv_size]) ++argv_size;
-    // Don't forget to alloc space for the sentinel NULL and file_ptr.
-    full_argv_ptr = (char**)logged_calloc(argv_size + 2, sizeof(char*));
-    if (NULL == full_argv_ptr) return NULL;
-
-    full_argv_ptr[0] = logged_strdup(file_ptr);
-    if (NULL == full_argv_ptr[0]) {
-        _free_argv_list(full_argv_ptr);
-        return NULL;
-    }
+    // Don't forget to alloc space for the sentinel NULL.
+    copied_argv_ptr = (char**)logged_calloc(argv_size + 1, sizeof(char*));
+    if (NULL == copied_argv_ptr) return NULL;
 
     for (size_t i = 0; i < argv_size; ++i) {
-        full_argv_ptr[i + 1] = logged_strdup(argv_ptr[i]);
-        if (NULL == full_argv_ptr[i + 1]) {
-            _free_argv_list(full_argv_ptr);
+        copied_argv_ptr[i] = logged_strdup(argv_ptr[i]);
+        if (NULL == copied_argv_ptr[i]) {
+            _free_argv_list(copied_argv_ptr);
             return NULL;
         }
     }
@@ -205,7 +200,7 @@ bs_subprocess_t *bs_subprocess_create(
         while (NULL != env_vars_ptr[env_var_size].name_ptr) ++env_var_size;
         env_var_ptr = logged_calloc(env_var_size + 1, sizeof(_env_var_t));
         if (NULL == env_var_ptr) {
-            _free_argv_list(full_argv_ptr);
+            _free_argv_list(copied_argv_ptr);
             return NULL;
         }
 
@@ -216,14 +211,13 @@ bs_subprocess_t *bs_subprocess_create(
                     strlen(env_vars_ptr[i].name_ptr),
                     env_vars_ptr[i].value_ptr)) {
                 _free_env_var_list(env_var_ptr);
-                _free_argv_list(full_argv_ptr);
+                _free_argv_list(copied_argv_ptr);
                 return NULL;
             }
         }
     }
 
-
-    return _subprocess_create_argv(full_argv_ptr, env_var_ptr);
+    return _subprocess_create_argv(file_ptr, copied_argv_ptr, env_var_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -237,7 +231,7 @@ bs_subprocess_t *bs_subprocess_create_cmdline(
         return NULL;
     }
 
-    return _subprocess_create_argv(argv_ptr, env_var_ptr);
+    return _subprocess_create_argv(argv_ptr[0], argv_ptr, env_var_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -254,9 +248,6 @@ void bs_subprocess_destroy(bs_subprocess_t *subprocess_ptr)
 
     if (NULL != subprocess_ptr->argv_ptr) {
         _free_argv_list(subprocess_ptr->argv_ptr);
-        // If argv_ptr was created, then file_ptr was argv_ptr[0], and thus it
-        // was already free()-ed.
-        subprocess_ptr->file_ptr = NULL;
     }
 
     if (NULL != subprocess_ptr->file_ptr) {
@@ -392,8 +383,17 @@ pid_t bs_subprocess_pid(bs_subprocess_t *subprocess_ptr)
 /* == Local methods ======================================================== */
 
 /* ------------------------------------------------------------------------- */
-/** Creates the subprocess from |argv_ptr|. argv_ptr[0] is the executable. */
+/**
+ * Creates the subprocess from |argv_ptr|.
+ *
+ * @param file_ptr            Will create a copy of file_ptr
+ * @param argv_ptr            Takes ownership of it.
+ * @param env_vars_ptr        Takes ownership of it.
+ *
+ * @return The subprocess handle or NULL on err.r
+ */
 bs_subprocess_t *_subprocess_create_argv(
+    const char *file_ptr,
     char **argv_ptr,
     _env_var_t *env_vars_ptr)
 {
@@ -402,7 +402,11 @@ bs_subprocess_t *_subprocess_create_argv(
     subprocess_ptr = (bs_subprocess_t*)logged_calloc(
         1, sizeof(bs_subprocess_t));
     if (NULL == subprocess_ptr) return NULL;
-    subprocess_ptr->file_ptr = argv_ptr[0];
+    subprocess_ptr->file_ptr = logged_strdup(file_ptr);
+    if (NULL == subprocess_ptr->file_ptr) {
+        free(subprocess_ptr);
+        return NULL;
+    }
     subprocess_ptr->argv_ptr = argv_ptr;
     subprocess_ptr->env_vars_ptr = env_vars_ptr;
 
@@ -763,7 +767,7 @@ const bs_test_case_t          bs_subprocess_test_cases[] = {
     { 0, NULL, NULL }
 };
 
-static const char             *test_args[] = { "alpha", NULL };
+static const char             *test_args[] = { NULL, "alpha", NULL };
 
 /* ------------------------------------------------------------------------- */
 /** Helper: Verify two NULL-terminated pointer string lists are equal. */
@@ -897,6 +901,7 @@ void test_split_command(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_hang(bs_test_t *test_ptr)
 {
+    test_args[0] = "./subprocess_test_hang";
     bs_subprocess_t *sp_ptr = bs_subprocess_create(
         "./subprocess_test_hang", test_args, NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
@@ -918,6 +923,7 @@ void test_hang(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_nonexisting(bs_test_t *test_ptr)
 {
+    test_args[0] = "./subprocess_test_does_not_exist";
     bs_subprocess_t *sp_ptr = bs_subprocess_create(
         "./subprocess_test_does_not_exist", test_args, NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);

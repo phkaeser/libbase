@@ -51,7 +51,7 @@ static void test_success(bs_test_t *test_ptr);
 static void test_success_cmdline(bs_test_t *test_ptr);
 static void test_success_twice(bs_test_t *test_ptr);
 
-static const char             *test_args[] = { "alpha", NULL };
+static const char             *test_args[] = { "binary", "alpha", NULL };
 const bs_test_case_t          bs_subprocess_extra_test_cases[] = {
     { 1, "failure", test_failure },
     { 1, "sigpipe", test_sigpipe },
@@ -104,8 +104,9 @@ void test_def(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
  void test_failure(bs_test_t *test_ptr)
 {
+    test_args[0] = BS_TEST_BINARY_DIR "/subprocess_test_failure";
     bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        BS_TEST_BINARY_DIR "/subprocess_test_failure", test_args, NULL);
+        test_args[0], test_args, NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
 
@@ -122,8 +123,9 @@ void test_def(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_sigpipe(bs_test_t *test_ptr)
 {
+    test_args[0] = BS_TEST_BINARY_DIR "/subprocess_test_sigpipe";
     bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        BS_TEST_BINARY_DIR "/subprocess_test_sigpipe", test_args, NULL);
+        test_args[0], test_args, NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
 
@@ -144,8 +146,9 @@ void test_success(bs_test_t *test_ptr)
         { "SUBPROCESS_ENV", "WORKS" },
         { NULL, NULL }
     };
+    test_args[0] = BS_TEST_BINARY_DIR "/subprocess_test_success";
     bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        BS_TEST_BINARY_DIR "/subprocess_test_success", test_args, envs);
+        test_args[0], test_args, envs);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_subprocess_start(sp_ptr));
 
@@ -218,8 +221,9 @@ void test_success_cmdline(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_success_twice(bs_test_t *test_ptr)
 {
+    test_args[0] = BS_TEST_BINARY_DIR "/subprocess_test_success";
     bs_subprocess_t *sp_ptr = bs_subprocess_create(
-        BS_TEST_BINARY_DIR "/subprocess_test_success", test_args, NULL);
+        test_args[0], test_args, NULL);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, sp_ptr);
 
     for (int i = 0; i < 2; ++i) {
