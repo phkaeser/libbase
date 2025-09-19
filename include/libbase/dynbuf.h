@@ -115,6 +115,17 @@ bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr);
  */
 int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd);
 
+/**
+ * Appends data to the buffer.
+ *
+ * @param dynbuf_ptr
+ * @param data_ptr
+ * @param len
+ *
+ * @return true on success.
+ */
+bool bs_dynbuf_append(bs_dynbuf_t *dynbuf_ptr, void *data_ptr, size_t len);
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_dynbuf_test_cases[];
 
