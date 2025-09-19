@@ -165,6 +165,17 @@ bool bs_dynbuf_append(
     return true;
 }
 
+/* ------------------------------------------------------------------------- */
+bool bs_dynbuf_append_char(
+    bs_dynbuf_t *dynbuf_ptr,
+    char c)
+{
+    if (dynbuf_ptr->length + 1 > dynbuf_ptr->capacity) return false;
+    ((char*)dynbuf_ptr->data_ptr)[dynbuf_ptr->length++] = c;
+    return true;
+}
+
+
 /* == Local (static) methods =============================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -304,6 +315,13 @@ void test_dynbuf_append(bs_test_t *test_ptr)
     BS_TEST_VERIFY_MEMEQ(test_ptr, "abc", d.data_ptr, 3);
 
     BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_append(&d, "d", 1));
+
+    d.length = 2;
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_append_char(&d, 'x'));
+    BS_TEST_VERIFY_EQ(test_ptr, 3, d.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "abx", d.data_ptr, 3);
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_append_char(&d, 'y'));
+
     bs_dynbuf_fini(&d);
 }
 

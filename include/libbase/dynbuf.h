@@ -136,6 +136,18 @@ bool bs_dynbuf_append(
     const void *data_ptr,
     size_t len);
 
+/**
+ * Appends a char to the buffer.
+ *
+ * @param dynbuf_ptr
+ * @param c
+ *
+ * @return true on success.
+ */
+bool bs_dynbuf_append_char(
+    bs_dynbuf_t *dynbuf_ptr,
+    char c);
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_dynbuf_test_cases[];
 
