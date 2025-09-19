@@ -117,6 +117,12 @@ bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_dynbuf_clear(bs_dynbuf_t *dynbuf_ptr)
+{
+    dynbuf_ptr->length = 0;
+}
+
+/* ------------------------------------------------------------------------- */
 int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd)
 {
     if (bs_dynbuf_full(dynbuf_ptr)) {
@@ -144,7 +150,10 @@ int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd)
 }
 
 /* ------------------------------------------------------------------------- */
-bool bs_dynbuf_append(bs_dynbuf_t *dynbuf_ptr, void *data_ptr, size_t len)
+bool bs_dynbuf_append(
+    bs_dynbuf_t *dynbuf_ptr,
+    const void *data_ptr,
+    size_t len)
 {
     if (len > dynbuf_ptr->capacity ||
         len + dynbuf_ptr->length > dynbuf_ptr->capacity) return false;

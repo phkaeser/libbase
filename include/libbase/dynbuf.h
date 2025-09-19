@@ -101,6 +101,13 @@ void bs_dynbuf_destroy(bs_dynbuf_t *dynbuf_ptr);
 bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr);
 
 /**
+ * Clears the buffer's contents: Resets length.
+ *
+ * @param dynbuf_ptr
+ */
+void bs_dynbuf_clear(bs_dynbuf_t *dynbuf_ptr);
+
+/**
  * Reads from the file descriptor into the dynamic buffer.
  *
  * Grows the buffer as needed. Reads until reaching the end of the file, or
@@ -124,7 +131,10 @@ int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd);
  *
  * @return true on success.
  */
-bool bs_dynbuf_append(bs_dynbuf_t *dynbuf_ptr, void *data_ptr, size_t len);
+bool bs_dynbuf_append(
+    bs_dynbuf_t *dynbuf_ptr,
+    const void *data_ptr,
+    size_t len);
 
 /** Unit tests. */
 extern const bs_test_case_t   bs_dynbuf_test_cases[];
