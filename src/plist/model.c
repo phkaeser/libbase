@@ -69,7 +69,7 @@ typedef struct {
 /** Array object. A vector of pointers to the objects. */
 struct _bspl_array_t {
     /** The array's superclass: An object. */
-    bspl_object_t           super_object;
+    bspl_object_t             super_object;
     /** Vector holding pointers to each object. */
     bs_ptr_vector_t           object_vector;
 };
@@ -85,6 +85,10 @@ static bool _bspl_string_object_write(
     bs_dynbuf_t *dynbuf_ptr);
 static void _bspl_string_object_destroy(bspl_object_t *object_ptr);
 static void _bspl_dict_object_destroy(bspl_object_t *object_ptr);
+
+static bool _bspl_array_object_write(
+    bspl_object_t *object_ptr,
+    bs_dynbuf_t *dynbuf_ptr);
 static void _bspl_array_object_destroy(bspl_object_t *object_ptr);
 
 static bspl_dict_item_t *_bspl_dict_item_create(
@@ -285,7 +289,7 @@ bspl_array_t *bspl_array_create(void)
 
     if (!_bspl_object_init(&array_ptr->super_object,
                            BSPL_ARRAY,
-                           NULL,
+                           _bspl_array_object_write,
                            _bspl_array_object_destroy)) {
         free(array_ptr);
         return NULL;
@@ -531,6 +535,42 @@ void _bspl_dict_item_node_destroy(bs_avltree_node_t *node_ptr)
 
 /* ------------------------------------------------------------------------- */
 /**
+ * Implements @ref bspl_object_t::write_fn. Writes the array.
+ *
+ * @param object_ptr
+ * @param dynbuf_ptr
+ *
+ * @return true on success
+ */
+bool _bspl_array_object_write(
+    bspl_object_t *object_ptr,
+    bs_dynbuf_t *dynbuf_ptr)
+{
+    bspl_array_t *array_ptr = BS_ASSERT_NOTNULL(
+        bspl_array_from_object(object_ptr));
+
+    // print bracket. if >1 element: newline, otherwise: print elem
+    if (!bs_dynbuf_append_char(dynbuf_ptr, '[')) return false;
+
+    for (size_t i = 0;
+         i < bs_ptr_vector_size(&array_ptr->object_vector);
+         ++i) {
+
+        if (!bspl_object_write(
+                bs_ptr_vector_at(&array_ptr->object_vector, i),
+                dynbuf_ptr)) return false;
+
+        if (i + 1 < bs_ptr_vector_size(&array_ptr->object_vector)) {
+            if (!bs_dynbuf_append_char(dynbuf_ptr, ',')) return false;
+        }
+    }
+
+    if (!bs_dynbuf_append_char(dynbuf_ptr, ']')) return false;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+/**
  * Implementation of @ref bspl_object_t::destroy_fn. Destroys the array,
  * including all contained elements.
  *
@@ -556,18 +596,22 @@ void _bspl_array_object_destroy(bspl_object_t *object_ptr)
     free(array_ptr);
 }
 
+
+
 /* == Unit tests =========================================================== */
 
 static void test_string(bs_test_t *test_ptr);
 static void test_dict(bs_test_t *test_ptr);
 static void test_array(bs_test_t *test_ptr);
 static void test_write_string(bs_test_t *test_ptr);
+static void test_write_array(bs_test_t *test_ptr);
 
 const bs_test_case_t bspl_model_test_cases[] = {
     { 1, "string", test_string },
     { 1, "dict", test_dict },
     { 1, "array", test_array },
     { 1, "write_string", test_write_string },
+    { 1, "write_array", test_write_array },
     { 0, NULL, NULL }
 };
 
@@ -754,6 +798,53 @@ void test_write_string(bs_test_t *test_ptr)
     BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 9, dynbuf.length);
     BS_TEST_VERIFY_MEMEQ(test_ptr, "\"x\\\\y\\\"z\"", dynbuf.data_ptr, 9);
     bspl_object_unref(object_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests correct output of an array. */
+void test_write_array(bs_test_t *test_ptr)
+{
+    bspl_array_t *array_ptr = bspl_array_create();
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, array_ptr);
+    bspl_object_t *o = bspl_object_from_array(array_ptr);
+
+    char output[16];
+    bs_dynbuf_t dynbuf;
+
+    // Empty array, insufficient space.
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 1);
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
+
+    // Sufficient space.
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "[]", dynbuf.data_ptr, 2);
+
+    // Array with one element. Insufficent space.
+    bspl_object_t *s = bspl_object_from_string(bspl_string_create("a"));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_array_push_back(array_ptr, s));
+    bspl_object_unref(s);
+
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
+
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 3);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "[a]", dynbuf.data_ptr, 3);
+
+    // Two elements.
+    s = bspl_object_from_string(bspl_string_create("b"));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_array_push_back(array_ptr, s));
+    bspl_object_unref(s);
+
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 4);
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
+
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 5);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "[a,b]", dynbuf.data_ptr, 5);
+
+    bspl_array_unref(array_ptr);
 }
 
 /* == End of model.c ======================================================= */
