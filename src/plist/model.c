@@ -146,7 +146,13 @@ bool bspl_object_write(bspl_object_t *object_ptr,
                        bs_dynbuf_t *dynbuf_ptr)
 {
     BS_ASSERT(NULL != object_ptr->write_fn);
-    return object_ptr->write_fn(object_ptr, dynbuf_ptr);
+
+    size_t backup_pos = dynbuf_ptr->length;
+    while (!object_ptr->write_fn(object_ptr, dynbuf_ptr)) {
+        dynbuf_ptr->length = backup_pos;
+        if (!bs_dynbuf_grow(dynbuf_ptr)) return false;
+    }
+    return true;
 }
 
 /* ------------------------------------------------------------------------- */

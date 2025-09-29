@@ -24,6 +24,9 @@
 #include <libbase/libbase.h>
 #include <libbase/plist.h>
 
+/*** Initial size for the output dynbuffer. */
+static const size_t min_size = 1 << 16;
+
 /** Main program, runs the unit tests. */
 int main(int argc, const char **argv)
 {
@@ -40,9 +43,9 @@ int main(int argc, const char **argv)
     }
 
     bs_dynbuf_t dynbuf;
-    if (!bs_dynbuf_init(&dynbuf, 65536, SIZE_MAX)) {
-        fprintf(stderr, "Failed bs_dynbuf_init(%p, 65536, %zu). "
-                "Insufficient memory?\n", &dynbuf, SIZE_MAX);
+    if (!bs_dynbuf_init(&dynbuf, min_size, SIZE_MAX)) {
+        fprintf(stderr, "Failed bs_dynbuf_init(%p, %zu, %zu). "
+                "Insufficient memory?\n", &dynbuf, min_size, SIZE_MAX);
         bspl_object_unref(object_ptr);
         return EXIT_FAILURE;
     }
