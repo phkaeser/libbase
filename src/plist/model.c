@@ -83,7 +83,14 @@ static bool _bspl_object_init(
 static bool _bspl_string_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr);
+static bool _bspl_string_write(
+    const char *str_ptr,
+    bs_dynbuf_t *dynbuf_ptr);
 static void _bspl_string_object_destroy(bspl_object_t *object_ptr);
+
+static bool _bspl_dict_object_write(
+    bspl_object_t *object_ptr,
+    bs_dynbuf_t *dynbuf_ptr);
 static void _bspl_dict_object_destroy(bspl_object_t *object_ptr);
 
 static bool _bspl_array_object_write(
@@ -96,6 +103,10 @@ static bspl_dict_item_t *_bspl_dict_item_create(
     bspl_object_t *object_ptr);
 static void _bspl_dict_item_destroy(
     bspl_dict_item_t *item_ptr);
+static bool _bspl_dict_item_write(
+    const char *key_ptr,
+    bspl_object_t *object_ptr,
+    void *userdata_ptr);
 
 static int _bspl_dict_item_node_cmp(
     const bs_avltree_node_t *node_ptr,
@@ -197,7 +208,7 @@ bspl_dict_t *bspl_dict_create(void)
 
     if (!_bspl_object_init(&dict_ptr->super_object,
                            BSPL_DICT,
-                           NULL,
+                           _bspl_dict_object_write,
                            _bspl_dict_object_destroy)) {
         free(dict_ptr);
         return NULL;
@@ -362,6 +373,7 @@ bool _bspl_object_init(
     void (*destroy_fn)(bspl_object_t *object_ptr))
 {
     BS_ASSERT(NULL != object_ptr);
+    BS_ASSERT(NULL != write_fn);
     BS_ASSERT(NULL != destroy_fn);
     *object_ptr = (bspl_object_t){
         .type = type,
@@ -385,13 +397,29 @@ bool _bspl_string_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr)
 {
-    static const char *identifier_pattern = "[a-zA-Z0-9_.$]+";
-    static thread_local regex_t identifier_regex;
-    static thread_local bool regex_initialized = false;
-
     bspl_string_t *string_ptr = BS_ASSERT_NOTNULL(
         bspl_string_from_object(object_ptr));
     BS_ASSERT(NULL != string_ptr->value_ptr);
+
+    return _bspl_string_write(string_ptr->value_ptr, dynbuf_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+/**
+ * Writes the actual C string, with escaping as needed.
+ *
+ * @param str_ptr
+ * @param dynbuf_ptr
+ *
+ * @return true on success.
+ */
+bool _bspl_string_write(
+    const char *str_ptr,
+    bs_dynbuf_t *dynbuf_ptr)
+{
+    static const char *identifier_pattern = "[a-zA-Z0-9_.$]+";
+    static thread_local regex_t identifier_regex;
+    static thread_local bool regex_initialized = false;
 
     if (!regex_initialized) {
         int rv = regcomp(&identifier_regex, identifier_pattern, REG_EXTENDED);
@@ -406,7 +434,7 @@ bool _bspl_string_object_write(
     }
 
     // Space check: At least the unescaped string needs to fit.
-    size_t len = strlen(string_ptr->value_ptr);
+    size_t len = strlen(str_ptr);
     if (len > dynbuf_ptr->capacity ||
         dynbuf_ptr->length + len > dynbuf_ptr->capacity) {
         return false;
@@ -414,13 +442,13 @@ bool _bspl_string_object_write(
 
     // If it matches an identifier: Write without quotes.
     regmatch_t match = { .rm_eo = len };
-    if (0 == regexec(&identifier_regex, string_ptr->value_ptr, 1, &match, 0) &&
+    if (0 == regexec(&identifier_regex, str_ptr, 1, &match, 0) &&
         match.rm_so == 0 && (size_t)match.rm_eo == len) {
-        return bs_dynbuf_append(dynbuf_ptr, string_ptr->value_ptr, len);
+        return bs_dynbuf_append(dynbuf_ptr, str_ptr, len);
     }
 
     // Otherwise: Write it, and escape any backslash or double quotes.
-    const char *pos = string_ptr->value_ptr;
+    const char *pos = str_ptr;
     const char *c = pos;
     if (!bs_dynbuf_append_char(dynbuf_ptr, '"')) return false;
     for (; *c != '\0'; ++c) {
@@ -454,6 +482,28 @@ void _bspl_string_object_destroy(bspl_object_t *object_ptr)
     }
 
     free(string_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+bool _bspl_dict_object_write(
+    bspl_object_t *object_ptr,
+    bs_dynbuf_t *dynbuf_ptr)
+{
+    bspl_dict_t *dict_ptr = BS_ASSERT_NOTNULL(
+        bspl_dict_from_object(object_ptr));
+
+    // FIXME: AND these
+    if (!bs_dynbuf_append_char(dynbuf_ptr, '{')) return false;
+    if (0 < bs_avltree_size(dict_ptr->tree_ptr)) {
+        if (!bs_dynbuf_append_char(dynbuf_ptr, '\n')) return false;
+    }
+
+    if (!bspl_dict_foreach(dict_ptr, _bspl_dict_item_write, dynbuf_ptr)) {
+        return false;
+    }
+
+    if (!bs_dynbuf_append_char(dynbuf_ptr, '}')) return false;
+    return true;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -515,6 +565,31 @@ void _bspl_dict_item_destroy(bspl_dict_item_t *item_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/**
+ * Writes the dict item into the dynamic buffer.
+ *
+ * @param key_ptr
+ * @param object_ptr
+ * @param userdata_ptr
+ *
+ * @return true on success.
+ */
+bool _bspl_dict_item_write(
+    const char *key_ptr,
+    bspl_object_t *object_ptr,
+    void *userdata_ptr)
+{
+    bs_dynbuf_t *dynbuf_ptr = userdata_ptr;
+
+    return (
+        _bspl_string_write(key_ptr, dynbuf_ptr) &&
+        bs_dynbuf_append(dynbuf_ptr, " = ", 3) &&
+        bspl_object_write(object_ptr, dynbuf_ptr)) &&
+        bs_dynbuf_append_char(dynbuf_ptr, ';') &&
+        bs_dynbuf_append_char(dynbuf_ptr, '\n');
+}
+
+/* ------------------------------------------------------------------------- */
 /** Comparator for the dictionary item with another key. */
 int _bspl_dict_item_node_cmp(const bs_avltree_node_t *node_ptr,
                                const void *key_ptr)
@@ -550,7 +625,7 @@ bool _bspl_array_object_write(
         bspl_array_from_object(object_ptr));
 
     // print bracket. if >1 element: newline, otherwise: print elem
-    if (!bs_dynbuf_append_char(dynbuf_ptr, '[')) return false;
+    if (!bs_dynbuf_append_char(dynbuf_ptr, '(')) return false;
     if (1 < bs_ptr_vector_size(&array_ptr->object_vector) &&
         !bs_dynbuf_append_char(dynbuf_ptr, '\n')) {
         return false;
@@ -565,13 +640,17 @@ bool _bspl_array_object_write(
                 bs_ptr_vector_at(&array_ptr->object_vector, i),
                 dynbuf_ptr)) return false;
 
-        if (i + 1 < bs_ptr_vector_size(&array_ptr->object_vector)&&
-            !bs_dynbuf_append(dynbuf_ptr, ",\n", 2)) {
+        if (i + 1 < bs_ptr_vector_size(&array_ptr->object_vector) &&
+            !bs_dynbuf_append_char(dynbuf_ptr, ',')) {
+            return false;
+        }
+        if (1 < bs_ptr_vector_size(&array_ptr->object_vector) &&
+            !bs_dynbuf_append_char(dynbuf_ptr, '\n')) {
             return false;
         }
     }
 
-    if (!bs_dynbuf_append_char(dynbuf_ptr, ']')) return false;
+    if (!bs_dynbuf_append_char(dynbuf_ptr, ')')) return false;
     return true;
 }
 
@@ -610,6 +689,7 @@ static void test_string(bs_test_t *test_ptr);
 static void test_dict(bs_test_t *test_ptr);
 static void test_array(bs_test_t *test_ptr);
 static void test_write_string(bs_test_t *test_ptr);
+static void test_write_dict(bs_test_t *test_ptr);
 static void test_write_array(bs_test_t *test_ptr);
 
 const bs_test_case_t bspl_model_test_cases[] = {
@@ -617,6 +697,7 @@ const bs_test_case_t bspl_model_test_cases[] = {
     { 1, "dict", test_dict },
     { 1, "array", test_array },
     { 1, "write_string", test_write_string },
+    { 1, "write_dict", test_write_dict },
     { 1, "write_array", test_write_array },
     { 0, NULL, NULL }
 };
@@ -807,6 +888,50 @@ void test_write_string(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Tests correct output of a dictionary. */
+void test_write_dict(bs_test_t *test_ptr)
+{
+    bspl_dict_t *dict_ptr = bspl_dict_create();
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, dict_ptr);
+    bspl_object_t *o = bspl_object_from_dict(dict_ptr);
+
+    char output[32];
+    bs_dynbuf_t dynbuf;
+
+    // Empty dict, insufficient space.
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 1);
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
+
+    // Empty dict, sufficient space.
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "{}", dynbuf.data_ptr, 2);
+
+    // Add an element. Test with both insufficient, then: sufficient space.
+    bspl_object_t *i = bspl_object_from_string(bspl_string_create("1"));
+    bspl_dict_add(dict_ptr, "a", i);
+    bspl_object_unref(i);
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
+
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 10);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "{\na = 1;\n}", dynbuf.data_ptr, 10);
+
+    // Add another element. One that needs escaping. Then verify.
+    i = bspl_object_from_string(bspl_string_create("2"));
+    bspl_dict_add(dict_ptr, " ", i);  // Yep. A space. Valid.
+    bspl_object_unref(i);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 32);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
+    BS_TEST_VERIFY_MEMEQ(
+        test_ptr,
+        "{\n\" \" = 2;\na = 1;\n}",
+        dynbuf.data_ptr, 19);
+
+    bspl_object_unref(o);
+}
+
+/* ------------------------------------------------------------------------- */
 /** Tests correct output of an array. */
 void test_write_array(bs_test_t *test_ptr)
 {
@@ -824,7 +949,7 @@ void test_write_array(bs_test_t *test_ptr)
     // Sufficient space.
     bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "[]", dynbuf.data_ptr, 2);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "()", dynbuf.data_ptr, 2);
 
     // Array with one element. Insufficent space.
     bspl_object_t *s = bspl_object_from_string(bspl_string_create("a"));
@@ -836,7 +961,7 @@ void test_write_array(bs_test_t *test_ptr)
 
     bs_dynbuf_init_unmanaged(&dynbuf, output, 3);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "[a]", dynbuf.data_ptr, 3);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "(a)", dynbuf.data_ptr, 3);
 
     // Two elements.
     s = bspl_object_from_string(bspl_string_create("b"));
@@ -848,7 +973,7 @@ void test_write_array(bs_test_t *test_ptr)
 
     bs_dynbuf_init_unmanaged(&dynbuf, output, 10);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "[\na,\nb]", dynbuf.data_ptr, 7);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "(\na,\nb\n)", dynbuf.data_ptr, 8);
 
     bspl_array_unref(array_ptr);
 }
