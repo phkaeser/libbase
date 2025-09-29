@@ -84,6 +84,22 @@ bool bspl_object_write(bspl_object_t *object_ptr,
                        bs_dynbuf_t *dynbuf_ptr);
 
 /**
+ * Writes the object into the buffer, with specified indentation & level.
+ *
+ * @param object_ptr
+ * @param dynbuf_ptr
+ * @param indent
+ * @param level
+ *
+ * @return true on success.
+ */
+bool bspl_object_write_indented(
+    bspl_object_t *object_ptr,
+    bs_dynbuf_t *dynbuf_ptr,
+    size_t indent,
+    size_t level);
+
+/**
  * Creates a string object.
  *
  * @param value_ptr

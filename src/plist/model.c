@@ -38,7 +38,8 @@ struct _bspl_object_t {
     bool (*write_fn)(
         bspl_object_t *object_ptr,
         bs_dynbuf_t *dynbuf_ptr,
-        size_t indent);
+        size_t indent,
+        size_t level);
     /** Abstract virtual method: Destroys the object. */
     void (*destroy_fn)(bspl_object_t *object_ptr);
 };
@@ -77,19 +78,31 @@ struct _bspl_array_t {
     bs_ptr_vector_t           object_vector;
 };
 
+/** Argument to _bspl_dict_item_write(). */
+typedef struct {
+    /** The dynbuf to write into. */
+    bs_dynbuf_t               *dynbuf_ptr;
+    /** Indentation. */
+    size_t                    indent;
+    /** Level of indentation. */
+    size_t                    level;
+} bspl_dict_item_write_arg_t;
+
 static bool _bspl_object_init(
     bspl_object_t *object_ptr,
     bspl_type_t type,
     bool (*write_fn)(
         bspl_object_t *object_ptr,
         bs_dynbuf_t *dynbuf_ptr,
-        size_t indent),
+        size_t indent,
+        size_t level),
     void (*destroy_fn)(bspl_object_t *object_ptr));
 
 static bool _bspl_string_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr,
-    size_t indent);
+    size_t indent,
+    size_t level);
 static bool _bspl_string_write(
     const char *str_ptr,
     bs_dynbuf_t *dynbuf_ptr);
@@ -98,13 +111,15 @@ static void _bspl_string_object_destroy(bspl_object_t *object_ptr);
 static bool _bspl_dict_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr,
-    size_t indent);
+    size_t indent,
+    size_t level);
 static void _bspl_dict_object_destroy(bspl_object_t *object_ptr);
 
 static bool _bspl_array_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr,
-    size_t indent);
+    size_t indent,
+    size_t level);
 static void _bspl_array_object_destroy(bspl_object_t *object_ptr);
 
 static bspl_dict_item_t *_bspl_dict_item_create(
@@ -154,10 +169,20 @@ bspl_type_t bspl_object_type(bspl_object_t *object_ptr)
 bool bspl_object_write(bspl_object_t *object_ptr,
                        bs_dynbuf_t *dynbuf_ptr)
 {
+    return bspl_object_write_indented(object_ptr, dynbuf_ptr, 2, 0);
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_object_write_indented(
+    bspl_object_t *object_ptr,
+    bs_dynbuf_t *dynbuf_ptr,
+    size_t indent,
+    size_t level)
+{
     BS_ASSERT(NULL != object_ptr->write_fn);
 
     size_t backup_pos = dynbuf_ptr->length;
-    while (!object_ptr->write_fn(object_ptr, dynbuf_ptr, 0)) {
+    while (!object_ptr->write_fn(object_ptr, dynbuf_ptr, indent, level)) {
         dynbuf_ptr->length = backup_pos;
         if (!bs_dynbuf_grow(dynbuf_ptr)) return false;
     }
@@ -387,7 +412,8 @@ bool _bspl_object_init(
     bool (*write_fn)(
         bspl_object_t *object_ptr,
         bs_dynbuf_t *dynbuf_ptr,
-        size_t indent),
+        size_t indent,
+        size_t level),
     void (*destroy_fn)(bspl_object_t *object_ptr))
 {
     BS_ASSERT(NULL != object_ptr);
@@ -415,7 +441,8 @@ bool _bspl_object_init(
 bool _bspl_string_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr,
-    __UNUSED__ size_t indent)
+    __UNUSED__ size_t indent,
+    __UNUSED__ size_t level)
 {
     bspl_string_t *string_ptr = BS_ASSERT_NOTNULL(
         bspl_string_from_object(object_ptr));
@@ -508,16 +535,23 @@ void _bspl_string_object_destroy(bspl_object_t *object_ptr)
 bool _bspl_dict_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr,
-    __UNUSED__ size_t indent)
+    size_t indent,
+    size_t level)
 {
     bspl_dict_t *dict_ptr = BS_ASSERT_NOTNULL(
         bspl_dict_from_object(object_ptr));
 
+    bspl_dict_item_write_arg_t arg = {
+        .dynbuf_ptr = dynbuf_ptr,
+        .indent = indent,
+        .level = level
+    };
     bool nonempty = bs_avltree_size(dict_ptr->tree_ptr) > 0;
     return (
         bs_dynbuf_append_char(dynbuf_ptr, '{') &&
         bs_dynbuf_maybe_append_char(dynbuf_ptr, nonempty, '\n') &&
-        bspl_dict_foreach(dict_ptr, _bspl_dict_item_write, dynbuf_ptr) &&
+        bs_dynbuf_maybe_indent(dynbuf_ptr, nonempty, indent * level) &&
+        bspl_dict_foreach(dict_ptr, _bspl_dict_item_write, &arg) &&
         bs_dynbuf_append_char(dynbuf_ptr, '}'));
 }
 
@@ -585,7 +619,7 @@ void _bspl_dict_item_destroy(bspl_dict_item_t *item_ptr)
  *
  * @param key_ptr
  * @param object_ptr
- * @param userdata_ptr
+ * @param userdata_ptr        Points to a @ref bspl_dict_item_write_arg_t.
  *
  * @return true on success.
  */
@@ -594,14 +628,20 @@ bool _bspl_dict_item_write(
     bspl_object_t *object_ptr,
     void *userdata_ptr)
 {
-    bs_dynbuf_t *dynbuf_ptr = userdata_ptr;
+    bspl_dict_item_write_arg_t *a = userdata_ptr;
 
     return (
-        _bspl_string_write(key_ptr, dynbuf_ptr) &&
-        bs_dynbuf_append(dynbuf_ptr, " = ", 3) &&
-        bspl_object_write(object_ptr, dynbuf_ptr)) &&
-        bs_dynbuf_append_char(dynbuf_ptr, ';') &&
-        bs_dynbuf_append_char(dynbuf_ptr, '\n');
+        bs_dynbuf_maybe_indent(a->dynbuf_ptr, true, a->indent) &&
+        _bspl_string_write(key_ptr, a->dynbuf_ptr) &&
+        bs_dynbuf_append(a->dynbuf_ptr, " = ", 3) &&
+        bspl_object_write_indented(
+            object_ptr,
+            a->dynbuf_ptr,
+            a->indent,
+            a->level + 1)) &&
+        bs_dynbuf_append_char(a->dynbuf_ptr, ';') &&
+        bs_dynbuf_append_char(a->dynbuf_ptr, '\n') &&
+        bs_dynbuf_maybe_indent(a->dynbuf_ptr, true, a->indent * a->level);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -635,33 +675,38 @@ void _bspl_dict_item_node_destroy(bs_avltree_node_t *node_ptr)
 bool _bspl_array_object_write(
     bspl_object_t *object_ptr,
     bs_dynbuf_t *dynbuf_ptr,
-    __UNUSED__ size_t indent)
+    size_t indent,
+    size_t level)
 {
     bspl_array_t *array_ptr = BS_ASSERT_NOTNULL(
         bspl_array_from_object(object_ptr));
 
+    bool two_or_more = 1 < bs_ptr_vector_size(&array_ptr->object_vector);
+
     // print bracket. if >1 element: newline, otherwise: print elem
-    if (!bs_dynbuf_append_char(dynbuf_ptr, '(')) return false;
-    if (1 < bs_ptr_vector_size(&array_ptr->object_vector) &&
-        !bs_dynbuf_append_char(dynbuf_ptr, '\n')) {
+    if (!bs_dynbuf_append_char(dynbuf_ptr, '(') ||
+        !bs_dynbuf_maybe_append_char(dynbuf_ptr, two_or_more, '\n') ||
+        !bs_dynbuf_maybe_indent(dynbuf_ptr, two_or_more, indent * level)) {
         return false;
     }
-
 
     for (size_t i = 0;
          i < bs_ptr_vector_size(&array_ptr->object_vector);
          ++i) {
+        bool not_last = i + 1 < bs_ptr_vector_size(&array_ptr->object_vector);
 
-        if (!bspl_object_write(
+        if (!bs_dynbuf_maybe_indent(
+                dynbuf_ptr,
+                two_or_more,  //0 < bs_ptr_vector_size(&array_ptr->object_vector),
+                indent) ||
+            !bspl_object_write_indented(
                 bs_ptr_vector_at(&array_ptr->object_vector, i),
-                dynbuf_ptr)) return false;
-
-        if (i + 1 < bs_ptr_vector_size(&array_ptr->object_vector) &&
-            !bs_dynbuf_append_char(dynbuf_ptr, ',')) {
-            return false;
-        }
-        if (1 < bs_ptr_vector_size(&array_ptr->object_vector) &&
-            !bs_dynbuf_append_char(dynbuf_ptr, '\n')) {
+                dynbuf_ptr,
+                indent,
+                level + 1) ||
+            !bs_dynbuf_maybe_append_char(dynbuf_ptr, not_last, ',') ||
+            !bs_dynbuf_maybe_append_char(dynbuf_ptr, two_or_more, '\n') ||
+            !bs_dynbuf_maybe_indent(dynbuf_ptr, two_or_more, indent * level)) {
             return false;
         }
     }
@@ -927,9 +972,9 @@ void test_write_dict(bs_test_t *test_ptr)
     bspl_object_unref(i);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 10);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 12);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "{\na = 1;\n}", dynbuf.data_ptr, 10);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "{\n  a = 1;\n}", dynbuf.data_ptr, 12);
 
     // Add another element. One that needs escaping. Then verify.
     i = bspl_object_from_string(bspl_string_create("2"));
@@ -939,8 +984,8 @@ void test_write_dict(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
     BS_TEST_VERIFY_MEMEQ(
         test_ptr,
-        "{\n\" \" = 2;\na = 1;\n}",
-        dynbuf.data_ptr, 19);
+        "{\n  \" \" = 2;\n  a = 1;\n}",
+        dynbuf.data_ptr, 23);
 
     bspl_object_unref(o);
 }
@@ -973,7 +1018,7 @@ void test_write_array(bs_test_t *test_ptr)
     bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 3);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 16);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
     BS_TEST_VERIFY_MEMEQ(test_ptr, "(a)", dynbuf.data_ptr, 3);
 
@@ -985,9 +1030,9 @@ void test_write_array(bs_test_t *test_ptr)
     bs_dynbuf_init_unmanaged(&dynbuf, output, 4);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 10);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 12);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "(\na,\nb\n)", dynbuf.data_ptr, 8);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "(\n  a,\n  b\n)", dynbuf.data_ptr, 12);
 
     bspl_array_unref(array_ptr);
 }
