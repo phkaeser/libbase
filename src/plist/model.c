@@ -551,6 +551,11 @@ bool _bspl_array_object_write(
 
     // print bracket. if >1 element: newline, otherwise: print elem
     if (!bs_dynbuf_append_char(dynbuf_ptr, '[')) return false;
+    if (1 < bs_ptr_vector_size(&array_ptr->object_vector) &&
+        !bs_dynbuf_append_char(dynbuf_ptr, '\n')) {
+        return false;
+    }
+
 
     for (size_t i = 0;
          i < bs_ptr_vector_size(&array_ptr->object_vector);
@@ -560,8 +565,9 @@ bool _bspl_array_object_write(
                 bs_ptr_vector_at(&array_ptr->object_vector, i),
                 dynbuf_ptr)) return false;
 
-        if (i + 1 < bs_ptr_vector_size(&array_ptr->object_vector)) {
-            if (!bs_dynbuf_append_char(dynbuf_ptr, ',')) return false;
+        if (i + 1 < bs_ptr_vector_size(&array_ptr->object_vector)&&
+            !bs_dynbuf_append(dynbuf_ptr, ",\n", 2)) {
+            return false;
         }
     }
 
@@ -840,9 +846,9 @@ void test_write_array(bs_test_t *test_ptr)
     bs_dynbuf_init_unmanaged(&dynbuf, output, 4);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 5);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 10);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "[a,b]", dynbuf.data_ptr, 5);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "[\na,\nb]", dynbuf.data_ptr, 7);
 
     bspl_array_unref(array_ptr);
 }
