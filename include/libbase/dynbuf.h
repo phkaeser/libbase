@@ -97,6 +97,15 @@ bs_dynbuf_t *bs_dynbuf_create(
  */
 void bs_dynbuf_destroy(bs_dynbuf_t *dynbuf_ptr);
 
+/**
+ * Grows the dynamic buffer. Doubles current capacity.
+ *
+ * @param dynbuf_ptr
+ *
+ * @return true on success.
+ */
+bool bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr);
+
 /** @return whether the buffer is full. */
 bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr);
 

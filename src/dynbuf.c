@@ -30,10 +30,6 @@
 #include "libbase/log.h"
 #include "libbase/log_wrappers.h"
 
-/* == Declarations ========================================================= */
-
-static bool _bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr);
-
 /* == Exported methods ===================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -111,6 +107,26 @@ void bs_dynbuf_destroy(bs_dynbuf_t *dynbuf_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+bool bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr)
+{
+    size_t new_capacity = dynbuf_ptr->max_capacity;
+    if (dynbuf_ptr->capacity <= dynbuf_ptr->max_capacity >> 1) {
+        new_capacity = dynbuf_ptr->capacity << 1;
+    }
+    if (dynbuf_ptr->capacity == new_capacity) return false;
+
+    void *new_data_ptr = realloc(dynbuf_ptr->data_ptr, new_capacity);
+    if (NULL == new_data_ptr) {
+        bs_log(BS_ERROR | BS_ERRNO, "Failed realloc(%p, %zu)",
+               dynbuf_ptr->data_ptr, new_capacity);
+        return false;
+    }
+    dynbuf_ptr->data_ptr = new_data_ptr;
+    dynbuf_ptr->capacity = new_capacity;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
 bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr)
 {
     return dynbuf_ptr->length >= dynbuf_ptr->capacity;
@@ -126,7 +142,7 @@ void bs_dynbuf_clear(bs_dynbuf_t *dynbuf_ptr)
 int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd)
 {
     if (bs_dynbuf_full(dynbuf_ptr)) {
-        if (!_bs_dynbuf_grow(dynbuf_ptr)) return -1;
+        if (!bs_dynbuf_grow(dynbuf_ptr)) return -1;
     }
     BS_ASSERT(dynbuf_ptr->capacity > dynbuf_ptr->length);
 
@@ -175,29 +191,6 @@ bool bs_dynbuf_append_char(
     return true;
 }
 
-
-/* == Local (static) methods =============================================== */
-
-/* ------------------------------------------------------------------------- */
-/** Grows the dynamic buffer. Doubles current capacity. */
-bool _bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr)
-{
-    size_t new_capacity = dynbuf_ptr->max_capacity;
-    if (dynbuf_ptr->capacity <= dynbuf_ptr->max_capacity >> 1) {
-        new_capacity = dynbuf_ptr->capacity << 1;
-    }
-    if (dynbuf_ptr->capacity == new_capacity) return false;
-
-    void *new_data_ptr = realloc(dynbuf_ptr->data_ptr, new_capacity);
-    if (NULL == new_data_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed realloc(%p, %zu)",
-               dynbuf_ptr->data_ptr, new_capacity);
-        return false;
-    }
-    dynbuf_ptr->data_ptr = new_data_ptr;
-    dynbuf_ptr->capacity = new_capacity;
-    return true;
-}
 
 /* == Tests ================================================================ */
 
