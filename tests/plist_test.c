@@ -1,6 +1,6 @@
 /* ========================================================================= */
 /**
- * @file conf_test.c
+ * @file plist_test.c
  *
  * @copyright
  * Copyright 2024 Google LLC
@@ -23,8 +23,8 @@
 #include <libbase/libbase.h>
 #include <libbase/plist.h>
 
-/** Conf module unit tests. */
-const bs_test_set_t conf_tests[] = {
+/** plist module unit tests. */
+const bs_test_set_t plist_tests[] = {
     { 1, "decode", bspl_decode_test_cases },
     { 1, "model", bspl_model_test_cases },
     { 1, "plist", bspl_plist_test_cases },
@@ -42,8 +42,8 @@ int main(__UNUSED__ int argc, __UNUSED__ const char **argv)
     const bs_test_param_t params = {
         .test_data_dir_ptr   = TEST_DATA_DIR
     };
-    return bs_test(conf_tests, argc, argv, &params);
+    return bs_test(plist_tests, argc, argv, &params);
 
 }
 
-/* == End of conf_test.c =================================================== */
+/* == End of plist_test.c ================================================== */
