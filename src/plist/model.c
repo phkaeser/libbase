@@ -492,18 +492,12 @@ bool _bspl_dict_object_write(
     bspl_dict_t *dict_ptr = BS_ASSERT_NOTNULL(
         bspl_dict_from_object(object_ptr));
 
-    // FIXME: AND these
-    if (!bs_dynbuf_append_char(dynbuf_ptr, '{')) return false;
-    if (0 < bs_avltree_size(dict_ptr->tree_ptr)) {
-        if (!bs_dynbuf_append_char(dynbuf_ptr, '\n')) return false;
-    }
-
-    if (!bspl_dict_foreach(dict_ptr, _bspl_dict_item_write, dynbuf_ptr)) {
-        return false;
-    }
-
-    if (!bs_dynbuf_append_char(dynbuf_ptr, '}')) return false;
-    return true;
+    bool nonempty = bs_avltree_size(dict_ptr->tree_ptr) > 0;
+    return (
+        bs_dynbuf_append_char(dynbuf_ptr, '{') &&
+        bs_dynbuf_maybe_append_char(dynbuf_ptr, nonempty, '\n') &&
+        bspl_dict_foreach(dict_ptr, _bspl_dict_item_write, dynbuf_ptr) &&
+        bs_dynbuf_append_char(dynbuf_ptr, '}'));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -680,8 +674,6 @@ void _bspl_array_object_destroy(bspl_object_t *object_ptr)
 
     free(array_ptr);
 }
-
-
 
 /* == Unit tests =========================================================== */
 
