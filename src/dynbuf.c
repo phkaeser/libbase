@@ -30,10 +30,6 @@
 #include "libbase/log.h"
 #include "libbase/log_wrappers.h"
 
-/* == Declarations ========================================================= */
-
-static bool _bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr);
-
 /* == Exported methods ===================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -111,16 +107,42 @@ void bs_dynbuf_destroy(bs_dynbuf_t *dynbuf_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+bool bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr)
+{
+    size_t new_capacity = dynbuf_ptr->max_capacity;
+    if (dynbuf_ptr->capacity <= dynbuf_ptr->max_capacity >> 1) {
+        new_capacity = dynbuf_ptr->capacity << 1;
+    }
+    if (dynbuf_ptr->capacity == new_capacity) return false;
+
+    void *new_data_ptr = realloc(dynbuf_ptr->data_ptr, new_capacity);
+    if (NULL == new_data_ptr) {
+        bs_log(BS_ERROR | BS_ERRNO, "Failed realloc(%p, %zu)",
+               dynbuf_ptr->data_ptr, new_capacity);
+        return false;
+    }
+    dynbuf_ptr->data_ptr = new_data_ptr;
+    dynbuf_ptr->capacity = new_capacity;
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
 bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr)
 {
     return dynbuf_ptr->length >= dynbuf_ptr->capacity;
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_dynbuf_clear(bs_dynbuf_t *dynbuf_ptr)
+{
+    dynbuf_ptr->length = 0;
+}
+
+/* ------------------------------------------------------------------------- */
 int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd)
 {
     if (bs_dynbuf_full(dynbuf_ptr)) {
-        if (!_bs_dynbuf_grow(dynbuf_ptr)) return -1;
+        if (!bs_dynbuf_grow(dynbuf_ptr)) return -1;
     }
     BS_ASSERT(dynbuf_ptr->capacity > dynbuf_ptr->length);
 
@@ -143,39 +165,45 @@ int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd)
     return bs_dynbuf_read(dynbuf_ptr, fd);
 }
 
-/* == Local (static) methods =============================================== */
-
 /* ------------------------------------------------------------------------- */
-/** Grows the dynamic buffer. Doubles current capacity. */
-bool _bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr)
+bool bs_dynbuf_append(
+    bs_dynbuf_t *dynbuf_ptr,
+    const void *data_ptr,
+    size_t len)
 {
-    size_t new_capacity = dynbuf_ptr->max_capacity;
-    if (dynbuf_ptr->capacity <= dynbuf_ptr->max_capacity >> 1) {
-        new_capacity = dynbuf_ptr->capacity << 1;
-    }
-    if (dynbuf_ptr->capacity == new_capacity) return false;
+    if (len > dynbuf_ptr->capacity ||
+        len + dynbuf_ptr->length > dynbuf_ptr->capacity) return false;
 
-    void *new_data_ptr = realloc(dynbuf_ptr->data_ptr, new_capacity);
-    if (NULL == new_data_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO, "Failed realloc(%p, %zu)",
-               dynbuf_ptr->data_ptr, new_capacity);
-        return false;
-    }
-    dynbuf_ptr->data_ptr = new_data_ptr;
-    dynbuf_ptr->capacity = new_capacity;
+    memcpy((uint8_t*)dynbuf_ptr->data_ptr + dynbuf_ptr->length,
+           data_ptr,
+           len);
+    dynbuf_ptr->length += len;
     return true;
 }
+
+/* ------------------------------------------------------------------------- */
+bool bs_dynbuf_append_char(
+    bs_dynbuf_t *dynbuf_ptr,
+    char c)
+{
+    if (dynbuf_ptr->length + 1 > dynbuf_ptr->capacity) return false;
+    ((char*)dynbuf_ptr->data_ptr)[dynbuf_ptr->length++] = c;
+    return true;
+}
+
 
 /* == Tests ================================================================ */
 
 static void test_dynbuf_ctor_dtor(bs_test_t *test_ptr);
 static void test_dynbuf_read(bs_test_t *test_ptr);
 static void test_dynbuf_read_capped(bs_test_t *test_ptr);
+static void test_dynbuf_append(bs_test_t *test_ptr);
 
 const bs_test_case_t          bs_dynbuf_test_cases[] = {
     { 1, "ctor_dtor", test_dynbuf_ctor_dtor },
     { 1, "read", test_dynbuf_read },
     { 1, "read_capped", test_dynbuf_read_capped },
+    { 1, "append", test_dynbuf_append },
     { 0, NULL, NULL },
 };
 
@@ -257,6 +285,43 @@ void test_dynbuf_read_capped(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 3, d.length);
     BS_TEST_VERIFY_EQ(test_ptr, 0, memcmp("abc", d.data_ptr, d.length));
+    bs_dynbuf_fini(&d);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests appending. */
+void test_dynbuf_append(bs_test_t *test_ptr)
+{
+    bs_dynbuf_t d;
+    BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, bs_dynbuf_init(&d, 3, 3));
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_append(&d, "ab", 2));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, d.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "ab", d.data_ptr, 2);
+
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_append(&d, "cd", 2));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, d.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "ab", d.data_ptr, 2);
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_append(&d, "c", 1));
+    BS_TEST_VERIFY_EQ(test_ptr, 3, d.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "abc", d.data_ptr, 3);
+
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_append(&d, "d", 1));
+
+    d.length = 2;
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_append_char(&d, 'x'));
+    BS_TEST_VERIFY_EQ(test_ptr, 3, d.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "abx", d.data_ptr, 3);
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_append_char(&d, 'y'));
+
+    d.length = 2;
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_maybe_append_char(&d, false, 'z'));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, d.length);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_maybe_append_char(&d, true, 'z'));
+    BS_TEST_VERIFY_EQ(test_ptr, 3, d.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "abz", d.data_ptr, 3);
+
     bs_dynbuf_fini(&d);
 }
 

@@ -97,8 +97,24 @@ bs_dynbuf_t *bs_dynbuf_create(
  */
 void bs_dynbuf_destroy(bs_dynbuf_t *dynbuf_ptr);
 
+/**
+ * Grows the dynamic buffer. Doubles current capacity.
+ *
+ * @param dynbuf_ptr
+ *
+ * @return true on success.
+ */
+bool bs_dynbuf_grow(bs_dynbuf_t *dynbuf_ptr);
+
 /** @return whether the buffer is full. */
 bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr);
+
+/**
+ * Clears the buffer's contents: Resets length.
+ *
+ * @param dynbuf_ptr
+ */
+void bs_dynbuf_clear(bs_dynbuf_t *dynbuf_ptr);
 
 /**
  * Reads from the file descriptor into the dynamic buffer.
@@ -114,6 +130,59 @@ bool bs_dynbuf_full(bs_dynbuf_t *dynbuf_ptr);
  * not reached yet, and -1 on error.
  */
 int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd);
+
+/**
+ * Appends data to the buffer.
+ *
+ * @param dynbuf_ptr
+ * @param data_ptr
+ * @param len
+ *
+ * @return true on success.
+ */
+bool bs_dynbuf_append(
+    bs_dynbuf_t *dynbuf_ptr,
+    const void *data_ptr,
+    size_t len);
+
+/**
+ * Appends a char to the buffer.
+ *
+ * @param dynbuf_ptr
+ * @param c
+ *
+ * @return true on success.
+ */
+bool bs_dynbuf_append_char(
+    bs_dynbuf_t *dynbuf_ptr,
+    char c);
+
+/**
+ * Conditionally appends a character.
+ *
+ * @param dynbuf_ptr
+ * @param condition
+ * @param c
+ *
+ * @return true on success.
+ */
+static inline bool bs_dynbuf_maybe_append_char(
+    bs_dynbuf_t *dynbuf_ptr,
+    bool condition,
+    char c) {
+    return (!condition || bs_dynbuf_append_char(dynbuf_ptr, c));
+}
+
+static inline bool bs_dynbuf_maybe_indent(
+    bs_dynbuf_t *dynbuf_ptr,
+    bool condition,
+    size_t indent) {
+    if (!condition) return true;
+    while (indent--) {
+        if (!bs_dynbuf_append_char(dynbuf_ptr, ' ')) return false;
+    }
+    return true;
+}
 
 /** Unit tests. */
 extern const bs_test_case_t   bs_dynbuf_test_cases[];
