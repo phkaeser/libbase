@@ -35,7 +35,10 @@ struct _bspl_object_t {
     /** References held to this object. */
     int references;
     /** Abstract virtual method: Writes the object into dynbuf_ptr. */
-    bool (*write_fn)(bspl_object_t *object_ptr, bs_dynbuf_t *dynbuf_ptr);
+    bool (*write_fn)(
+        bspl_object_t *object_ptr,
+        bs_dynbuf_t *dynbuf_ptr,
+        size_t indent);
     /** Abstract virtual method: Destroys the object. */
     void (*destroy_fn)(bspl_object_t *object_ptr);
 };
@@ -77,12 +80,16 @@ struct _bspl_array_t {
 static bool _bspl_object_init(
     bspl_object_t *object_ptr,
     bspl_type_t type,
-    bool (*write_fn)(bspl_object_t *object_ptr, bs_dynbuf_t *dynbuf_ptr),
+    bool (*write_fn)(
+        bspl_object_t *object_ptr,
+        bs_dynbuf_t *dynbuf_ptr,
+        size_t indent),
     void (*destroy_fn)(bspl_object_t *object_ptr));
 
 static bool _bspl_string_object_write(
     bspl_object_t *object_ptr,
-    bs_dynbuf_t *dynbuf_ptr);
+    bs_dynbuf_t *dynbuf_ptr,
+    size_t indent);
 static bool _bspl_string_write(
     const char *str_ptr,
     bs_dynbuf_t *dynbuf_ptr);
@@ -90,12 +97,14 @@ static void _bspl_string_object_destroy(bspl_object_t *object_ptr);
 
 static bool _bspl_dict_object_write(
     bspl_object_t *object_ptr,
-    bs_dynbuf_t *dynbuf_ptr);
+    bs_dynbuf_t *dynbuf_ptr,
+    size_t indent);
 static void _bspl_dict_object_destroy(bspl_object_t *object_ptr);
 
 static bool _bspl_array_object_write(
     bspl_object_t *object_ptr,
-    bs_dynbuf_t *dynbuf_ptr);
+    bs_dynbuf_t *dynbuf_ptr,
+    size_t indent);
 static void _bspl_array_object_destroy(bspl_object_t *object_ptr);
 
 static bspl_dict_item_t *_bspl_dict_item_create(
@@ -148,7 +157,7 @@ bool bspl_object_write(bspl_object_t *object_ptr,
     BS_ASSERT(NULL != object_ptr->write_fn);
 
     size_t backup_pos = dynbuf_ptr->length;
-    while (!object_ptr->write_fn(object_ptr, dynbuf_ptr)) {
+    while (!object_ptr->write_fn(object_ptr, dynbuf_ptr, 0)) {
         dynbuf_ptr->length = backup_pos;
         if (!bs_dynbuf_grow(dynbuf_ptr)) return false;
     }
@@ -375,7 +384,10 @@ bspl_array_t *bspl_array_from_object(bspl_object_t *object_ptr)
 bool _bspl_object_init(
     bspl_object_t *object_ptr,
     bspl_type_t type,
-    bool (*write_fn)(bspl_object_t *object_ptr, bs_dynbuf_t *dynbuf_ptr),
+    bool (*write_fn)(
+        bspl_object_t *object_ptr,
+        bs_dynbuf_t *dynbuf_ptr,
+        size_t indent),
     void (*destroy_fn)(bspl_object_t *object_ptr))
 {
     BS_ASSERT(NULL != object_ptr);
@@ -396,12 +408,14 @@ bool _bspl_object_init(
  *
  * @param object_ptr
  * @param dynbuf_ptr
+ * @param indent
  *
  * @return true on success.
  */
 bool _bspl_string_object_write(
     bspl_object_t *object_ptr,
-    bs_dynbuf_t *dynbuf_ptr)
+    bs_dynbuf_t *dynbuf_ptr,
+    __UNUSED__ size_t indent)
 {
     bspl_string_t *string_ptr = BS_ASSERT_NOTNULL(
         bspl_string_from_object(object_ptr));
@@ -493,7 +507,8 @@ void _bspl_string_object_destroy(bspl_object_t *object_ptr)
 /* ------------------------------------------------------------------------- */
 bool _bspl_dict_object_write(
     bspl_object_t *object_ptr,
-    bs_dynbuf_t *dynbuf_ptr)
+    bs_dynbuf_t *dynbuf_ptr,
+    __UNUSED__ size_t indent)
 {
     bspl_dict_t *dict_ptr = BS_ASSERT_NOTNULL(
         bspl_dict_from_object(object_ptr));
@@ -619,7 +634,8 @@ void _bspl_dict_item_node_destroy(bs_avltree_node_t *node_ptr)
  */
 bool _bspl_array_object_write(
     bspl_object_t *object_ptr,
-    bs_dynbuf_t *dynbuf_ptr)
+    bs_dynbuf_t *dynbuf_ptr,
+    __UNUSED__ size_t indent)
 {
     bspl_array_t *array_ptr = BS_ASSERT_NOTNULL(
         bspl_array_from_object(object_ptr));
