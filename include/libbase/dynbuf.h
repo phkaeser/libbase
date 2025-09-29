@@ -173,6 +173,17 @@ static inline bool bs_dynbuf_maybe_append_char(
     return (!condition || bs_dynbuf_append_char(dynbuf_ptr, c));
 }
 
+static inline bool bs_dynbuf_maybe_indent(
+    bs_dynbuf_t *dynbuf_ptr,
+    bool condition,
+    size_t indent) {
+    if (!condition) return true;
+    while (indent--) {
+        if (!bs_dynbuf_append_char(dynbuf_ptr, ' ')) return false;
+    }
+    return true;
+}
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_dynbuf_test_cases[];
 
