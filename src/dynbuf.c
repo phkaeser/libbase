@@ -322,6 +322,13 @@ void test_dynbuf_append(bs_test_t *test_ptr)
     BS_TEST_VERIFY_MEMEQ(test_ptr, "abx", d.data_ptr, 3);
     BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_append_char(&d, 'y'));
 
+    d.length = 2;
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_maybe_append_char(&d, false, 'z'));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, d.length);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_maybe_append_char(&d, true, 'z'));
+    BS_TEST_VERIFY_EQ(test_ptr, 3, d.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "abz", d.data_ptr, 3);
+
     bs_dynbuf_fini(&d);
 }
 

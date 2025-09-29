@@ -148,6 +148,22 @@ bool bs_dynbuf_append_char(
     bs_dynbuf_t *dynbuf_ptr,
     char c);
 
+/**
+ * Conditionally appends a character.
+ *
+ * @param dynbuf_ptr
+ * @param condition
+ * @param c
+ *
+ * @return true on success.
+ */
+static inline bool bs_dynbuf_maybe_append_char(
+    bs_dynbuf_t *dynbuf_ptr,
+    bool condition,
+    char c) {
+    return (!condition || bs_dynbuf_append_char(dynbuf_ptr, c));
+}
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_dynbuf_test_cases[];
 
