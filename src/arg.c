@@ -436,6 +436,7 @@ bool parse_uint32(const bs_arg_uint32_t *arg_uint32_ptr,
 }
 
 /* ------------------------------------------------------------------------- */
+/** Sets defaults, from the arg descriptor. */
 void set_all_defaults(const bs_arg_t *arg_ptr)
 {
     for (;
@@ -485,6 +486,7 @@ void set_all_defaults(const bs_arg_t *arg_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Checks arguments. */
 bool check_arg(const bs_arg_t *arg_ptr)
 {
     bool                      retval = true;
@@ -583,6 +585,7 @@ bool check_arg(const bs_arg_t *arg_ptr)
 /* == Helpers for storing the names in a tree ============================== */
 
 /* ------------------------------------------------------------------------- */
+/** Node comparator, for @ref bs_avltree_node_cmp_t. */
 int node_cmp(const bs_avltree_node_t *node_ptr, const void *key_ptr)
 {
     arg_name_t *arg_name_ptr = BS_CONTAINER_OF(node_ptr, arg_name_t, node);
@@ -590,6 +593,7 @@ int node_cmp(const bs_avltree_node_t *node_ptr, const void *key_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Node ctor. */
 arg_name_t *node_create(const char *prefix_ptr, const char *name_ptr)
 {
     size_t                    len;
@@ -614,6 +618,7 @@ arg_name_t *node_create(const char *prefix_ptr, const char *name_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Node dtor. */
 void node_destroy(bs_avltree_node_t *node_ptr)
 {
     arg_name_t *arg_name_ptr = BS_CONTAINER_OF(node_ptr, arg_name_t, node);
@@ -626,6 +631,7 @@ void node_destroy(bs_avltree_node_t *node_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Checks whether the name is valid. */
 bool is_name_valid(const char *name_ptr)
 {
     if (!isalpha(*name_ptr) && !(*name_ptr & 0x80)) {
@@ -647,6 +653,7 @@ bool is_name_valid(const char *name_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Looks up an enum for a @ref bs_arg_enum_table_t. */
 bool lookup_enum(const bs_arg_enum_table_t *lookup_table,
                  const char *name_ptr,
                  int *value_ptr)
@@ -722,7 +729,8 @@ void bs_arg_test_get_match_type_bool(bs_test_t *test_ptr) {
     BS_TEST_VERIFY_EQ(test_ptr, NULL, arg_value);
 }
 
-/* -- Verifies get_match_type() with non-bool args ------------------------- */
+/* ------------------------------------------------------------------------- */
+/** Verifies get_match_type() with non-bool args. */
 void bs_arg_test_get_match_type_nonbool(bs_test_t *test_ptr) {
     static const bs_arg_t     uint32_arg = BS_ARG_UINT32(
         "value", "description", 42, 0, UINT32_MAX, NULL );
@@ -762,6 +770,7 @@ void bs_arg_test_get_match_type_nonbool(bs_test_t *test_ptr) {
 }
 
 /* ------------------------------------------------------------------------- */
+/** Tests find_matching_arg(). */
 void bs_arg_test_find_matching_arg(bs_test_t *test_ptr) {
     static const bs_arg_t     args[] = {
         BS_ARG_BOOL("b", "d", true, NULL),
@@ -806,6 +815,7 @@ void bs_arg_test_find_matching_arg(bs_test_t *test_ptr) {
 }
 
 /* ------------------------------------------------------------------------- */
+/** Tests parser for boolean value. */
 void bs_arg_test_parse_arg_for_bool(bs_test_t *test_ptr)
 {
     static bool               value;
@@ -823,6 +833,7 @@ void bs_arg_test_parse_arg_for_bool(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Tests parser for unsigned 32 bit values. */
 void bs_arg_test_parse_arg_for_uint32(bs_test_t *test_ptr)
 {
     static uint32_t           value;
@@ -852,6 +863,7 @@ void bs_arg_test_parse_arg_for_uint32(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Tests enum parser. */
 void bs_arg_test_parse_arg_for_enum(bs_test_t *test_ptr)
 {
     static int                value;

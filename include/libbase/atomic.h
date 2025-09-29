@@ -60,6 +60,7 @@
 
 #if defined(__BS_ATOMIC_INT64_MUTEX)
 #include <pthread.h>
+/** Fallback: Static mutex. */
 static pthread_mutex_t        _bs_atomic_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif  // defined(__BS_ATOMIC_INT64_MUTEX)
 
