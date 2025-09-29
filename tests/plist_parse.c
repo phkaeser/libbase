@@ -27,9 +27,25 @@
 /*** Initial size for the output dynbuffer. */
 static const size_t min_size = 1 << 16;
 
+static uint32_t               indentation = 4;
+
+/** Specification of commandline arguments. */
+bs_arg_t args[] = {
+    BS_ARG_UINT32(
+        "indentation",
+        "Indentation to use when writing the parsed plist. Default: 4.",
+        4, 0, INT32_MAX, &indentation),
+    BS_ARG_SENTINEL(),
+};
+
 /** Main program, runs the unit tests. */
 int main(int argc, const char **argv)
 {
+    if (!bs_arg_parse(args, BS_ARG_MODE_EXTRA_VALUES, &argc, argv)) {
+        bs_arg_print_usage(stderr, args);
+        return EXIT_FAILURE;
+    }
+
     if (2 != argc) {
         fprintf(stderr, "Usage: %s PLIST_FILE\n", argv[0]);
         return EXIT_FAILURE;
@@ -50,7 +66,7 @@ int main(int argc, const char **argv)
         return EXIT_FAILURE;
     }
 
-    bool rv = bspl_object_write(object_ptr, &dynbuf);
+    bool rv = bspl_object_write_indented(object_ptr, &dynbuf, indentation, 0);
     bspl_object_unref(object_ptr);
     if (!rv) {
         fprintf(stderr, "Failed bspl_object_write(%p, %p). "
