@@ -19,7 +19,9 @@ FLEX_TARGET(
   ${CMAKE_CURRENT_BINARY_DIR}/analyzer.c
   DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/analyzer.h)
 
-FIND_PACKAGE(BISON 3.0 REQUIRED)
+# Needs 3.8.2 due to a build warning.
+# See: https://github.com/phkaeser/wlmaker/issues/53
+FIND_PACKAGE(BISON 3.8.2 REQUIRED)
 BISON_TARGET(
   grammar
   grammar.y
@@ -47,9 +49,6 @@ TARGET_INCLUDE_DIRECTORIES(
   PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}/)
 
-# TODO(kaeser@gubbe.ch):Remove, once updating post bison 3.8.2 (Aug 2022).
-# See: https://github.com/phkaeser/wlmaker/issues/53
-TARGET_COMPILE_OPTIONS(libbase_plist PRIVATE -Wno-unused-but-set-variable)
 TARGET_LINK_LIBRARIES(libbase_plist libbase)
 SET_TARGET_PROPERTIES(
   libbase_plist
