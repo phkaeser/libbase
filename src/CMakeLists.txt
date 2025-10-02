@@ -13,31 +13,31 @@
 # limitations under the License.
 
 SET(PUBLIC_HEADER_FILES
-  arg.h
-  assert.h
-  atomic.h
-  avltree.h
-  c2x_compat.h
-  def.h
-  dequeue.h
-  dllist.h
-  dynbuf.h
-  file.h
-  gfxbuf.h
-  gfxbuf_xpm.h
-  libbase.h
-  log.h
-  log_wrappers.h
-  ptr_set.h
-  ptr_stack.h
-  ptr_vector.h
-  sock.h
-  strutil.h
-  subprocess.h
-  test.h
-  thread.h
-  time.h
-  vector.h)
+  include/libbase/arg.h
+  include/libbase/assert.h
+  include/libbase/atomic.h
+  include/libbase/avltree.h
+  include/libbase/c2x_compat.h
+  include/libbase/def.h
+  include/libbase/dequeue.h
+  include/libbase/dllist.h
+  include/libbase/dynbuf.h
+  include/libbase/file.h
+  include/libbase/gfxbuf.h
+  include/libbase/gfxbuf_xpm.h
+  include/libbase/libbase.h
+  include/libbase/log.h
+  include/libbase/log_wrappers.h
+  include/libbase/ptr_set.h
+  include/libbase/ptr_stack.h
+  include/libbase/ptr_vector.h
+  include/libbase/sock.h
+  include/libbase/strutil.h
+  include/libbase/subprocess.h
+  include/libbase/test.h
+  include/libbase/thread.h
+  include/libbase/time.h
+  include/libbase/vector.h)
 
 SET(SOURCES
   arg.c

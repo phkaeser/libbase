@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # Suggested configuration:
-#   cmake -B build -Dconfig_WERROR=ON -Dconfig_DEBUG=ON
+#   cmake -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/.local -Dconfig_WERROR=ON -Dconfig_DEBUG=ON -B build
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 PROJECT(libbase VERSION 1.0
   DESCRIPTION "A small standard library for C"
@@ -91,6 +91,7 @@ CONFIGURE_FILE(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(src/plist)
+ADD_SUBDIRECTORY(tools)
 
 # Add 'install' target, but only if we're the toplevel project.
 IF(CMAKE_PROJECT_NAME STREQUAL libbase)

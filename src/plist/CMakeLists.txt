@@ -29,9 +29,9 @@ BISON_TARGET(
 ADD_FLEX_BISON_DEPENDENCY(analyzer grammar)
 
 SET(PUBLIC_HEADER_FILES
-  decode.h
-  model.h
-  parse.h)
+  include/libbase/plist/decode.h
+  include/libbase/plist/model.h
+  include/libbase/plist/parse.h)
 
 ADD_LIBRARY(libbase_plist STATIC)
 TARGET_SOURCES(libbase_plist PRIVATE
