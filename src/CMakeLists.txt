@@ -13,31 +13,31 @@
 # limitations under the License.
 
 SET(PUBLIC_HEADER_FILES
-  include/libbase/arg.h
-  include/libbase/assert.h
-  include/libbase/atomic.h
-  include/libbase/avltree.h
-  include/libbase/c2x_compat.h
-  include/libbase/def.h
-  include/libbase/dequeue.h
-  include/libbase/dllist.h
-  include/libbase/dynbuf.h
-  include/libbase/file.h
-  include/libbase/gfxbuf.h
-  include/libbase/gfxbuf_xpm.h
-  include/libbase/libbase.h
-  include/libbase/log.h
-  include/libbase/log_wrappers.h
-  include/libbase/ptr_set.h
-  include/libbase/ptr_stack.h
-  include/libbase/ptr_vector.h
-  include/libbase/sock.h
-  include/libbase/strutil.h
-  include/libbase/subprocess.h
-  include/libbase/test.h
-  include/libbase/thread.h
-  include/libbase/time.h
-  include/libbase/vector.h)
+  ${PROJECT_SOURCE_DIR}/include/libbase/arg.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/assert.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/atomic.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/avltree.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/c2x_compat.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/def.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/dequeue.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/dllist.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/dynbuf.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/file.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/gfxbuf.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/gfxbuf_xpm.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/libbase.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/log.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/log_wrappers.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/ptr_set.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/ptr_stack.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/ptr_vector.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/sock.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/strutil.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/subprocess.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/test.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/thread.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/time.h
+  ${PROJECT_SOURCE_DIR}/include/libbase/vector.h)
 
 SET(SOURCES
   arg.c
@@ -83,3 +83,11 @@ IF(CAIRO_FOUND)
   TARGET_INCLUDE_DIRECTORIES(libbase PUBLIC ${CAIRO_INCLUDE_DIRS})
   TARGET_LINK_LIBRARIES(libbase PUBLIC PkgConfig::CAIRO)
 ENDIF(CAIRO_FOUND)
+
+# Add 'install' target, but only if we're the toplevel project.
+IF(CMAKE_PROJECT_NAME STREQUAL libbase)
+  INSTALL(
+    TARGETS libbase
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libbase")
+ENDIF()

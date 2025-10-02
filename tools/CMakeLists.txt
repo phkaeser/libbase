@@ -22,4 +22,9 @@ IF(iwyu_path_and_options)
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
 ENDIF(iwyu_path_and_options)
 
-INSTALL(TARGETS plist_parse DESTINATION bin)
+# Add 'install' target, but only if we're the toplevel project.
+IF(CMAKE_PROJECT_NAME STREQUAL libbase)
+  INSTALL(
+    TARGETS plist_parse
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
+ENDIF()
