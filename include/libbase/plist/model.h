@@ -104,7 +104,7 @@ bool bspl_object_write_indented(
  *
  * @param value_ptr
  *
- * @return The string object, or NULL on error.
+ * @return The string object, or NULL on error or if `value_ptr` was NULL.
  */
 bspl_string_t *bspl_string_create(const char *value_ptr);
 
