@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 /* == Declarations ========================================================= */
 
@@ -67,6 +68,14 @@ static bool _bspl_decode_charbuf(
     char *str_ptr,
     size_t len);
 
+static bool _bspl_encode_dict(
+    const bspl_desc_t *desc_ptr,
+    void *src_ptr,
+    bspl_dict_t *dest_dict_ptr);
+static bspl_object_t *_bspl_encode_uint64(uint64_t uint64);
+static bspl_object_t *_bspl_encode_int64(int64_t int64);
+static bspl_object_t *_bspl_encode_double(double d);
+
 /** Enum descriptor for decoding bool. */
 static const bspl_enum_desc_t _bspl_bool_desc[] = {
     BSPL_ENUM("True", true),
@@ -93,6 +102,20 @@ bool bspl_decode_dict(
     }
 
     return _bspl_decode_dict_without_init(dict_ptr, desc_ptr, dest_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+bspl_dict_t *bspl_encode_dict(
+    const bspl_desc_t *desc_ptr,
+    void *src_ptr)
+{
+    bspl_dict_t *dict_ptr = bspl_dict_create();
+    if (NULL == dict_ptr) return NULL;
+
+    if (_bspl_encode_dict(desc_ptr, src_ptr, dict_ptr)) return dict_ptr;
+
+    bspl_dict_unref(dict_ptr);
+    return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -394,6 +417,57 @@ bool _bspl_decode_dict_without_init(
 }
 
 /* ------------------------------------------------------------------------- */
+bool _bspl_encode_dict(const bspl_desc_t *desc_ptr,
+                       void *src_ptr,
+                       bspl_dict_t *dest_dict_ptr)
+{
+    bspl_object_t *object_ptr;
+
+    for (const bspl_desc_t *iter_desc_ptr = desc_ptr;
+         iter_desc_ptr->key_ptr != NULL;
+         ++iter_desc_ptr) {
+
+        if (!*BS_VALUE_AT(bool, src_ptr, iter_desc_ptr->presence_ofs)) continue;
+
+        switch (iter_desc_ptr->type) {
+
+        case BSPL_TYPE_UINT64:
+            object_ptr = _bspl_encode_uint64(
+                *BS_VALUE_AT(uint64_t, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
+        case BSPL_TYPE_INT64:
+            object_ptr = _bspl_encode_int64(
+                *BS_VALUE_AT(int64_t, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
+        case BSPL_TYPE_DOUBLE:
+            object_ptr = _bspl_encode_double(
+                *BS_VALUE_AT(double, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
+        default:
+            return false;
+        }
+
+        if (NULL == object_ptr) return false;
+        if (!bspl_dict_add(
+                dest_dict_ptr,
+                iter_desc_ptr->key_ptr,
+                object_ptr)) {
+            bs_log(BS_WARNING, "Failed bspl-dict_add(%p, \"%s\", %p)",
+                   dest_dict_ptr,
+                   iter_desc_ptr->key_ptr,
+                   object_ptr);
+            return false;
+        }
+        bspl_object_unref(object_ptr);
+    }
+
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
 /** Decodes an unsigned number, using uint64_t as carry-all. */
 bool _bspl_decode_uint64(bspl_object_t *obj_ptr, uint64_t *uint64_ptr)
 {
@@ -518,6 +592,39 @@ bool _bspl_decode_charbuf(
     return true;
 }
 
+/* ------------------------------------------------------------------------- */
+/** Encodes an unsigned 64-bit value into a plist object (a string). */
+bspl_object_t *_bspl_encode_uint64(uint64_t uint64)
+{
+    char buf[21];  // Length of the UINT64_MAX value plus 1 for NUL.
+
+    int rv = snprintf(buf, sizeof(buf), "%"PRIu64, uint64);
+    if (0 > rv || (size_t)rv >= sizeof(buf)) return NULL;
+    return bspl_object_from_string(bspl_string_create(buf));
+}
+
+/* ------------------------------------------------------------------------- */
+/** Encodes a signed 64-bit value into a plist object (a string). */
+bspl_object_t *_bspl_encode_int64(int64_t int64)
+{
+    char buf[22];  // Length of INT64_MIN value plus sign, plus 1 for NUL.
+
+    int rv = snprintf(buf, sizeof(buf), "%"PRId64, int64);
+    if (0 > rv || (size_t)rv >= sizeof(buf)) return NULL;
+    return bspl_object_from_string(bspl_string_create(buf));
+}
+
+/* ------------------------------------------------------------------------- */
+/** Encodes a floating point value into a plist object (a string). */
+bspl_object_t *_bspl_encode_double(double d)
+{
+    char buf[32];  // Surely enough for a double.
+
+    int rv = snprintf(buf, sizeof(buf), "%e", d);
+    if (0 > rv || (size_t)rv >= sizeof(buf)) return NULL;
+    return bspl_object_from_string(bspl_string_create(buf));
+}
+
 /* == Unit tests =========================================================== */
 
 static void test_init_defaults(bs_test_t *test_ptr);
@@ -530,6 +637,9 @@ static void test_decode_enum(bs_test_t *test_ptr);
 static void test_decode_string(bs_test_t *test_ptr);
 static void test_decode_charbuf(bs_test_t *test_ptr);
 
+static void test_encode_dict(bs_test_t *test_ptr);
+static void test_encode_number(bs_test_t *test_ptr);
+
 const bs_test_case_t bspl_decode_test_cases[] = {
     { 1, "init_defaults", test_init_defaults },
     { 1, "enum_translate", test_enum_translate },
@@ -540,6 +650,8 @@ const bs_test_case_t bspl_decode_test_cases[] = {
     { 1, "enum", test_decode_enum },
     { 1, "string", test_decode_string },
     { 1, "charbuf", test_decode_charbuf },
+    { 1, "encode_dict", test_encode_dict },
+    { 1, "encode_number", test_encode_number },
     { 0, NULL, NULL },
 };
 
@@ -1013,6 +1125,63 @@ void test_decode_charbuf(bs_test_t *test_ptr)
     o = bspl_create_object_from_plist_string("1234567890");
     BS_TEST_VERIFY_FALSE(test_ptr, _bspl_decode_charbuf(o, b, sizeof(b)));
     bspl_object_unref(o);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests encoding a dict. */
+void test_encode_dict(bs_test_t *test_ptr)
+{
+    _test_value_t val = {
+        .v_uint64 = 64,
+        .has_uint64 = true,
+        .v_int64 = -2,
+        .has_int64 = true,
+        .v_double = 3.14,
+        .has_double = true
+    };
+
+    bspl_dict_t *d = bspl_encode_dict(_bspl_decode_test_desc, &val);
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, d);
+
+    BS_TEST_VERIFY_STREQ(test_ptr, "64", bspl_dict_get_string_value(d, "u64"));
+    BS_TEST_VERIFY_STREQ(test_ptr, "-2", bspl_dict_get_string_value(d, "i64"));
+    BS_TEST_VERIFY_STREQ(
+        test_ptr,
+        "3.140000e+00",
+        bspl_dict_get_string_value(d, "d"));
+
+    bspl_dict_unref(d);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests number encoding. */
+void test_encode_number(bs_test_t *t)
+{
+    bspl_string_t *s;
+
+    s = bspl_string_from_object(_bspl_encode_uint64(UINT64_MAX));
+    BS_TEST_VERIFY_STREQ(t, "18446744073709551615", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_int64(INT64_MAX));
+    BS_TEST_VERIFY_STREQ(t, "9223372036854775807", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_int64(INT64_MIN));
+    BS_TEST_VERIFY_STREQ(t, "-9223372036854775808", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_double(0.2));
+    BS_TEST_VERIFY_STREQ(t, "2.000000e-01", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_double(DBL_MIN));
+    BS_TEST_VERIFY_STREQ(t, "2.225074e-308", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_double(DBL_MAX));
+    BS_TEST_VERIFY_STREQ(t, "1.797693e+308", bspl_string_value(s));
+    bspl_string_unref(s);
 }
 
 /* == End of decode.c ====================================================== */

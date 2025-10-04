@@ -301,6 +301,18 @@ bool bspl_decode_dict(
     void *dest_ptr);
 
 /**
+ * Encodes the data at `src_ptr` according to description into a plist object.
+ *
+ * @param desc_ptr
+ * @param src_ptr
+ *
+ * @return A new plist object with the encoded data, or NULL on error.
+ */
+bspl_dict_t *bspl_encode_dict(
+    const bspl_desc_t *desc_ptr,
+    void *src_ptr);
+
+/**
  * Destroys resources that were allocated during @ref bspl_decode_dict.
  *
  * @param desc_ptr
