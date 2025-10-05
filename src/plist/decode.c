@@ -75,6 +75,11 @@ static bool _bspl_encode_dict(
 static bspl_object_t *_bspl_encode_uint64(uint64_t uint64);
 static bspl_object_t *_bspl_encode_int64(int64_t int64);
 static bspl_object_t *_bspl_encode_double(double d);
+static bspl_object_t *_bspl_encode_argb32(uint32_t argb32);
+static bspl_object_t *_bspl_encode_bool(bool b);
+static bspl_object_t *_bspl_encode_enum(
+    int value,
+    const bspl_enum_desc_t *enum_desc_ptr);
 
 /** Enum descriptor for decoding bool. */
 static const bspl_enum_desc_t _bspl_bool_desc[] = {
@@ -446,6 +451,22 @@ bool _bspl_encode_dict(const bspl_desc_t *desc_ptr,
                 *BS_VALUE_AT(double, src_ptr, iter_desc_ptr->field_ofs));
             break;
 
+        case BSPL_TYPE_ARGB32:
+            object_ptr = _bspl_encode_argb32(
+                *BS_VALUE_AT(uint32_t, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
+        case BSPL_TYPE_BOOL:
+            object_ptr = _bspl_encode_bool(
+                *BS_VALUE_AT(bool, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
+        case BSPL_TYPE_ENUM:
+            object_ptr = _bspl_encode_enum(
+                *BS_VALUE_AT(int, src_ptr, iter_desc_ptr->field_ofs),
+                iter_desc_ptr->v.v_enum.desc_ptr);
+            break;
+
         default:
             return false;
         }
@@ -625,6 +646,35 @@ bspl_object_t *_bspl_encode_double(double d)
     return bspl_object_from_string(bspl_string_create(buf));
 }
 
+/* ------------------------------------------------------------------------- */
+/** Encodes the 32-bit value as a ARGB32 value. */
+bspl_object_t *_bspl_encode_argb32(uint32_t argb32)
+{
+    char buf[16];   // Enough for "argb32:aarrggbb".
+
+    int rv = snprintf(buf, sizeof(buf), "argb32:%"PRIx32, argb32);
+    if (0 > rv || (size_t)rv >= sizeof(buf)) return NULL;
+    return bspl_object_from_string(bspl_string_create(buf));
+}
+
+/* ------------------------------------------------------------------------- */
+/** Encodes the boolean value. Falls back to @ref _bspl_encode_enum. */
+bspl_object_t *_bspl_encode_bool(bool b)
+{
+    return _bspl_encode_enum(b != 0, _bspl_bool_desc);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Encodes the integer value as an enum. */
+bspl_object_t *_bspl_encode_enum(
+    int value,
+    const bspl_enum_desc_t *enum_desc_ptr)
+{
+    const char *p;
+    if (!bspl_enum_value_to_name(enum_desc_ptr, value, &p)) return NULL;
+    return bspl_object_from_string(bspl_string_create(p));
+}
+
 /* == Unit tests =========================================================== */
 
 static void test_init_defaults(bs_test_t *test_ptr);
@@ -639,6 +689,9 @@ static void test_decode_charbuf(bs_test_t *test_ptr);
 
 static void test_encode_dict(bs_test_t *test_ptr);
 static void test_encode_number(bs_test_t *test_ptr);
+static void test_encode_argb32(bs_test_t *test_ptr);
+static void test_encode_bool(bs_test_t *test_ptr);
+static void test_encode_enum(bs_test_t *test_ptr);
 
 const bs_test_case_t bspl_decode_test_cases[] = {
     { 1, "init_defaults", test_init_defaults },
@@ -652,6 +705,9 @@ const bs_test_case_t bspl_decode_test_cases[] = {
     { 1, "charbuf", test_decode_charbuf },
     { 1, "encode_dict", test_encode_dict },
     { 1, "encode_number", test_encode_number },
+    { 1, "encode_argb32", test_encode_argb32 },
+    { 1, "encode_bool", test_encode_bool },
+    { 1, "encode_enum", test_encode_enum },
     { 0, NULL, NULL },
 };
 
@@ -1182,6 +1238,53 @@ void test_encode_number(bs_test_t *t)
     s = bspl_string_from_object(_bspl_encode_double(DBL_MAX));
     BS_TEST_VERIFY_STREQ(t, "1.797693e+308", bspl_string_value(s));
     bspl_string_unref(s);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests argb32 encoding. */
+void test_encode_argb32(bs_test_t *test_ptr)
+{
+    bspl_string_t *s;
+
+    s = bspl_string_from_object(_bspl_encode_argb32(0x10203040));
+    BS_TEST_VERIFY_STREQ(test_ptr, "argb32:10203040", bspl_string_value(s));
+    bspl_string_unref(s);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests argb32 encoding. */
+void test_encode_bool(bs_test_t *test_ptr)
+{
+    bspl_string_t *s;
+    s = bspl_string_from_object(_bspl_encode_bool(0));
+    BS_TEST_VERIFY_STREQ(test_ptr, "False", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_bool(1));
+    BS_TEST_VERIFY_STREQ(test_ptr, "True", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    // Does not correspond to the defined enums, but must translate to True.
+    s = bspl_string_from_object(_bspl_encode_bool(42));
+    BS_TEST_VERIFY_STREQ(test_ptr, "True", bspl_string_value(s));
+    bspl_string_unref(s);
+}
+/* ------------------------------------------------------------------------- */
+/** Tests argb32 encoding. */
+void test_encode_enum(bs_test_t *test_ptr)
+{
+    bspl_string_t *s;
+
+    s = bspl_string_from_object(_bspl_encode_enum(1, _bspl_bool_desc));
+    BS_TEST_VERIFY_STREQ(test_ptr, "True", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_enum(0, _bspl_bool_desc));
+    BS_TEST_VERIFY_STREQ(test_ptr, "False", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_enum(42, _bspl_bool_desc));
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, s);
 }
 
 /* == End of decode.c ====================================================== */
