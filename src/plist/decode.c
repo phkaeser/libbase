@@ -80,6 +80,7 @@ static bspl_object_t *_bspl_encode_bool(bool b);
 static bspl_object_t *_bspl_encode_enum(
     int value,
     const bspl_enum_desc_t *enum_desc_ptr);
+static bspl_object_t *_bspl_encode_string(const char *str_ptr);
 
 /** Enum descriptor for decoding bool. */
 static const bspl_enum_desc_t _bspl_bool_desc[] = {
@@ -427,12 +428,17 @@ bool _bspl_encode_dict(const bspl_desc_t *desc_ptr,
                        bspl_dict_t *dest_dict_ptr)
 {
     bspl_object_t *object_ptr;
+    bspl_dict_t *sub_dict_ptr;
 
     for (const bspl_desc_t *iter_desc_ptr = desc_ptr;
          iter_desc_ptr->key_ptr != NULL;
          ++iter_desc_ptr) {
 
-        if (!*BS_VALUE_AT(bool, src_ptr, iter_desc_ptr->presence_ofs)) continue;
+        // Check presence field, but only if given.
+        if (iter_desc_ptr->presence_ofs != iter_desc_ptr->field_ofs &&
+            !*BS_VALUE_AT(bool, src_ptr, iter_desc_ptr->presence_ofs)) {
+            continue;
+        }
 
         switch (iter_desc_ptr->type) {
 
@@ -465,6 +471,29 @@ bool _bspl_encode_dict(const bspl_desc_t *desc_ptr,
             object_ptr = _bspl_encode_enum(
                 *BS_VALUE_AT(int, src_ptr, iter_desc_ptr->field_ofs),
                 iter_desc_ptr->v.v_enum.desc_ptr);
+            break;
+
+        case BSPL_TYPE_STRING:
+            object_ptr = _bspl_encode_string(
+                *BS_VALUE_AT(char*, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
+        case BSPL_TYPE_CHARBUF:
+            object_ptr = _bspl_encode_string(
+                BS_VALUE_AT(char, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
+        case BSPL_TYPE_DICT:
+            sub_dict_ptr = bspl_dict_create();
+            if (NULL == sub_dict_ptr) return false;
+            if (!_bspl_encode_dict(
+                    iter_desc_ptr->v.v_dict_desc_ptr,
+                    BS_VALUE_AT(void*, src_ptr, iter_desc_ptr->field_ofs),
+                    sub_dict_ptr)) {
+                bspl_dict_unref(sub_dict_ptr);
+                return false;
+            }
+            object_ptr = bspl_object_from_dict(sub_dict_ptr);
             break;
 
         default:
@@ -675,6 +704,12 @@ bspl_object_t *_bspl_encode_enum(
     return bspl_object_from_string(bspl_string_create(p));
 }
 
+/* ------------------------------------------------------------------------- */
+bspl_object_t *_bspl_encode_string(const char *str_ptr)
+{
+    return bspl_object_from_string(bspl_string_create(str_ptr));
+}
+
 /* == Unit tests =========================================================== */
 
 static void test_init_defaults(bs_test_t *test_ptr);
@@ -692,6 +727,7 @@ static void test_encode_number(bs_test_t *test_ptr);
 static void test_encode_argb32(bs_test_t *test_ptr);
 static void test_encode_bool(bs_test_t *test_ptr);
 static void test_encode_enum(bs_test_t *test_ptr);
+static void test_encode_string(bs_test_t *test_ptr);
 
 const bs_test_case_t bspl_decode_test_cases[] = {
     { 1, "init_defaults", test_init_defaults },
@@ -708,6 +744,7 @@ const bs_test_case_t bspl_decode_test_cases[] = {
     { 1, "encode_argb32", test_encode_argb32 },
     { 1, "encode_bool", test_encode_bool },
     { 1, "encode_enum", test_encode_enum },
+    { 1, "encode_string", test_encode_string },
     { 0, NULL, NULL },
 };
 
@@ -1185,7 +1222,7 @@ void test_decode_charbuf(bs_test_t *test_ptr)
 
 /* ------------------------------------------------------------------------- */
 /** Tests encoding a dict. */
-void test_encode_dict(bs_test_t *test_ptr)
+void test_encode_dict(bs_test_t *t)
 {
     _test_value_t val = {
         .v_uint64 = 64,
@@ -1193,18 +1230,42 @@ void test_encode_dict(bs_test_t *test_ptr)
         .v_int64 = -2,
         .has_int64 = true,
         .v_double = 3.14,
-        .has_double = true
+        .has_double = true,
+        .v_argb32 = 0x10203040,
+        .has_argb32 = true,
+        .v_bool = true,
+        .has_bool = true,
+        .v_enum = 1,
+        .has_enum = true,
+        .v_string = "TheStr",
+        .has_string = true,
+        .v_charbuf = { 'a', 'b' },
+        .has_charbuf = true,
+        .subdict.value = "SubVal",
+        .has_subdict = true,
     };
 
     bspl_dict_t *d = bspl_encode_dict(_bspl_decode_test_desc, &val);
-    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, d);
+    BS_TEST_VERIFY_NEQ_OR_RETURN(t, NULL, d);
 
-    BS_TEST_VERIFY_STREQ(test_ptr, "64", bspl_dict_get_string_value(d, "u64"));
-    BS_TEST_VERIFY_STREQ(test_ptr, "-2", bspl_dict_get_string_value(d, "i64"));
+    BS_TEST_VERIFY_STREQ(t, "64", bspl_dict_get_string_value(d, "u64"));
+    BS_TEST_VERIFY_STREQ(t, "-2", bspl_dict_get_string_value(d, "i64"));
     BS_TEST_VERIFY_STREQ(
-        test_ptr,
+        t,
         "3.140000e+00",
         bspl_dict_get_string_value(d, "d"));
+    BS_TEST_VERIFY_STREQ(
+        t,
+        "argb32:10203040",
+        bspl_dict_get_string_value(d, "argb32"));
+    BS_TEST_VERIFY_STREQ(t, "True", bspl_dict_get_string_value(d, "bool"));
+    BS_TEST_VERIFY_STREQ(t, "enum1", bspl_dict_get_string_value(d, "enum"));
+    BS_TEST_VERIFY_STREQ(t, "TheStr", bspl_dict_get_string_value(d, "string"));
+    BS_TEST_VERIFY_STREQ(t, "ab", bspl_dict_get_string_value(d, "charbuf"));
+
+    bspl_dict_t *sd = bspl_dict_get_dict(d, "subdict");
+    BS_TEST_VERIFY_NEQ_OR_RETURN(t, NULL, sd);
+    BS_TEST_VERIFY_STREQ(t, "SubVal", bspl_dict_get_string_value(sd, "string"));
 
     bspl_dict_unref(d);
 }
@@ -1252,7 +1313,7 @@ void test_encode_argb32(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-/** Tests argb32 encoding. */
+/** Tests bool encoding. */
 void test_encode_bool(bs_test_t *test_ptr)
 {
     bspl_string_t *s;
@@ -1270,7 +1331,7 @@ void test_encode_bool(bs_test_t *test_ptr)
     bspl_string_unref(s);
 }
 /* ------------------------------------------------------------------------- */
-/** Tests argb32 encoding. */
+/** Tests enum encoding. */
 void test_encode_enum(bs_test_t *test_ptr)
 {
     bspl_string_t *s;
@@ -1284,6 +1345,18 @@ void test_encode_enum(bs_test_t *test_ptr)
     bspl_string_unref(s);
 
     s = bspl_string_from_object(_bspl_encode_enum(42, _bspl_bool_desc));
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, s);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Tests string encoding. */
+void test_encode_string(bs_test_t *test_ptr)
+{
+    bspl_string_t *s = bspl_string_from_object(_bspl_encode_string("test"));
+    BS_TEST_VERIFY_STREQ(test_ptr, "test", bspl_string_value(s));
+    bspl_string_unref(s);
+
+    s = bspl_string_from_object(_bspl_encode_string(NULL));
     BS_TEST_VERIFY_EQ(test_ptr, NULL, s);
 }
 
