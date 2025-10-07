@@ -496,7 +496,13 @@ bool _bspl_encode_dict(const bspl_desc_t *desc_ptr,
             object_ptr = bspl_object_from_dict(sub_dict_ptr);
             break;
 
+        case BSPL_TYPE_ARRAY:
+            object_ptr = iter_desc_ptr->v.v_array.encode_all(
+                BS_VALUE_AT(void, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
         default:
+            bs_log(BS_ERROR, "Unsupported type %d", iter_desc_ptr->type);
             return false;
         }
 
@@ -756,8 +762,13 @@ static bool _bspl_test_custom_init(void *dst_ptr);
 static void _bspl_test_custom_fini(void *dst_ptr);
 static bool _bspl_test_array_decode(
     bspl_object_t *obj_ptr, size_t i, void *dst_ptr);
+static bspl_object_t *_bspl_test_array_encode_all(void *src_ptr);
 static bool _bspl_test_array_init(void *dst_ptr);
 static void _bspl_test_array_fini(void *dst_ptr);
+
+static bool _bspl_test_array_encode_dlnode(
+    bs_dllist_node_t *dlnode_ptr,
+    void *ud_ptr);
 
 /** Structure with test values. */
 typedef struct {
@@ -838,6 +849,7 @@ static const bspl_desc_t _bspl_decode_test_desc[] = {
                      _bspl_test_custom_fini),
     BSPL_DESC_ARRAY("array", true, _test_value_t, dllist_ptr, has_array,
                     _bspl_test_array_decode,
+                    _bspl_test_array_encode_all,
                     _bspl_test_array_init,
                     _bspl_test_array_fini),
     BSPL_DESC_SENTINEL(),
@@ -880,7 +892,7 @@ void _bspl_test_custom_fini(void *dst_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-/** Deocde method for array item. */
+/** Decode method for array item. */
 bool _bspl_test_array_decode(
     bspl_object_t *obj_ptr,
     __UNUSED__ size_t i,
@@ -900,6 +912,24 @@ bool _bspl_test_array_decode(
     item_ptr->c = bspl_string_value(string_ptr)[0];
     bs_dllist_push_back(*dllist_ptr_ptr, &item_ptr->dlnode);
     return true;
+}
+
+/* ------------------------------------------------------------------------- */
+/** Encodes all items of the array, and returns the plist array object. */
+bspl_object_t *_bspl_test_array_encode_all(void *src_ptr)
+{
+    bspl_array_t *array_ptr = bspl_array_create();
+    if (NULL == array_ptr) return NULL;
+
+    bs_dllist_t **dllist_ptr_ptr = src_ptr;
+    if (bs_dllist_all(*dllist_ptr_ptr,
+                      _bspl_test_array_encode_dlnode,
+                      array_ptr)) {
+        return bspl_object_from_array(array_ptr);
+    }
+
+    bspl_array_unref(array_ptr);
+    return NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -930,6 +960,23 @@ void _bspl_test_array_fini(void *dst_ptr)
         free(*dllist_ptr_ptr);
         *dllist_ptr_ptr = NULL;
     }
+}
+
+/* ------------------------------------------------------------------------- */
+/** @ref bs_dllist_for_each callback: Encodes one node, appends to `ud_ptr`. */
+bool _bspl_test_array_encode_dlnode(bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
+{
+    _test_array_item_t *item_ptr = BS_CONTAINER_OF(
+        dlnode_ptr, _test_array_item_t, dlnode);
+
+    char s[2] = { item_ptr->c, '\0' };
+    bspl_object_t *object_ptr = bspl_object_from_string(bspl_string_create(s));
+    if (NULL == object_ptr) return false;
+
+    bspl_array_t *array_ptr = ud_ptr;
+    bool rv = bspl_array_push_back(array_ptr, object_ptr);
+    bspl_object_unref(object_ptr);
+    return rv;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1224,6 +1271,8 @@ void test_decode_charbuf(bs_test_t *test_ptr)
 /** Tests encoding a dict. */
 void test_encode_dict(bs_test_t *t)
 {
+    bs_dllist_t dllist = {};
+    _test_array_item_t i0 = { .c = 'a' }, i1 = { .c = 'b' };
     _test_value_t val = {
         .v_uint64 = 64,
         .has_uint64 = true,
@@ -1243,7 +1292,11 @@ void test_encode_dict(bs_test_t *t)
         .has_charbuf = true,
         .subdict.value = "SubVal",
         .has_subdict = true,
+        .dllist_ptr = &dllist,
+        .has_array = true,
     };
+    bs_dllist_push_back(&dllist, &i0.dlnode);
+    bs_dllist_push_back(&dllist, &i1.dlnode);
 
     bspl_dict_t *d = bspl_encode_dict(_bspl_decode_test_desc, &val);
     BS_TEST_VERIFY_NEQ_OR_RETURN(t, NULL, d);
@@ -1266,6 +1319,12 @@ void test_encode_dict(bs_test_t *t)
     bspl_dict_t *sd = bspl_dict_get_dict(d, "subdict");
     BS_TEST_VERIFY_NEQ_OR_RETURN(t, NULL, sd);
     BS_TEST_VERIFY_STREQ(t, "SubVal", bspl_dict_get_string_value(sd, "string"));
+
+    bspl_array_t *a = bspl_dict_get_array(d, "array");
+    BS_TEST_VERIFY_NEQ_OR_RETURN(t, NULL, a);
+    BS_TEST_VERIFY_EQ(t, 2, bspl_array_size(a));
+    BS_TEST_VERIFY_STREQ(t, "a", bspl_array_string_value_at(a, 0));
+    BS_TEST_VERIFY_STREQ(t, "b", bspl_array_string_value_at(a, 1));
 
     bspl_dict_unref(d);
 }

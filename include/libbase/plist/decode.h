@@ -118,6 +118,8 @@ typedef struct {
 typedef struct {
     /** Decoding method, for item at position `i`. */
     bool (*decode)(bspl_object_t *obj_ptr, size_t i, void *dest_ptr);
+    /** Encoding method, for the full array. */
+    bspl_object_t *(*encode_all)(void *src_ptr);
     /** Initializer method: Allocate or prepare `dest_ptr`. May be NULL. */
     bool (*init)(void *dest_ptr);
     /** Cleanup method: Frees `dest_ptr`. May be NULL.. */
@@ -275,13 +277,14 @@ struct _bspl_desc_t {
             }
 
 /** Descriptor for an array, with an item-decoder. */
-#define BSPL_DESC_ARRAY(_key, _required, _base, _field, _presence, _d, _i, _f) { \
+#define BSPL_DESC_ARRAY(_key, _required, _base, _field, _presence, _d, _e, _i, _f) { \
         .type = BSPL_TYPE_ARRAY,                                        \
             .key_ptr = (_key),                                          \
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
             .v.v_array.decode = _d,                                     \
+            .v.v_array.encode_all = _e,                                 \
             .v.v_array.init = _i,                                       \
             .v.v_array.fini = _f,                                       \
             }
