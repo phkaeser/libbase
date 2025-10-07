@@ -97,7 +97,7 @@ typedef struct {
     /** The default value, if not in the dict. */
     int                        default_value;
     /** The enum descriptor. */
-    const bspl_enum_desc_t   *desc_ptr;
+    const bspl_enum_desc_t     *desc_ptr;
 } bspl_desc_enum_t;
 
 /** A string. Will be (re)created and must be free'd. */
@@ -139,7 +139,7 @@ typedef struct {
 /** Descriptor to decode a plist dict. */
 struct _bspl_desc_t {
     /** Type of the value. */
-    bspl_decode_type_t      type;
+    bspl_decode_type_t        type;
     /** The key used for the described value in the plist dict. */
     const char                *key_ptr;
     /** Whether the field is required. */
@@ -154,17 +154,17 @@ struct _bspl_desc_t {
     size_t                    presence_ofs;
     /** And the descriptor of the value. */
     union {
-        bspl_desc_int64_t   v_int64;
-        bspl_desc_uint64_t  v_uint64;
-        bspl_desc_double_t  v_double;
-        bspl_desc_argb32_t  v_argb32;
-        bspl_desc_bool_t    v_bool;
-        bspl_desc_enum_t    v_enum;
-        bspl_desc_string_t  v_string;
-        bspl_desc_charbuf_t v_charbuf;
-        const bspl_desc_t   *v_dict_desc_ptr;
-        bspl_desc_custom_t  v_custom;
-        bspl_desc_array_t   v_array;
+        bspl_desc_int64_t     v_int64;
+        bspl_desc_uint64_t    v_uint64;
+        bspl_desc_double_t    v_double;
+        bspl_desc_argb32_t    v_argb32;
+        bspl_desc_bool_t      v_bool;
+        bspl_desc_enum_t      v_enum;
+        bspl_desc_string_t    v_string;
+        bspl_desc_charbuf_t   v_charbuf;
+        const bspl_desc_t     *v_dict_desc_ptr;
+        bspl_desc_custom_t    v_custom;
+        bspl_desc_array_t     v_array;
     } v;
 };
 
