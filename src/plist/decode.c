@@ -496,6 +496,11 @@ bool _bspl_encode_dict(const bspl_desc_t *desc_ptr,
             object_ptr = bspl_object_from_dict(sub_dict_ptr);
             break;
 
+        case BSPL_TYPE_CUSTOM:
+            object_ptr = iter_desc_ptr->v.v_custom.encode(
+                BS_VALUE_AT(void, src_ptr, iter_desc_ptr->field_ofs));
+            break;
+
         case BSPL_TYPE_ARRAY:
             object_ptr = iter_desc_ptr->v.v_array.encode_all(
                 BS_VALUE_AT(void, src_ptr, iter_desc_ptr->field_ofs));
@@ -755,6 +760,7 @@ const bs_test_case_t bspl_decode_test_cases[] = {
 };
 
 static bool _bspl_test_custom_decode(bspl_object_t *o_ptr, void *dst_ptr);
+static bspl_object_t *_bspl_test_custom_encode(void *src_ptr);
 static void _bspl_test_array_item_destroy(
     bs_dllist_node_t *dlnode_ptr,
     void *ud_ptr);
@@ -845,6 +851,7 @@ static const bspl_desc_t _bspl_decode_test_desc[] = {
                    _bspl_decode_test_subdesc),
     BSPL_DESC_CUSTOM("custom", true, _test_value_t, v_custom_ptr, has_custom,
                      _bspl_test_custom_decode,
+                     _bspl_test_custom_encode,
                      _bspl_test_custom_init,
                      _bspl_test_custom_fini),
     BSPL_DESC_ARRAY("array", true, _test_value_t, dllist_ptr, has_array,
@@ -868,6 +875,14 @@ bool _bspl_test_custom_decode(bspl_object_t *o_ptr,
     if (NULL == string_ptr) return false;
     *str_ptr_ptr = logged_strdup(bspl_string_value(string_ptr));
     return *str_ptr_ptr != NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+/** A custom encoding function. Here: just encode the string. */
+bspl_object_t *_bspl_test_custom_encode(void *src_ptr)
+{
+    char **str_ptr_ptr = src_ptr;
+    return bspl_object_from_string(bspl_string_create(*str_ptr_ptr));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1292,6 +1307,8 @@ void test_encode_dict(bs_test_t *t)
         .has_charbuf = true,
         .subdict.value = "SubVal",
         .has_subdict = true,
+        .v_custom_ptr = "Custom",
+        .has_custom = true,
         .dllist_ptr = &dllist,
         .has_array = true,
     };
@@ -1319,6 +1336,8 @@ void test_encode_dict(bs_test_t *t)
     bspl_dict_t *sd = bspl_dict_get_dict(d, "subdict");
     BS_TEST_VERIFY_NEQ_OR_RETURN(t, NULL, sd);
     BS_TEST_VERIFY_STREQ(t, "SubVal", bspl_dict_get_string_value(sd, "string"));
+
+    BS_TEST_VERIFY_STREQ(t, "Custom", bspl_dict_get_string_value(d, "custom"));
 
     bspl_array_t *a = bspl_dict_get_array(d, "array");
     BS_TEST_VERIFY_NEQ_OR_RETURN(t, NULL, a);

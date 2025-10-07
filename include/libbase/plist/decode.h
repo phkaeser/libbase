@@ -130,6 +130,8 @@ typedef struct {
 typedef struct {
     /** Decoding method: From object into `dest_ptr`. */
     bool (*decode)(bspl_object_t *obj_ptr, void *dest_ptr);
+    /** Encoding method. From `src_ptr` create the object. */
+    bspl_object_t *(*encode)(void *src_ptr);
     /** Initializer method: Allocate or prepare `dest_ptr`. May be NULL. */
     bool (*init)(void *dest_ptr);
     /** Cleanup method: Frees `dest_ptr`. May be NULL.. */
@@ -265,13 +267,14 @@ struct _bspl_desc_t {
             }
 
 /** Descriptor for a custom object decoder. */
-#define BSPL_DESC_CUSTOM(_key, _required, _base, _field, _presence, _d ,_i, _f) { \
+#define BSPL_DESC_CUSTOM(_key, _required, _base, _field, _presence, _d ,_e, _i, _f) { \
         .type = BSPL_TYPE_CUSTOM,                                       \
             .key_ptr = (_key),                                          \
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
             .v.v_custom.decode = _d,                                    \
+            .v.v_custom.encode = _e,                                    \
             .v.v_custom.init = _i,                                      \
             .v.v_custom.fini = _f,                                      \
             }
