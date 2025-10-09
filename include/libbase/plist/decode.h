@@ -126,8 +126,6 @@ typedef struct {
 
 /** A custom decoder. */
 typedef struct {
-    /** Decoding method: From object into `value_ptr`. */
-    bool (*decode)(bspl_object_t *obj_ptr, void *value_ptr);
     /** Initializer method: Allocate or prepare `value_ptr`. May be NULL. */
     bool (*init)(void *value_ptr);
     /** Cleanup method: Frees `value_ptr`. May be NULL.. */
@@ -189,6 +187,47 @@ struct _bspl_desc_t {
     union bspl_desc_value     v;
 };
 
+/** Decodes an unsigned number, using uint64_t as carry-all. */
+bool bspl_decode_uint64(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes a signed number, using int64_t as carry-all. */
+bool bspl_decode_int64(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes a floating point number. */
+bool bspl_decode_double(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes an ARGB32 color value. */
+bool bspl_decode_argb32(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes a boolean. */
+bool bspl_decode_bool(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes an enum. */
+bool bspl_decode_enum(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes a string. */
+bool bspl_decode_string(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes a charbuf. */
+bool bspl_decode_charbuf(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+
 /** Encodes an unsigned 64-bit value into a plist object (a string). */
 bspl_object_t *bspl_encode_uint64(
     const union bspl_desc_value *desc_value_ptr,
@@ -236,6 +275,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_uint64,                               \
             .encode = bspl_encode_uint64,                               \
             .v.v_uint64.default_value = _default                        \
             }
@@ -247,6 +287,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_int64,                                \
             .encode = bspl_encode_int64,                                \
             .v.v_int64.default_value = _default                         \
             }
@@ -258,6 +299,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_double,                               \
             .encode = bspl_encode_double,                               \
             .v.v_double.default_value = _default                        \
             }
@@ -269,6 +311,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_argb32,                               \
             .encode = bspl_encode_argb32,                               \
             .v.v_argb32.default_value = _default                        \
             }
@@ -280,6 +323,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_bool,                                 \
             .encode = bspl_encode_bool,                                 \
             .v.v_bool.default_value = _default                          \
             }
@@ -292,6 +336,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_enum,                                 \
             .encode = bspl_encode_enum,                                 \
             .v.v_enum.default_value = _default,                         \
             .v.v_enum.desc_ptr = _desc_ptr                              \
@@ -304,6 +349,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_string,                               \
             .encode = bspl_encode_string,                               \
             .v.v_string.default_value_ptr = _default,                   \
             }
@@ -315,6 +361,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_charbuf,                              \
             .encode = bspl_encode_charbuf,                              \
             .v.v_charbuf.len = _len,                                    \
             .v.v_charbuf.default_value_ptr = _default,                  \
@@ -338,8 +385,8 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = _d,                                               \
             .encode = _e,                                               \
-            .v.v_custom.decode = _d,                                    \
             .v.v_custom.init = _i,                                      \
             .v.v_custom.fini = _f,                                      \
             }

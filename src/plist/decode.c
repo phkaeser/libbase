@@ -41,33 +41,6 @@ static bool _bspl_decode_dict_without_init(
     const bspl_desc_t *desc_ptr,
     void *value_ptr);
 
-static bool _bspl_decode_uint64(
-    bspl_object_t *obj_ptr,
-    uint64_t *uint64_ptr);
-static bool _bspl_decode_int64(
-    bspl_object_t *obj_ptr,
-    int64_t *int64_ptr);
-static bool _bspl_decode_double(
-    bspl_object_t *obj_ptr,
-    double *double_ptr);
-static bool _bspl_decode_argb32(
-    bspl_object_t *obj_ptr,
-    uint32_t *argb32_ptr);
-static bool _bspl_decode_bool(
-    bspl_object_t *obj_ptr,
-    bool *bool_ptr);
-static bool _bspl_decode_enum(
-    bspl_object_t *obj_ptr,
-    const bspl_enum_desc_t *enum_desc_ptr,
-    int *enum_value_ptr);
-static bool _bspl_decode_string(
-    bspl_object_t *obj_ptr,
-    char **str_ptr_ptr);
-static bool _bspl_decode_charbuf(
-    bspl_object_t *obj_ptr,
-    char *str_ptr,
-    size_t len);
-
 static bool _bspl_encode_dict_values(
     const bspl_desc_t *desc_ptr,
     const void *value_ptr,
@@ -188,14 +161,144 @@ bool bspl_enum_value_to_name(
 }
 
 /* ------------------------------------------------------------------------- */
+bool bspl_decode_uint64(
+    bspl_object_t *obj_ptr,
+    __UNUSED__ const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    const char *s = bspl_string_value_from_object(obj_ptr);
+    if (NULL == s) return false;
+
+    uint64_t *uint64_ptr = value_ptr;
+    return bs_strconvert_uint64(s, uint64_ptr, 10);
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_int64(
+    bspl_object_t *obj_ptr,
+    __UNUSED__ const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    const char *s = bspl_string_value_from_object(obj_ptr);
+    if (NULL == s) return false;
+
+    int64_t *int64_ptr = value_ptr;
+    return bs_strconvert_int64(s, int64_ptr, 10);
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_double(
+    bspl_object_t *obj_ptr,
+    __UNUSED__ const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    const char *s = bspl_string_value_from_object(obj_ptr);
+    if (NULL == s) return false;
+
+    double *d_ptr = value_ptr;
+    return bs_strconvert_double(s, d_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_argb32(
+    bspl_object_t *obj_ptr,
+    __UNUSED__ const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    const char *s = bspl_string_value_from_object(obj_ptr);
+    if (NULL == s) return false;
+
+    uint32_t *argb32_ptr = value_ptr;
+    int rv = sscanf(s, "argb32:%"PRIx32, argb32_ptr);
+    if (1 != rv) {
+        bs_log(BS_ERROR | BS_ERRNO,
+               "Failed sscanf(\"%s\", \"argb32:%%"PRIx32", %p)",
+               s, argb32_ptr);
+        return false;
+    }
+
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_bool(
+    bspl_object_t *obj_ptr,
+    __UNUSED__ const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    static const union bspl_desc_value dv = {
+        .v_enum.desc_ptr = _bspl_bool_desc
+    };
+    int i;
+    bool rv = bspl_decode_enum(obj_ptr, &dv, &i);
+    *((bool*)value_ptr) = i;
+    return rv;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_enum(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    const char *s = bspl_string_value_from_object(obj_ptr);
+    if (NULL == s) return false;
+
+    int *enum_value_ptr = value_ptr;
+    const bspl_enum_desc_t *enum_desc_ptr = desc_value_ptr->v_enum.desc_ptr;
+    for (; NULL != enum_desc_ptr->name_ptr; ++enum_desc_ptr) {
+        if (0 == strcmp(enum_desc_ptr->name_ptr, s)) {
+            *enum_value_ptr = enum_desc_ptr->value;
+            return true;
+        }
+    }
+
+    bs_log(BS_WARNING, "Failed to decode enum value \"%s\".", s);
+    return false;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_string(
+    bspl_object_t *obj_ptr,
+    __UNUSED__ const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    const char *s = bspl_string_value_from_object(obj_ptr);
+    if (NULL == s) return false;
+
+    char **str_ptr_ptr = value_ptr;
+    if (NULL != *str_ptr_ptr) free(*str_ptr_ptr);
+    *str_ptr_ptr = logged_strdup(s);
+    return (NULL != *str_ptr_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_charbuf(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    const char *s = bspl_string_value_from_object(obj_ptr);
+    if (NULL == s) return false;
+
+    if (desc_value_ptr->v_charbuf.len < strlen(s) + 1) {
+        bs_log(BS_WARNING, "Charbuf size %zu < %zu + 1 for \"%s\"",
+               desc_value_ptr->v_charbuf.len, strlen(s), s);
+        return false;
+    }
+    strcpy(value_ptr, s);
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
 bspl_object_t *bspl_encode_uint64(
     __UNUSED__ const union bspl_desc_value *desc_value_ptr,
     const void *value_ptr)
 {
     char buf[21];  // Length of the UINT64_MAX value plus 1 for NUL.
-    const uint64_t *u64_ptr = value_ptr;
+    const uint64_t *uint64_ptr = value_ptr;
 
-    int rv = snprintf(buf, sizeof(buf), "%"PRIu64, *u64_ptr);
+    int rv = snprintf(buf, sizeof(buf), "%"PRIu64, *uint64_ptr);
     if (0 > rv || (size_t)rv >= sizeof(buf)) return NULL;
     return bspl_object_from_string(bspl_string_create(buf));
 }
@@ -443,81 +546,42 @@ bool _bspl_decode_dict_without_init(
         }
 
         bool rv = false;
-        switch (iter_desc_ptr->type) {
-        case BSPL_TYPE_UINT64:
-            rv = _bspl_decode_uint64(
+        if (NULL != iter_desc_ptr->decode) {
+            rv = iter_desc_ptr->decode(
                 obj_ptr,
-                BS_VALUE_AT(uint64_t, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_INT64:
-            rv = _bspl_decode_int64(
-                obj_ptr,
-                BS_VALUE_AT(int64_t, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_DOUBLE:
-            rv = _bspl_decode_double(
-                obj_ptr,
-                BS_VALUE_AT(double, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_ARGB32:
-            rv = _bspl_decode_argb32(
-                obj_ptr,
-                BS_VALUE_AT(uint32_t, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_BOOL:
-            rv = _bspl_decode_bool(
-                obj_ptr,
-                BS_VALUE_AT(bool, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_ENUM:
-            rv = _bspl_decode_enum(
-                obj_ptr,
-                iter_desc_ptr->v.v_enum.desc_ptr,
-                BS_VALUE_AT(int, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_STRING:
-            rv = _bspl_decode_string(
-                obj_ptr,
-                BS_VALUE_AT(char*, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_CHARBUF:
-            rv = _bspl_decode_charbuf(
-                obj_ptr,
-                BS_VALUE_AT(char, value_ptr, iter_desc_ptr->field_ofs),
-                iter_desc_ptr->v.v_charbuf.len);
-            break;
-        case BSPL_TYPE_DICT:
-            rv = _bspl_decode_dict_without_init(
-                bspl_dict_from_object(obj_ptr),
-                iter_desc_ptr->v.v_dict_desc_ptr,
-                BS_VALUE_AT(void*, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_CUSTOM:
-            rv = iter_desc_ptr->v.v_custom.decode(
-                obj_ptr,
-                BS_VALUE_AT(void*, value_ptr, iter_desc_ptr->field_ofs));
-            break;
-        case BSPL_TYPE_ARRAY:
-            if (BSPL_ARRAY == bspl_object_type(obj_ptr)) {
-                bspl_array_t *array_ptr = bspl_array_from_object(obj_ptr);
-                rv = true;
-                for (size_t i = 0; i < bspl_array_size(array_ptr); ++i) {
-                    if (!iter_desc_ptr->v.v_array.decode(
-                            bspl_array_at(array_ptr, i),
-                            i,
-                            BS_VALUE_AT(
-                                void *,
-                                value_ptr,
-                                iter_desc_ptr->field_ofs))) {
-                        rv = false;
+                &iter_desc_ptr->v,
+                BS_VALUE_AT(void, value_ptr, iter_desc_ptr->field_ofs));
+        } else {
+
+            switch (iter_desc_ptr->type) {
+            case BSPL_TYPE_DICT:
+                rv = _bspl_decode_dict_without_init(
+                    bspl_dict_from_object(obj_ptr),
+                    iter_desc_ptr->v.v_dict_desc_ptr,
+                    BS_VALUE_AT(void*, value_ptr, iter_desc_ptr->field_ofs));
+                break;
+            case BSPL_TYPE_ARRAY:
+                if (BSPL_ARRAY == bspl_object_type(obj_ptr)) {
+                    bspl_array_t *array_ptr = bspl_array_from_object(obj_ptr);
+                    rv = true;
+                    for (size_t i = 0; i < bspl_array_size(array_ptr); ++i) {
+                        if (!iter_desc_ptr->v.v_array.decode(
+                                bspl_array_at(array_ptr, i),
+                                i,
+                                BS_VALUE_AT(
+                                    void *,
+                                    value_ptr,
+                                    iter_desc_ptr->field_ofs))) {
+                            rv = false;
+                        }
                     }
                 }
+                break;
+            default:
+                bs_log(BS_ERROR, "Unsupported type %d.", iter_desc_ptr->type);
+                rv = false;
+                break;
             }
-            break;
-        default:
-            bs_log(BS_ERROR, "Unsupported type %d.", iter_desc_ptr->type);
-            rv = false;
-            break;
         }
 
         if (iter_desc_ptr->presence_ofs != iter_desc_ptr->field_ofs) {
@@ -587,131 +651,6 @@ bool _bspl_encode_dict_values(
     return true;
 }
 
-/* ------------------------------------------------------------------------- */
-/** Decodes an unsigned number, using uint64_t as carry-all. */
-bool _bspl_decode_uint64(bspl_object_t *obj_ptr, uint64_t *uint64_ptr)
-{
-    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
-    if (NULL == string_ptr) return false;
-    const char *value_ptr = bspl_string_value(string_ptr);
-    if (NULL == value_ptr) return false;
-    return bs_strconvert_uint64(value_ptr, uint64_ptr, 10);
-}
-
-/* ------------------------------------------------------------------------- */
-/** Decodes a signed number, using int64_t as carry-all. */
-bool _bspl_decode_int64(bspl_object_t *obj_ptr, int64_t *int64_ptr)
-{
-    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
-    if (NULL == string_ptr) return false;
-    const char *value_ptr = bspl_string_value(string_ptr);
-    if (NULL == value_ptr) return false;
-    return bs_strconvert_int64(value_ptr, int64_ptr, 10);
-}
-
-/* ------------------------------------------------------------------------- */
-/** Decodes a floating point number. */
-bool _bspl_decode_double(bspl_object_t *obj_ptr, double *double_ptr)
-{
-    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
-    if (NULL == string_ptr) return false;
-    const char *value_ptr = bspl_string_value(string_ptr);
-    if (NULL == value_ptr) return false;
-    return bs_strconvert_double(value_ptr, double_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-/** Deocdes an ARGB32 value from the config object. */
-bool _bspl_decode_argb32(bspl_object_t *obj_ptr, uint32_t *argb32_ptr)
-{
-    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
-    if (NULL == string_ptr) return false;
-
-    const char *value_ptr = bspl_string_value(string_ptr);
-    if (NULL == value_ptr) return false;
-    int rv = sscanf(value_ptr, "argb32:%"PRIx32, argb32_ptr);
-    if (1 != rv) {
-        bs_log(BS_ERROR | BS_ERRNO,
-               "Failed sscanf(\"%s\", \"argb32:%%"PRIx32", %p)",
-               value_ptr, argb32_ptr);
-        return false;
-    }
-
-    return true;
-}
-
-/* ------------------------------------------------------------------------- */
-/** Translates a bool value from the string. */
-bool _bspl_decode_bool(
-    bspl_object_t *obj_ptr,
-    bool *bool_ptr)
-{
-    int bool_value;
-    bool rv = _bspl_decode_enum(obj_ptr, _bspl_bool_desc, &bool_value);
-    if (rv) *bool_ptr = bool_value;
-    return rv;
-}
-
-/* ------------------------------------------------------------------------- */
-/** Translates a enum value from the string, using the provided descriptor. */
-bool _bspl_decode_enum(
-    bspl_object_t *obj_ptr,
-    const bspl_enum_desc_t *enum_desc_ptr,
-    int *enum_value_ptr)
-{
-    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
-    if (NULL == string_ptr) return false;
-    const char *value_ptr = bspl_string_value(string_ptr);
-    if (NULL == value_ptr) return false;
-
-    for (; NULL != enum_desc_ptr->name_ptr; ++enum_desc_ptr) {
-        if (0 == strcmp(enum_desc_ptr->name_ptr, value_ptr)) {
-            *enum_value_ptr = enum_desc_ptr->value;
-            return true;
-        }
-    }
-
-    bs_log(BS_WARNING, "Failed to decode enum value '%s'.", value_ptr);
-    return false;
-}
-
-/* ------------------------------------------------------------------------- */
-/** Translates (ie. duplicates) a string value from the plist string. */
-bool _bspl_decode_string(
-    bspl_object_t *obj_ptr,
-    char **str_ptr_ptr)
-{
-    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
-    if (NULL == string_ptr) return false;
-    const char *value_ptr = bspl_string_value(string_ptr);
-    if (NULL == value_ptr) return false;
-
-    if (NULL != *str_ptr_ptr) free(*str_ptr_ptr);
-    *str_ptr_ptr = logged_strdup(value_ptr);
-    return (NULL != *str_ptr_ptr);
-}
-
-/* ------------------------------------------------------------------------- */
-/** Translates (ie. duplicates) a char buf from the plist string. */
-bool _bspl_decode_charbuf(
-    bspl_object_t *obj_ptr,
-    char *str_ptr,
-    size_t len)
-{
-    bspl_string_t *string_ptr = bspl_string_from_object(obj_ptr);
-    if (NULL == string_ptr) return false;
-    const char *value_ptr = bspl_string_value(string_ptr);
-    if (NULL == value_ptr) return false;
-
-    if (len < strlen(value_ptr) + 1) {
-        bs_log(BS_WARNING, "Charbuf size %zu < %zu + 1 for \"%s\"",
-               len, strlen(value_ptr), value_ptr);
-        return false;
-    }
-    strcpy(str_ptr, value_ptr);
-    return true;
-}
-
 /* == Unit tests =========================================================== */
 
 static void test_init_defaults(bs_test_t *test_ptr);
@@ -750,7 +689,10 @@ const bs_test_case_t bspl_decode_test_cases[] = {
     { 0, NULL, NULL },
 };
 
-static bool _bspl_test_custom_decode(bspl_object_t *o_ptr, void *dst_ptr);
+static bool _bspl_test_custom_decode(
+    bspl_object_t *object_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
 static bspl_object_t *_bspl_test_custom_encode(
     const union bspl_desc_value *desc_value_ptr,
     const void *value_ptr);
@@ -860,15 +802,17 @@ static const bspl_desc_t _bspl_decode_test_desc[] = {
 
 /* ------------------------------------------------------------------------- */
 /** A custom decoding function. Here: just decode a string. */
-bool _bspl_test_custom_decode(bspl_object_t *o_ptr,
-                              void *dst_ptr)
+bool _bspl_test_custom_decode(
+    bspl_object_t *object_ptr,
+    __UNUSED__ const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
 {
-    char** str_ptr_ptr = dst_ptr;
-    _bspl_test_custom_fini(dst_ptr);
+    char** str_ptr_ptr = value_ptr;
+    _bspl_test_custom_fini(value_ptr);
 
-    bspl_string_t *string_ptr = bspl_string_from_object(o_ptr);
-    if (NULL == string_ptr) return false;
-    *str_ptr_ptr = logged_strdup(bspl_string_value(string_ptr));
+    const char *s = bspl_string_value_from_object(object_ptr);
+    if (NULL == s) return false;
+    *str_ptr_ptr = logged_strdup(s);
     return *str_ptr_ptr != NULL;
 }
 
@@ -1125,31 +1069,31 @@ void test_decode_number(bs_test_t *test_ptr)
 
     obj_ptr = bspl_create_object_from_plist_string("42");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_uint64(obj_ptr, &u64));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_uint64(obj_ptr, NULL, &u64));
     BS_TEST_VERIFY_EQ(test_ptr, 42, u64);
     bspl_object_unref(obj_ptr);
 
     obj_ptr = bspl_create_object_from_plist_string("\"-1234\"");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_FALSE(test_ptr, _bspl_decode_uint64(obj_ptr, &u64));
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_decode_uint64(obj_ptr, NULL, &u64));
     bspl_object_unref(obj_ptr);
 
     obj_ptr = bspl_create_object_from_plist_string("42");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_int64(obj_ptr, &i64));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_int64(obj_ptr, NULL, &i64));
     BS_TEST_VERIFY_EQ(test_ptr, 42, i64);
     bspl_object_unref(obj_ptr);
 
     obj_ptr = bspl_create_object_from_plist_string("\"-1234\"");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_int64(obj_ptr, &i64));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_int64(obj_ptr, NULL, &i64));
     BS_TEST_VERIFY_EQ(test_ptr, -1234, i64);
     bspl_object_unref(obj_ptr);
 
     double d;
     obj_ptr = bspl_create_object_from_plist_string("\"3.14\"");
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_double(obj_ptr, &d));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_double(obj_ptr, NULL, &d));
     BS_TEST_VERIFY_EQ(test_ptr, 3.14, d);
     bspl_object_unref(obj_ptr);
 }
@@ -1163,7 +1107,7 @@ void test_decode_argb32(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, obj_ptr);
 
     uint32_t argb32;
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_argb32(obj_ptr, &argb32));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_argb32(obj_ptr, NULL, &argb32));
     BS_TEST_VERIFY_EQ(test_ptr, 0x01020304, argb32);
     bspl_object_unref(obj_ptr);
 
@@ -1191,14 +1135,14 @@ void test_decode_bool(bs_test_t *test_ptr)
     bspl_object_t *obj_ptr;
 
     obj_ptr = bspl_create_object_from_plist_string("Yes");
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_bool(obj_ptr, &value));
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, obj_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_bool(obj_ptr, NULL, &value));
     BS_TEST_VERIFY_TRUE(test_ptr, value);
     bspl_object_unref(obj_ptr);
 
     obj_ptr = bspl_create_object_from_plist_string("Disabled");
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_bool(obj_ptr, &value));
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, obj_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_bool(obj_ptr, NULL, &value));
     BS_TEST_VERIFY_FALSE(test_ptr, value);
     bspl_object_unref(obj_ptr);
 }
@@ -1209,28 +1153,25 @@ void test_decode_enum(bs_test_t *test_ptr)
 {
     int value;
     bspl_object_t *obj_ptr;
+    static const union bspl_desc_value dv = {
+        .v_enum.desc_ptr = _test_enum_desc
+    };
 
     obj_ptr = bspl_create_object_from_plist_string("enum2");
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(
-        test_ptr,
-        _bspl_decode_enum(obj_ptr, _test_enum_desc, &value));
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, obj_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_enum(obj_ptr, &dv, &value));
     BS_TEST_VERIFY_EQ(test_ptr, 2, value);
     bspl_object_unref(obj_ptr);
 
     obj_ptr = bspl_create_object_from_plist_string("\"enum2\"");
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(
-        test_ptr,
-        _bspl_decode_enum(obj_ptr, _test_enum_desc, &value));
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, obj_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_enum(obj_ptr, &dv, &value));
     BS_TEST_VERIFY_EQ(test_ptr, 2, value);
     bspl_object_unref(obj_ptr);
 
     obj_ptr = bspl_create_object_from_plist_string("INVALID");
-    BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_FALSE(
-        test_ptr,
-        _bspl_decode_enum(obj_ptr, _test_enum_desc, &value));
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, obj_ptr);
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_decode_enum(obj_ptr, &dv, &value));
     bspl_object_unref(obj_ptr);
 }
 
@@ -1243,7 +1184,7 @@ void test_decode_string(bs_test_t *test_ptr)
 
     obj_ptr = bspl_create_object_from_plist_string("TheString");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_string(obj_ptr, &v_ptr));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_string(obj_ptr, NULL, &v_ptr));
     BS_TEST_VERIFY_STREQ(test_ptr, "TheString", v_ptr);
     bspl_object_unref(obj_ptr);
     free(v_ptr);
@@ -1251,14 +1192,14 @@ void test_decode_string(bs_test_t *test_ptr)
 
     obj_ptr = bspl_create_object_from_plist_string("1234");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_string(obj_ptr, &v_ptr));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_string(obj_ptr, NULL, &v_ptr));
     BS_TEST_VERIFY_STREQ(test_ptr, "1234", v_ptr);
     bspl_object_unref(obj_ptr);
     // Not free-ing v_ptr => the next 'decode' call has to do that.
 
     obj_ptr = bspl_create_object_from_plist_string("\"quoted string\"");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, obj_ptr);
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_string(obj_ptr, &v_ptr));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_string(obj_ptr, NULL, &v_ptr));
     BS_TEST_VERIFY_STREQ(test_ptr, "quoted string", v_ptr);
     bspl_object_unref(obj_ptr);
     free(v_ptr);
@@ -1271,13 +1212,16 @@ void test_decode_charbuf(bs_test_t *test_ptr)
     char b[10];
     bspl_object_t *o;
 
+    static const union bspl_desc_value dv = {
+        .v_charbuf.len = sizeof(b)
+    };
     o = bspl_create_object_from_plist_string("123456789");
-    BS_TEST_VERIFY_TRUE(test_ptr, _bspl_decode_charbuf(o, b, sizeof(b)));
+    BS_TEST_VERIFY_TRUE(test_ptr, bspl_decode_charbuf(o, &dv, b));
     BS_TEST_VERIFY_STREQ(test_ptr, b, "123456789");
     bspl_object_unref(o);
 
     o = bspl_create_object_from_plist_string("1234567890");
-    BS_TEST_VERIFY_FALSE(test_ptr, _bspl_decode_charbuf(o, b, sizeof(b)));
+    BS_TEST_VERIFY_FALSE(test_ptr, bspl_decode_charbuf(o, &dv, b));
     bspl_object_unref(o);
 }
 
