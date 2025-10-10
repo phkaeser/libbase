@@ -117,7 +117,7 @@ typedef struct {
 /** An array, with a decoder for each item. */
 typedef struct {
     /** Decoding method, for item at position `i`. */
-    bool (*decode)(bspl_object_t *obj_ptr, size_t i, void *value_ptr);
+    bool (*decode_item)(bspl_object_t *obj_ptr, size_t i, void *value_ptr);
     /** Initializer method: Allocate or prepare `value_ptr`. May be NULL. */
     bool (*init)(void *value_ptr);
     /** Cleanup method: Frees `value_ptr`. May be NULL.. */
@@ -224,6 +224,16 @@ bool bspl_decode_string(
     void *value_ptr);
 /** Decodes a charbuf. */
 bool bspl_decode_charbuf(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes an array. */
+bool bspl_decode_array(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr);
+/** Decodes the dictionary, without initializing the value. */
+bool bspl_decode_dict_without_init(
     bspl_object_t *obj_ptr,
     const union bspl_desc_value *desc_value_ptr,
     void *value_ptr);
@@ -374,6 +384,7 @@ bspl_object_t *bspl_encode_dict_as_object(
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_dict_without_init,                    \
             .encode = bspl_encode_dict_as_object,                       \
             .v.v_dict_desc_ptr = _desc                                  \
             }
@@ -392,14 +403,15 @@ bspl_object_t *bspl_encode_dict_as_object(
             }
 
 /** Descriptor for an array, with an item-decoder. */
-#define BSPL_DESC_ARRAY(_key, _required, _base, _field, _presence, _d, _e, _i, _f) { \
+#define BSPL_DESC_ARRAY(_key, _required, _base, _field, _presence, _decode_item, _e, _i, _f) { \
         .type = BSPL_TYPE_ARRAY,                                        \
             .key_ptr = (_key),                                          \
             .required = _required,                                      \
             .field_ofs = offsetof(_base, _field),                       \
             .presence_ofs = offsetof(_base, _presence),                 \
+            .decode = bspl_decode_array,                                \
             .encode = _e,                                               \
-            .v.v_array.decode = _d,                                     \
+            .v.v_array.decode_item = _decode_item,                      \
             .v.v_array.init = _i,                                       \
             .v.v_array.fini = _f,                                       \
             }

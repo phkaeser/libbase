@@ -36,11 +36,6 @@
 static bool _bspl_init_defaults(
     const bspl_desc_t *desc_ptr,
     void *value_ptr);
-static bool _bspl_decode_dict_without_init(
-    bspl_dict_t *dict_ptr,
-    const bspl_desc_t *desc_ptr,
-    void *value_ptr);
-
 static bool _bspl_encode_dict_values(
     const bspl_desc_t *desc_ptr,
     const void *value_ptr,
@@ -66,12 +61,14 @@ bool bspl_decode_dict(
     const bspl_desc_t *desc_ptr,
     void *value_ptr)
 {
-    if (!_bspl_init_defaults(desc_ptr, value_ptr)) {
+    union bspl_desc_value dv = { .v_dict_desc_ptr = desc_ptr };
+    if (!_bspl_init_defaults(desc_ptr, value_ptr) ||
+        !bspl_decode_dict_without_init(
+            bspl_object_from_dict(dict_ptr), &dv, value_ptr)) {
         bspl_decoded_destroy(desc_ptr, value_ptr);
         return false;
     }
-
-    return _bspl_decode_dict_without_init(dict_ptr, desc_ptr, value_ptr);
+    return true;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -288,6 +285,26 @@ bool bspl_decode_charbuf(
     }
     strcpy(value_ptr, s);
     return true;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_decode_array(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
+    void *value_ptr)
+{
+    bspl_array_t *array_ptr = bspl_array_from_object(obj_ptr);
+    if (NULL == array_ptr) {
+        bs_log(BS_ERROR, "Requires object type ARRAY for %p", obj_ptr);
+        return false;
+    }
+
+    bool rv = true;
+    for (size_t i = 0; i < bspl_array_size(array_ptr); ++i) {
+        bspl_object_t *o = bspl_array_at(array_ptr, i);
+        if (!desc_value_ptr->v_array.decode_item(o, i, value_ptr)) rv = false;
+    }
+    return rv;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -523,74 +540,49 @@ bool _bspl_init_defaults(const bspl_desc_t *desc_ptr,
 }
 
 /* ------------------------------------------------------------------------- */
-/** Decodes the dict. Will not recursively initialize dicts. */
-bool _bspl_decode_dict_without_init(
-    bspl_dict_t *dict_ptr,
-    const bspl_desc_t *desc_ptr,
+bool bspl_decode_dict_without_init(
+    bspl_object_t *obj_ptr,
+    const union bspl_desc_value *desc_value_ptr,
     void *value_ptr)
 {
-    for (const bspl_desc_t *iter_desc_ptr = desc_ptr;
+    bspl_dict_t *dict_ptr = bspl_dict_from_object(obj_ptr);
+    if (NULL == dict_ptr) {
+        bs_log(BS_ERROR, "Requires object type DICT for %p", obj_ptr);
+        return false;
+    }
+
+    for (const bspl_desc_t *iter_desc_ptr = desc_value_ptr->v_dict_desc_ptr;
          iter_desc_ptr->key_ptr != NULL;
          ++iter_desc_ptr) {
 
-        bspl_object_t *obj_ptr = bspl_dict_get(
+        bspl_object_t *item_obj_ptr = bspl_dict_get(
             dict_ptr, iter_desc_ptr->key_ptr);
-        if (NULL == obj_ptr) {
+        if (NULL == item_obj_ptr) {
             if (iter_desc_ptr->required) {
                 bs_log(BS_ERROR, "Key \"%s\" not found in dict %p.",
                        iter_desc_ptr->key_ptr, dict_ptr);
-                bspl_decoded_destroy(desc_ptr, value_ptr);
                 return false;
             }
             continue;
         }
 
-        bool rv = false;
-        if (NULL != iter_desc_ptr->decode) {
-            rv = iter_desc_ptr->decode(
-                obj_ptr,
-                &iter_desc_ptr->v,
-                BS_VALUE_AT(void, value_ptr, iter_desc_ptr->field_ofs));
-        } else {
-
-            switch (iter_desc_ptr->type) {
-            case BSPL_TYPE_DICT:
-                rv = _bspl_decode_dict_without_init(
-                    bspl_dict_from_object(obj_ptr),
-                    iter_desc_ptr->v.v_dict_desc_ptr,
-                    BS_VALUE_AT(void*, value_ptr, iter_desc_ptr->field_ofs));
-                break;
-            case BSPL_TYPE_ARRAY:
-                if (BSPL_ARRAY == bspl_object_type(obj_ptr)) {
-                    bspl_array_t *array_ptr = bspl_array_from_object(obj_ptr);
-                    rv = true;
-                    for (size_t i = 0; i < bspl_array_size(array_ptr); ++i) {
-                        if (!iter_desc_ptr->v.v_array.decode(
-                                bspl_array_at(array_ptr, i),
-                                i,
-                                BS_VALUE_AT(
-                                    void *,
-                                    value_ptr,
-                                    iter_desc_ptr->field_ofs))) {
-                            rv = false;
-                        }
-                    }
-                }
-                break;
-            default:
-                bs_log(BS_ERROR, "Unsupported type %d.", iter_desc_ptr->type);
-                rv = false;
-                break;
-            }
+        if (NULL == iter_desc_ptr->decode) {
+            bs_log(BS_ERROR, "Missing decode method for %p (key \"%s\")",
+                   item_obj_ptr, iter_desc_ptr->key_ptr);
+            return false;
         }
 
+        bool rv = iter_desc_ptr->decode(
+            item_obj_ptr,
+            &iter_desc_ptr->v,
+            BS_VALUE_AT(void, value_ptr, iter_desc_ptr->field_ofs));
         if (iter_desc_ptr->presence_ofs != iter_desc_ptr->field_ofs) {
             *BS_VALUE_AT(bool, value_ptr, iter_desc_ptr->presence_ofs) = rv;
         }
+
         if (!rv) {
             bs_log(BS_ERROR, "Failed to decode key \"%s\"",
                    iter_desc_ptr->key_ptr);
-            bspl_decoded_destroy(desc_ptr, value_ptr);
             return false;
         }
     }
