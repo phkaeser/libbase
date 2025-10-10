@@ -74,7 +74,7 @@ bool bspl_decode_dict(
 /* ------------------------------------------------------------------------- */
 bspl_dict_t *bspl_encode_dict(
     const bspl_desc_t *desc_ptr,
-    void *src_ptr)
+    const void *src_ptr)
 {
     bspl_dict_t *dict_ptr = bspl_dict_create();
     if (NULL == dict_ptr) return NULL;

@@ -440,7 +440,7 @@ bool bspl_decode_dict(
  */
 bspl_dict_t *bspl_encode_dict(
     const bspl_desc_t *desc_ptr,
-    void *src_ptr);
+    const void *src_ptr);
 
 /**
  * Destroys resources that were allocated during @ref bspl_decode_dict.
