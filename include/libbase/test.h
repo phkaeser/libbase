@@ -274,7 +274,7 @@ const char *bs_test_resolve_path(const char *fname_ptr);
 /** Verifies that _a != _b, and reutrns (stop tests) if not. */
 #define BS_TEST_VERIFY_NEQ_OR_RETURN(_test, _a, _b) { \
         BS_TEST_VERIFY_NEQ(_test, _a, _b);            \
-        if (bs_test_failed(test_ptr)) return;         \
+        if (bs_test_failed(_test)) return;            \
     }
 
 /**

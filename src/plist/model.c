@@ -192,7 +192,7 @@ bool bspl_object_write_indented(
 /* ------------------------------------------------------------------------- */
 bspl_string_t *bspl_string_create(const char *value_ptr)
 {
-    BS_ASSERT(NULL != value_ptr);
+    if (NULL == value_ptr) return NULL;
     bspl_string_t *string_ptr = logged_calloc(1, sizeof(bspl_string_t));
     if (NULL == string_ptr) return NULL;
 
@@ -782,6 +782,8 @@ static bool foreach_callback(
 void test_string(bs_test_t *test_ptr)
 {
     bspl_string_t *string_ptr;
+
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, bspl_string_create(NULL));
 
     string_ptr = bspl_string_create("a test");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, string_ptr);
