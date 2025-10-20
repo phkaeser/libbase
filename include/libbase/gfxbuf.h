@@ -21,8 +21,8 @@
 #define __LIBBASE_GFXBUF_H__
 
 #include <inttypes.h>
-#include <libbase/assert.h>
-#include <libbase/test.h>
+#include "assert.h"
+#include "test.h"
 
 #ifdef HAVE_CAIRO
 #include <cairo.h>
