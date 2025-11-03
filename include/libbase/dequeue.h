@@ -25,9 +25,6 @@
 #include "assert.h"
 #include "test.h"
 
-struct _bs_dequeue_t;
-struct _bs_dequeue_node_t;
-
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus

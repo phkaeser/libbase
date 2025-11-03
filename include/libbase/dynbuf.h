@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "libbase/test.h"
+#include "test.h"
 
 #ifdef __cplusplus
 extern "C" {

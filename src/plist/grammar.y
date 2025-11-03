@@ -51,7 +51,6 @@
 %code requires {
 #include "parser_context.h"
 
-struct YYLTYPE;  // For IWYU.
 }
 
 %code provides {

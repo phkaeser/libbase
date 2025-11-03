@@ -27,6 +27,8 @@
 #include <libbase/time.h>
 #include <poll.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 /* == Methods ============================================================== */

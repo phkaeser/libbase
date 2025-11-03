@@ -13,31 +13,31 @@
 # limitations under the License.
 
 SET(PUBLIC_HEADER_FILES
-  ${PROJECT_SOURCE_DIR}/include/libbase/arg.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/assert.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/atomic.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/avltree.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/c2x_compat.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/def.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/dequeue.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/dllist.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/dynbuf.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/file.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/gfxbuf.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/gfxbuf_xpm.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/libbase.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/log.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/log_wrappers.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/ptr_set.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/ptr_stack.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/ptr_vector.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/sock.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/strutil.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/subprocess.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/test.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/thread.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/time.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/vector.h)
+  arg.h
+  assert.h
+  atomic.h
+  avltree.h
+  c2x_compat.h
+  def.h
+  dequeue.h
+  dllist.h
+  dynbuf.h
+  file.h
+  gfxbuf.h
+  gfxbuf_xpm.h
+  libbase.h
+  log.h
+  log_wrappers.h
+  ptr_set.h
+  ptr_stack.h
+  ptr_vector.h
+  sock.h
+  strutil.h
+  subprocess.h
+  test.h
+  thread.h
+  time.h
+  vector.h)
 
 SET(SOURCES
   arg.c
@@ -63,7 +63,11 @@ SET(SOURCES
 
 ADD_LIBRARY(libbase STATIC)
 TARGET_SOURCES(libbase PRIVATE ${SOURCES})
-TARGET_INCLUDE_DIRECTORIES(libbase PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+TARGET_INCLUDE_DIRECTORIES(
+  libbase
+  PUBLIC
+  $<INSTALL_INTERFACE:include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 TARGET_INCLUDE_DIRECTORIES(libbase PRIVATE ${CURSES_INCLUDE_DIRS})
 TARGET_LINK_LIBRARIES(libbase PRIVATE ${CURSES_LIBRARIES})
 SET_TARGET_PROPERTIES(
