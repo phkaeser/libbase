@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # Suggested configuration:
-#   cmake -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/.local -Dconfig_WERROR=ON -Dconfig_DEBUG=ON -B build
+#   cmake -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/.local -Dconfig_WERROR=ON -Dconfig_DEBUG=ON -DIWYU_MODE=FAIL -B build
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 PROJECT(libbase VERSION 1.0
   DESCRIPTION "A small standard library for C"
@@ -47,6 +47,9 @@ OPTION(config_OPTIM "Optimizations" OFF)
 OPTION(config_COVERAGE "Build with test coverage" OFF)
 OPTION(config_WERROR "Make all compiler warnings into errors." OFF)
 
+SET(IWYU_MODE "OFF" CACHE STRING "Whether to run `iwyu`. OFF, WARN or FAIL.")
+SET_PROPERTY(CACHE IWYU_MODE PROPERTY STRINGS "OFF" "WARN" "FAIL")
+
 # Toplevel compile options, for Clang and GCC.
 IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
   IF(config_DEBUG)
@@ -74,12 +77,28 @@ IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
   ENDIF(LINUX)
 
   # Run iwyu when available.
-  FIND_PROGRAM(iwyu_executable NAMES include-what-you-use iwyu OPTIONAL)
-  IF(iwyu_executable)
-    SET(iwyu_path_and_options
-      ${iwyu_executable}
-      -Xiwyu --error=1 -Xiwyu --transitive_includes_only -Xiwyu --mapping_file=${PROJECT_SOURCE_DIR}/iwyu-mappings.imp)
-  ENDIF(iwyu_executable)
+  IF((IWYU_MODE STREQUAL "WARN") OR (IWYU_MODE STREQUAL "FAIL"))
+    FIND_PROGRAM(iwyu_executable NAMES include-what-you-use iwyu REQUIRED)
+
+    IF(IWYU_MODE STREQUAL "FAIL")
+      SET(iwyu_error "1")
+    ELSE(IWYU_MODE STREQUAL "FAIL")
+      SET(iwyu_error "0")
+    ENDIF(IWYU_MODE STREQUAL "FAIL")
+
+    IF(iwyu_executable)
+      SET(iwyu_path_and_options
+        ${iwyu_executable}
+        -Xiwyu --error=${iwyu_error} -Xiwyu --transitive_includes_only -Xiwyu --mapping_file=${PROJECT_SOURCE_DIR}/iwyu-mappings.imp)
+    ENDIF(iwyu_executable)
+
+    MESSAGE(STATUS "Configured iwyu (${iwyu_executable}) to run in mode \"${IWYU_MODE}\"")
+  ELSEIF(IWYU_MODE STREQUAL "OFF")
+    # Permitted value, we don't set iwyu_path_and_options.
+  ELSE()
+    MESSAGE(FATAL_ERROR
+      "Invalid value for IWYU_MODE: \"${IWYU_MODE}\". Must be OFF, WARN or FAIL")
+  ENDIF()
 ENDIF()
 SET(CMAKE_C_STANDARD 11)
 
