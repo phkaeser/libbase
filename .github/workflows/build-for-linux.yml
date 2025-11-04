@@ -13,7 +13,7 @@ jobs:
         compiler: [ "gcc", "clang" ]
     runs-on: ubuntu-latest
     container:
-      image: debian:bookworm
+      image: debian:trixie
 
     steps:
     - name: Install package dependencies.
@@ -36,7 +36,7 @@ jobs:
     - name: Configure libbase through CMake.
       run: |
         export CC="${{ matrix.compiler }}"
-        cmake -B ${{github.workspace}}/build -Dconfig_WERROR=ON
+        cmake -B ${{github.workspace}}/build -Dconfig_WERROR=ON -DIWYU_MODE=FAIL
 
     - name: Build libbase.
       run: |
