@@ -36,10 +36,6 @@
 static bool _bspl_init_defaults(
     const bspl_desc_t *desc_ptr,
     void *value_ptr);
-static bool _bspl_encode_dict_values(
-    const bspl_desc_t *desc_ptr,
-    const void *value_ptr,
-    bspl_dict_t *dest_dict_ptr);
 
 /** Enum descriptor for decoding bool. */
 static const bspl_enum_desc_t _bspl_bool_desc[] = {
@@ -79,10 +75,55 @@ bspl_dict_t *bspl_encode_dict(
     bspl_dict_t *dict_ptr = bspl_dict_create();
     if (NULL == dict_ptr) return NULL;
 
-    if (_bspl_encode_dict_values(desc_ptr, src_ptr, dict_ptr)) return dict_ptr;
+    if (bspl_encode_into_dict(desc_ptr, src_ptr, dict_ptr)) return dict_ptr;
 
     bspl_dict_unref(dict_ptr);
     return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bspl_encode_into_dict(
+    const bspl_desc_t *desc_ptr,
+    const void *value_ptr,
+    bspl_dict_t *dest_dict_ptr)
+{
+    bspl_object_t *object_ptr;
+
+    for (const bspl_desc_t *iter_desc_ptr = desc_ptr;
+         iter_desc_ptr->key_ptr != NULL;
+         ++iter_desc_ptr) {
+
+        // Check presence field, but only if given.
+        if (iter_desc_ptr->presence_ofs != iter_desc_ptr->field_ofs &&
+            !*BS_VALUE_AT(bool, value_ptr, iter_desc_ptr->presence_ofs)) {
+            continue;
+        }
+
+        if (NULL == iter_desc_ptr->encode) {
+            bs_log(BS_ERROR, "Missing encode method for key \"%s\"",
+                   iter_desc_ptr->key_ptr);
+            return false;
+        }
+
+        object_ptr = iter_desc_ptr->encode(
+            &iter_desc_ptr->v,
+            BS_VALUE_AT(void, value_ptr, iter_desc_ptr->field_ofs));
+        if (NULL == object_ptr) return false;
+
+        if (!bspl_dict_add(
+                dest_dict_ptr,
+                iter_desc_ptr->key_ptr,
+                object_ptr)) {
+            bs_log(BS_WARNING, "Failed bspl_dict_add(%p, \"%s\", %p)",
+                   dest_dict_ptr,
+                   iter_desc_ptr->key_ptr,
+                   object_ptr);
+            return false;
+        }
+        bspl_object_unref(object_ptr);
+    }
+
+    return true;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -416,7 +457,7 @@ bspl_object_t *bspl_encode_dict_as_object(
     bspl_dict_t *dict_ptr = bspl_dict_create();
     if (NULL == dict_ptr) return NULL;
 
-    if (_bspl_encode_dict_values(
+    if (bspl_encode_into_dict(
             desc_value_ptr->v_dict_desc_ptr,
             value_ptr,
             dict_ptr)) {
@@ -586,60 +627,6 @@ bool bspl_decode_dict_without_init(
             return false;
         }
     }
-    return true;
-}
-
-/* ------------------------------------------------------------------------- */
-/**
- * Encodes the described values into the destination dict.
- *
- * @param desc_ptr
- * @param value_ptr           Base pointer for the described values.
- * @param dest_dict_ptr
- *
- * @return true on success.
- */
-bool _bspl_encode_dict_values(
-    const bspl_desc_t *desc_ptr,
-    const void *value_ptr,
-    bspl_dict_t *dest_dict_ptr)
-{
-    bspl_object_t *object_ptr;
-
-    for (const bspl_desc_t *iter_desc_ptr = desc_ptr;
-         iter_desc_ptr->key_ptr != NULL;
-         ++iter_desc_ptr) {
-
-        // Check presence field, but only if given.
-        if (iter_desc_ptr->presence_ofs != iter_desc_ptr->field_ofs &&
-            !*BS_VALUE_AT(bool, value_ptr, iter_desc_ptr->presence_ofs)) {
-            continue;
-        }
-
-        if (NULL == iter_desc_ptr->encode) {
-            bs_log(BS_ERROR, "Missing encode method for key \"%s\"",
-                   iter_desc_ptr->key_ptr);
-            return false;
-        }
-
-        object_ptr = iter_desc_ptr->encode(
-            &iter_desc_ptr->v,
-            BS_VALUE_AT(void, value_ptr, iter_desc_ptr->field_ofs));
-        if (NULL == object_ptr) return false;
-
-        if (!bspl_dict_add(
-                dest_dict_ptr,
-                iter_desc_ptr->key_ptr,
-                object_ptr)) {
-            bs_log(BS_WARNING, "Failed bspl_dict_add(%p, \"%s\", %p)",
-                   dest_dict_ptr,
-                   iter_desc_ptr->key_ptr,
-                   object_ptr);
-            return false;
-        }
-        bspl_object_unref(object_ptr);
-    }
-
     return true;
 }
 
