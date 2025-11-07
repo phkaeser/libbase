@@ -132,6 +132,22 @@ void bs_dynbuf_clear(bs_dynbuf_t *dynbuf_ptr);
 int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd);
 
 /**
+ * Safely writes the dynamic buffer into the file at `fname_ptr`.
+ *
+ * First, creates a temporary file and writes the buffer contents there. If
+ * that succeeds, checks if the target exists. If it exists and is writable,
+ * creates a backup file by appending a ".old" extension, and removes any
+ * already-existing backup flie. Then, it replaces the target atomically with
+ * the temporary file.
+ *
+ * @param dynbuf_ptr
+ * @param fname_ptr
+ *
+ * @return true on success.
+ */
+bool bs_dynbuf_write_file(bs_dynbuf_t *dynbuf_ptr, const char *fname_ptr);
+
+/**
  * Appends data to the buffer.
  *
  * @param dynbuf_ptr
