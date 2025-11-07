@@ -169,7 +169,13 @@ bspl_type_t bspl_object_type(bspl_object_t *object_ptr)
 bool bspl_object_write(bspl_object_t *object_ptr,
                        bs_dynbuf_t *dynbuf_ptr)
 {
-    return bspl_object_write_indented(object_ptr, dynbuf_ptr, 2, 0);
+    if (bspl_object_write_indented(object_ptr, dynbuf_ptr, 2, 0)) {
+        return (
+            bs_dynbuf_append_char(dynbuf_ptr, '\n') ||
+            (bs_dynbuf_grow(dynbuf_ptr) &&
+             bs_dynbuf_append_char(dynbuf_ptr, '\n')));
+    }
+    return false;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -907,8 +913,8 @@ void test_write_string(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, string_ptr);
     object_ptr = bspl_object_from_string(string_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(object_ptr, &dynbuf));
-    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 4, dynbuf.length);
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "test", dynbuf.data_ptr, 4);
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 5, dynbuf.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "test\n", dynbuf.data_ptr, 5);
     bspl_object_unref(object_ptr);
 
     bs_dynbuf_clear(&dynbuf);
@@ -916,8 +922,8 @@ void test_write_string(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, string_ptr);
     object_ptr = bspl_object_from_string(string_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(object_ptr, &dynbuf));
-    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 8, dynbuf.length);
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "test1.$_", dynbuf.data_ptr, 8);
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 9, dynbuf.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "test1.$_\n", dynbuf.data_ptr, 9);
     bspl_object_unref(object_ptr);
 
     bs_dynbuf_clear(&dynbuf);
@@ -925,8 +931,8 @@ void test_write_string(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, string_ptr);
     object_ptr = bspl_object_from_string(string_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(object_ptr, &dynbuf));
-    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 2, dynbuf.length);
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "\"\"", dynbuf.data_ptr, 2);
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 3, dynbuf.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "\"\"\n", dynbuf.data_ptr, 3);
     bspl_object_unref(object_ptr);
 
     bs_dynbuf_clear(&dynbuf);
@@ -934,8 +940,8 @@ void test_write_string(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, string_ptr);
     object_ptr = bspl_object_from_string(string_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(object_ptr, &dynbuf));
-    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 4, dynbuf.length);
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "\",1\"", dynbuf.data_ptr, 4);
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 5, dynbuf.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "\",1\"\n", dynbuf.data_ptr, 5);
     bspl_object_unref(object_ptr);
 
     bs_dynbuf_clear(&dynbuf);
@@ -943,8 +949,8 @@ void test_write_string(bs_test_t *test_ptr)
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, string_ptr);
     object_ptr = bspl_object_from_string(string_ptr);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(object_ptr, &dynbuf));
-    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 9, dynbuf.length);
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "\"x\\\\y\\\"z\"", dynbuf.data_ptr, 9);
+    BS_TEST_VERIFY_EQ_OR_RETURN(test_ptr, 10, dynbuf.length);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "\"x\\\\y\\\"z\"\n", dynbuf.data_ptr, 10);
     bspl_object_unref(object_ptr);
 }
 
@@ -964,9 +970,9 @@ void test_write_dict(bs_test_t *test_ptr)
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
     // Empty dict, sufficient space.
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 3);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "{}", dynbuf.data_ptr, 2);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "{}\n", dynbuf.data_ptr, 3);
 
     // Add an element. Test with both insufficient, then: sufficient space.
     bspl_object_t *i = bspl_object_from_string(bspl_string_create("1"));
@@ -974,9 +980,9 @@ void test_write_dict(bs_test_t *test_ptr)
     bspl_object_unref(i);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 12);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 13);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "{\n  a = 1;\n}", dynbuf.data_ptr, 12);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "{\n  a = 1;\n}\n", dynbuf.data_ptr, 13);
 
     // Add another element. One that needs escaping. Then verify.
     i = bspl_object_from_string(bspl_string_create("2"));
@@ -986,8 +992,8 @@ void test_write_dict(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
     BS_TEST_VERIFY_MEMEQ(
         test_ptr,
-        "{\n  \" \" = 2;\n  a = 1;\n}",
-        dynbuf.data_ptr, 23);
+        "{\n  \" \" = 2;\n  a = 1;\n}\n",
+        dynbuf.data_ptr, 24);
 
     bspl_object_unref(o);
 }
@@ -1008,21 +1014,20 @@ void test_write_array(bs_test_t *test_ptr)
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
     // Sufficient space.
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 3);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "()", dynbuf.data_ptr, 2);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "()\n", dynbuf.data_ptr, 3);
 
     // Array with one element. Insufficent space.
     bspl_object_t *s = bspl_object_from_string(bspl_string_create("a"));
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_array_push_back(array_ptr, s));
     bspl_object_unref(s);
-
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 2);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 3);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
     bs_dynbuf_init_unmanaged(&dynbuf, output, 16);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "(a)", dynbuf.data_ptr, 3);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "(a)\n", dynbuf.data_ptr, 4);
 
     // Two elements.
     s = bspl_object_from_string(bspl_string_create("b"));
@@ -1032,9 +1037,9 @@ void test_write_array(bs_test_t *test_ptr)
     bs_dynbuf_init_unmanaged(&dynbuf, output, 4);
     BS_TEST_VERIFY_FALSE(test_ptr, bspl_object_write(o, &dynbuf));
 
-    bs_dynbuf_init_unmanaged(&dynbuf, output, 12);
+    bs_dynbuf_init_unmanaged(&dynbuf, output, 13);
     BS_TEST_VERIFY_TRUE(test_ptr, bspl_object_write(o, &dynbuf));
-    BS_TEST_VERIFY_MEMEQ(test_ptr, "(\n  a,\n  b\n)", dynbuf.data_ptr, 12);
+    BS_TEST_VERIFY_MEMEQ(test_ptr, "(\n  a,\n  b\n)\n", dynbuf.data_ptr, 13);
 
     bspl_array_unref(array_ptr);
 }
