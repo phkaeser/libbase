@@ -443,6 +443,20 @@ bspl_dict_t *bspl_encode_dict(
     const void *src_ptr);
 
 /**
+ * Encodes the data at `src_ptr` into the already-existing plist dict.
+ *
+ * @param desc_ptr
+ * @param src_ptr
+ * @param dict_ptr
+ *
+ * @return true on success.
+ */
+bool bspl_encode_into_dict(
+    const bspl_desc_t *desc_ptr,
+    const void *src_ptr,
+    bspl_dict_t *dict_ptr);
+
+/**
  * Destroys resources that were allocated during @ref bspl_decode_dict.
  *
  * @param desc_ptr
