@@ -40,6 +40,7 @@ extern "C" {
  * @return A negative value on error, or the number of bytes read on success.
  *     Any error will be logged.
  */
+// TODO(kaeser@gubbe.ch): Merge with dynbuf.
 ssize_t bs_file_read_buffer(
     const char *fname_ptr,
     char *buf_ptr,
@@ -55,6 +56,7 @@ ssize_t bs_file_read_buffer(
  * @return A negative value on error, or the number of bytes written.
  *     Any error will be logged.
  */
+// TODO(kaeser@gubbe.ch): Merge with dynbuf and bs_dynbuf_write_file.
 ssize_t bs_file_write_buffer(
     const char *fname_ptr,
     const char *buf_ptr,
