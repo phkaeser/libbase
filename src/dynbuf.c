@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include <libbase/assert.h>
+#include <libbase/file.h>
 #include <libbase/log.h>
 #include <libbase/log_wrappers.h>
 #include <libbase/strutil.h>
@@ -173,12 +174,30 @@ int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd)
 }
 
 /* ------------------------------------------------------------------------- */
-bool bs_dynbuf_write_file(bs_dynbuf_t *dynbuf_ptr, const char *fname_ptr)
+bool bs_dynbuf_write_file(
+    bs_dynbuf_t *dynbuf_ptr,
+    const char *fname_ptr,
+    int mode)
 {
+    struct stat sbuf;
+
     // Create a temporary file in the target's directory.
     char *fname_copy_ptr = logged_strdup(fname_ptr);
     if (NULL == fname_copy_ptr) return false;
     char *dir = dirname(fname_copy_ptr);
+
+    if (0 != stat(dir, &sbuf)) {
+        if (ENOENT != errno) {
+            bs_log(BS_ERROR | BS_ERRNO, "Failed stat(\"%s\", %p)", dir, &sbuf);
+            free(dir);
+            return false;
+        }
+        if (!bs_file_mkdir_p(dir, mode | S_IXUSR)) {
+            free(dir);
+            return false;
+        }
+    }
+
     char *tmp_fname_ptr = bs_strdupf("%s/dynbuf-XXXXXX", dir);
     free(fname_copy_ptr);
     if (NULL == tmp_fname_ptr) {
@@ -187,7 +206,9 @@ bool bs_dynbuf_write_file(bs_dynbuf_t *dynbuf_ptr, const char *fname_ptr)
         return false;
     }
 
+    mode_t old_mask = umask((S_IRWXU | S_IRWXG | S_IRWXO) ^ mode);
     int fd = mkstemp(tmp_fname_ptr);
+    umask(old_mask);
     if (0 > fd) {
         bs_log(BS_ERROR | BS_ERRNO, "Failed mkstemp(%s)", tmp_fname_ptr);
         free(tmp_fname_ptr);
@@ -205,11 +226,10 @@ bool bs_dynbuf_write_file(bs_dynbuf_t *dynbuf_ptr, const char *fname_ptr)
     close(fd);
 
     // If the target exists already: Verify it's writable. Create bakcup.
-    struct stat stat_buffer;
-    if (0 == stat(fname_ptr, &stat_buffer)) {
-        if ((stat_buffer.st_mode & S_IWUSR) != S_IWUSR) {
+    if (0 == stat(fname_ptr, &sbuf)) {
+        if ((sbuf.st_mode & S_IWUSR) != S_IWUSR) {
             bs_log(BS_ERROR, "File \"%s\" mode %o not user-writable",
-                   fname_ptr, stat_buffer.st_mode);
+                   fname_ptr, sbuf.st_mode);
             goto error;
         }
 
@@ -374,9 +394,9 @@ void test_dynbuf_write(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, mkdtemp(tmp_path));
 
-    char *fn1 = bs_strdupf("%s/file.txt", tmp_path);
+    char *fn1 = bs_strdupf("%s/sub/file.txt", tmp_path);
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn1);
-    char *fn2 = bs_strdupf("%s/file.txt.old", tmp_path);
+    char *fn2 = bs_strdupf("%s/sub/file.txt.old", tmp_path);
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn2);
 
     char content[8] = {};
@@ -385,14 +405,14 @@ void test_dynbuf_write(bs_test_t *test_ptr)
 
     // Write initial content. Must create one file, size 4.
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, bs_dynbuf_append(&db, "test", 4));
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_write_file(&db, fn1));
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_write_file(&db, fn1, 0600));
     BS_TEST_VERIFY_EQ(test_ptr, 0, stat(fn1, &stat_buffer));
     BS_TEST_VERIFY_EQ(test_ptr, 4, (size_t)stat_buffer.st_size);
     BS_TEST_VERIFY_NEQ(test_ptr, 0, stat(fn2, &stat_buffer));
 
     // Write further content. Expect a file with size 5, and backup.
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, bs_dynbuf_append_char(&db, 'a'));
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_write_file(&db, fn1));
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_write_file(&db, fn1, 0600));
     BS_TEST_VERIFY_EQ(test_ptr, 0, stat(fn1, &stat_buffer));
     BS_TEST_VERIFY_EQ(test_ptr, 5, (size_t)stat_buffer.st_size);
     BS_TEST_VERIFY_EQ(test_ptr, 0, stat(fn2, &stat_buffer));
@@ -400,7 +420,7 @@ void test_dynbuf_write(bs_test_t *test_ptr)
 
     // Further content: Rotates the files.
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, bs_dynbuf_append_char(&db, 'b'));
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_write_file(&db, fn1));
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dynbuf_write_file(&db, fn1, 0600));
     BS_TEST_VERIFY_EQ(test_ptr, 0, stat(fn1, &stat_buffer));
     BS_TEST_VERIFY_EQ(test_ptr, 6, (size_t)stat_buffer.st_size);
     BS_TEST_VERIFY_EQ(test_ptr, 0, stat(fn2, &stat_buffer));
@@ -409,12 +429,13 @@ void test_dynbuf_write(bs_test_t *test_ptr)
     // The file is read-only: Our write must fail.
     BS_TEST_VERIFY_EQ(test_ptr, 0, chmod(fn1, S_IRUSR));
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, bs_dynbuf_append_char(&db, 'c'));
-    BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_write_file(&db, fn1));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dynbuf_write_file(&db, fn1, 0600));
     BS_TEST_VERIFY_EQ(test_ptr, 0, chmod(fn1, S_IRUSR | S_IWUSR));
 
     // Must be able to clean up the file.
     unlink(fn2);
     unlink(fn1);
+    rmdir(dirname(fn1));
     free(fn2);
     free(fn1);
     BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));

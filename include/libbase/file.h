@@ -124,6 +124,16 @@ char *bs_file_resolve_and_lookup_from_paths(
     int mode,
     char *resolved_path_buf_ptr);
 
+/**
+ * Creates the directory (and, recursively the parents) with the given mode.
+ *
+ * @param dirname_ptr
+ * @param mode
+ *
+ * @return true on success. If the directory exists already, errno is ENOENT.
+ */
+bool bs_file_mkdir_p(const char *dirname_ptr, int mode);
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_file_test_cases[];
 

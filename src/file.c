@@ -26,11 +26,14 @@
 #include <libbase/test.h>
 #include <libgen.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "libbase/log_wrappers.h"
 
 /* == Declarations ========================================================= */
 
@@ -179,6 +182,27 @@ char *bs_file_resolve_and_lookup_from_paths(
     return NULL;
 }
 
+/* ------------------------------------------------------------------------- */
+bool bs_file_mkdir_p(const char *dirname_ptr, int mode)
+{
+    if (0 == mkdir(dirname_ptr, mode)) return true;
+
+    if (ENOENT != errno) {
+        bs_log(BS_ERROR | BS_ERRNO, "Failed mkdir(\"%s\", %o)",
+               dirname_ptr, mode);
+        return false;
+    }
+
+    // A parent does not exist. Attempt to create the parent, then try again.
+    char *parent_dirname_ptr = logged_strdup(dirname_ptr);
+    if (NULL == parent_dirname_ptr) return false;
+    bool rv = bs_file_mkdir_p(dirname(parent_dirname_ptr), mode);
+    free(parent_dirname_ptr);
+    if (!rv) return false;
+
+    return 0 == mkdir(dirname_ptr, mode);
+}
+
 /* == Static (local) functions ============================================= */
 
 /* == Test Functions ======================================================= */
@@ -186,11 +210,13 @@ char *bs_file_resolve_and_lookup_from_paths(
 static void test_resolve_path(bs_test_t *test_ptr);
 static void test_join_resolve_path(bs_test_t *test_ptr);
 static void test_lookup(bs_test_t *test_ptr);
+static void test_mkdir_p(bs_test_t *test_ptr);
 
 const bs_test_case_t bs_file_test_cases[] = {
     { 1, "resolve_path", test_resolve_path },
     { 1, "join_resolve_path", test_join_resolve_path },
     { 1, "lookup", test_lookup },
+    { 1, "mkdir_p", test_mkdir_p },
     { 0, NULL, NULL }  // sentinel.
 };
 
@@ -266,6 +292,27 @@ void test_lookup(bs_test_t *test_ptr)
     p = bs_file_resolve_and_lookup_from_paths(
         "", paths, S_IFDIR, path);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, p);
+}
+
+/* ------------------------------------------------------------------------- */
+void test_mkdir_p(bs_test_t *test_ptr)
+{
+    char tmp_path[] = "/tmp/file-mkdir_p-XXXXXX";
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, mkdtemp(tmp_path));
+
+    char *dirname_ptr = bs_strdupf("%s/a/b", tmp_path);
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, dirname_ptr);
+
+    // The temp dir was just created: First attempt must succeed.
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_file_mkdir_p(dirname_ptr, 0700));
+
+    // Second attempt already finds the directories, must fail.
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_file_mkdir_p(dirname_ptr, 0700));
+
+    rmdir(dirname_ptr);
+    rmdir(dirname(dirname_ptr));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));
+    free(dirname_ptr);
 }
 
 /* == End of file.c ======================================================== */
