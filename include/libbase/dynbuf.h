@@ -139,13 +139,20 @@ int bs_dynbuf_read(bs_dynbuf_t *dynbuf_ptr, int fd);
  * creates a backup file by appending a ".old" extension, and removes any
  * already-existing backup flie. Then, it replaces the target atomically with
  * the temporary file.
+ * If the base directory at `fname_ptr` does not exist yet, it will attempt to
+ * create the parent hierarchy with @ref bs_file_mkdir_p and `mode` | S_IXUSR.
+ *
  *
  * @param dynbuf_ptr
  * @param fname_ptr
+ * @param mode
  *
  * @return true on success.
  */
-bool bs_dynbuf_write_file(bs_dynbuf_t *dynbuf_ptr, const char *fname_ptr);
+bool bs_dynbuf_write_file(
+    bs_dynbuf_t *dynbuf_ptr,
+    const char *fname_ptr,
+    int mode);
 
 /**
  * Appends data to the buffer.
