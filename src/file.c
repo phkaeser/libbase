@@ -203,6 +203,30 @@ bool bs_file_mkdir_p(const char *dirname_ptr, int mode)
     return 0 == mkdir(dirname_ptr, mode);
 }
 
+/* ------------------------------------------------------------------------- */
+bool bs_file_realpath_is(const char *fname_ptr, int mode_type)
+{
+    char *resolved_fname_ptr = realpath(fname_ptr, NULL);
+    if (NULL == resolved_fname_ptr) {
+        if (ENOENT != errno) {
+            bs_log(BS_ERROR, "Failed realpath(\"%s\", NULL)", fname_ptr);
+        }
+        return false;
+    }
+
+    struct stat stat_buf;
+    bool rv = (0 == stat(resolved_fname_ptr, &stat_buf));
+    if (rv) {
+        rv = ((stat_buf.st_mode & S_IFMT) == (mode_t)mode_type);
+    } else if (ENOENT != errno) {
+        bs_log(BS_ERROR, "Failed stat(\"%s\", %p)",
+               resolved_fname_ptr, &stat_buf);
+    }
+
+    free(resolved_fname_ptr);
+    return rv;
+}
+
 /* == Static (local) functions ============================================= */
 
 /* == Test Functions ======================================================= */
@@ -211,12 +235,14 @@ static void test_resolve_path(bs_test_t *test_ptr);
 static void test_join_resolve_path(bs_test_t *test_ptr);
 static void test_lookup(bs_test_t *test_ptr);
 static void test_mkdir_p(bs_test_t *test_ptr);
+static void test_realpath_is(bs_test_t *test_ptr);
 
 const bs_test_case_t bs_file_test_cases[] = {
     { 1, "resolve_path", test_resolve_path },
     { 1, "join_resolve_path", test_join_resolve_path },
     { 1, "lookup", test_lookup },
     { 1, "mkdir_p", test_mkdir_p },
+    { 1, "realpath_is", test_realpath_is },
     { 0, NULL, NULL }  // sentinel.
 };
 
@@ -311,8 +337,31 @@ void test_mkdir_p(bs_test_t *test_ptr)
 
     rmdir(dirname_ptr);
     rmdir(dirname(dirname_ptr));
-    BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));
     free(dirname_ptr);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));
+}
+
+/* ------------------------------------------------------------------------- */
+void test_realpath_is(bs_test_t *test_ptr)
+{
+    char tmp_path[] = "/tmp/file-mkdir_p-XXXXXX";
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, mkdtemp(tmp_path));
+
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(tmp_path, S_IFDIR));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(tmp_path, S_IFREG));
+
+    char *fn = bs_strdupf("%s/a", tmp_path);
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn);
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(fn, S_IFDIR));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(fn, S_IFREG));
+
+    int fd = creat(fn, 0600);
+    close(fd);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(fn, S_IFREG));
+
+    unlink(fn);
+    free(fn);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));
 }
 
 /* == End of file.c ======================================================== */
