@@ -134,6 +134,17 @@ char *bs_file_resolve_and_lookup_from_paths(
  */
 bool bs_file_mkdir_p(const char *dirname_ptr, int mode);
 
+/**
+ * Checks if the entity at the realpath()-expanded location is of mode_type.
+ *
+ * @param fname_ptr
+ * @param mode_type           Desired mode of resolved entity, see inode(7).
+ *
+ * @return true if there is a file, directory (or ...) at `fname_ptr` with type
+ *     `mode_type`.
+ */
+bool bs_file_realpath_is(const char *fname_ptr, int mode_type);
+
 /** Unit tests. */
 extern const bs_test_case_t   bs_file_test_cases[];
 
