@@ -22,7 +22,7 @@ cmake [-DCMAKE_INSTALL_PREFIX:PATH="${HOME}/.local"] -S . -B build
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details, and [code of conduct](CODE_OF_CONDUCT.md) for more.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details, and [code of conduct](CODE_OF_CONDUCT.md) for more. See the [idea backlog](BACKLOG.md) for inspiration.
 
 ## License
 
