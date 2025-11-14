@@ -765,12 +765,11 @@ static const bs_test_case_t bspl_model_test_cases[] = {
     { true, "write_string", test_write_string },
     { true, "write_dict", test_write_dict },
     { true, "write_array", test_write_array },
-    { false, NULL, NULL }
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bspl_model_test_set = {
-    true, "model", bspl_model_test_cases
-};
+const bs_test_set_t bspl_model_test_set = BS_TEST_SET(
+    true, "model", bspl_model_test_cases);
 
 /* ------------------------------------------------------------------------- */
 /** Test helper: A callback for @ref bspl_dict_foreach. */

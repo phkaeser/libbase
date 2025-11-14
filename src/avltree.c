@@ -827,9 +827,8 @@ static const bs_test_case_t   bs_avltree_test_cases[] = {
     { false, NULL, NULL }
 };
 
-const bs_test_set_t           bs_avltree_test_set = {
-    true, "avltree", bs_avltree_test_cases
-};
+const bs_test_set_t bs_avltree_test_set = BS_TEST_SET(
+    true, "avltree", bs_avltree_test_cases);
 
 /* ------------------------------------------------------------------------- */
 void bs_avltree_test_random(bs_test_t *test_ptr)

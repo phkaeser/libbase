@@ -47,9 +47,8 @@ static const bs_test_case_t bs_header_only_test_cases[] = {
 };
 
 /** Test set of the cases without .c file. */
-static const bs_test_set_t bs_header_only_test_set = {
-    true, "header_only", bs_header_only_test_cases
-};
+static const bs_test_set_t bs_header_only_test_set = BS_TEST_SET(
+    true, "header_only", bs_header_only_test_cases);
 
 static void test_failure(bs_test_t *test_ptr);
 static void test_sigpipe(bs_test_t *test_ptr);
@@ -66,9 +65,8 @@ const bs_test_case_t          bs_subprocess_extra_test_cases[] = {
     { true, "success_twice", test_success_twice },
     { false , NULL, NULL }
 };
-static const bs_test_set_t    bs_subprocess_extra_test_set = {
-    true, "subprocess_extra", bs_subprocess_extra_test_cases
-};
+static const bs_test_set_t    bs_subprocess_extra_test_set = BS_TEST_SET(
+    true, "subprocess_extra", bs_subprocess_extra_test_cases);
 
 /* ------------------------------------------------------------------------- */
 /** Tests the functions of 'assert.h' */
@@ -256,8 +254,8 @@ int main(int argc, const char **argv)
     };
 
     const bs_test_set_t *sets[] = {
-        &bs_atomic_test_set,
         &bs_arg_test_set,
+        &bs_atomic_test_set,
         &bs_avltree_test_set,
         &bs_dequeue_test_set,
         &bs_dllist_test_set,
@@ -270,9 +268,9 @@ int main(int argc, const char **argv)
         &bs_ptr_set_test_set,
         &bs_ptr_stack_test_set,
         &bs_ptr_vector_test_set,
-        &bs_subprocess_test_set,
-        &bs_subprocess_extra_test_set,
         &bs_strutil_test_set,
+        &bs_subprocess_extra_test_set,
+        &bs_subprocess_test_set,
         &bs_test_test_set,
         &bs_time_test_set,
         NULL

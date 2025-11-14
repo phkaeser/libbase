@@ -140,12 +140,11 @@ static const bs_test_case_t bspl_plist_test_cases[] = {
     { true, "from_data", test_from_data },
     { true, "from_dynbuf", test_from_dynbuf },
     { true, "escaped_string", test_escaped_string },
-    { false, NULL, NULL }
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bspl_plist_test_set = {
-    true, "plist", bspl_plist_test_cases
-};
+const bs_test_set_t bspl_plist_test_set = BS_TEST_SET(
+    true, "plist", bspl_plist_test_cases);
 
 static const uint8_t _test_data[] = { 'v', 'a', 'l', 'u', 'e' };
 

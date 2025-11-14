@@ -247,7 +247,8 @@ static const bs_test_case_t bs_file_test_cases[] = {
     { false, NULL, NULL }  // sentinel.
 };
 
-const bs_test_set_t bs_file_test_set = { true, "file", bs_file_test_cases };
+const bs_test_set_t bs_file_test_set = BS_TEST_SET(
+    true, "file", bs_file_test_cases);
 
 /* ------------------------------------------------------------------------- */
 void test_resolve_path(bs_test_t *test_ptr)

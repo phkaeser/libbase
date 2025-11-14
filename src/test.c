@@ -46,6 +46,9 @@ struct _bs_test_t {
     /** Current test case descriptor. */
     const bs_test_case_t      *case_ptr;
 
+    /** Return value of @ref bs_test_set_t::setup. */
+    void                      *setup_context_ptr;
+
     /** Test outcome: Failed? */
     bool                      failed;
     /** Test report summary (through bs_test_succeed, bs_test_fail) */
@@ -113,7 +116,9 @@ static int bs_test_set(const bs_test_set_t *set_ptr,
 static void bs_test_case_prepare(bs_test_t *test_ptr,
                                  const bs_test_set_t *set_ptr,
                                  int case_idx);
-static void bs_test_case_report(const bs_test_t *test_ptr, bool enabled);
+static void bs_test_case_report(const bs_test_t *test_ptr,
+                                const bs_test_set_t *set_ptr,
+                                bool enabled);
 
 static struct bs_test_fail_node *bs_test_case_fail_node_create(
     char *full_name_ptr);
@@ -251,7 +256,8 @@ int bs_test_sets(
     bool                      run_set;
     bs_dllist_t               failed_tests = {};
 
-    if (!bs_arg_parse(bs_test_args, BS_ARG_MODE_EXTRA_VALUES, &argc, argv)) {
+    if (NULL != argv &&
+        !bs_arg_parse(bs_test_args, BS_ARG_MODE_EXTRA_VALUES, &argc, argv)) {
         bs_arg_print_usage(stderr, bs_test_args);
         return -1;
     }
@@ -313,7 +319,9 @@ int bs_test_sets(
         bs_test_attr(BS_TEST_ATTR_RESET);
     }
 
-    bs_arg_cleanup(bs_test_args);
+    if (NULL != argv) {
+        bs_arg_cleanup(bs_test_args);
+    };
     return report.failed;
 }
 
@@ -354,6 +362,12 @@ void bs_test_fail_at(
 bool bs_test_failed(bs_test_t *test_ptr)
 {
     return test_ptr->failed;
+}
+
+/* ------------------------------------------------------------------------- */
+void *bs_test_context(bs_test_t *test_ptr)
+{
+    return test_ptr->setup_context_ptr;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -605,10 +619,10 @@ int bs_test_set(const bs_test_set_t *set_ptr,
 
     /* step through descriptors and run each test */
     for (case_idx = 0;
-         NULL != set_ptr->case_ptr[case_idx].name_ptr;
+         NULL != set_ptr->cases_ptr[case_idx].name_ptr;
          set_report.total++, case_idx++) {
 
-        case_ptr = set_ptr->case_ptr + case_idx;
+        case_ptr = set_ptr->cases_ptr + case_idx;
         bs_test_puts("%s\n", bs_test_linesep_ptr);
         bs_test_case_prepare(&test, set_ptr, case_idx);
         bool enabled = case_ptr->enabled;
@@ -640,7 +654,7 @@ int bs_test_set(const bs_test_set_t *set_ptr,
 
         if (NULL != full_name_ptr) free(full_name_ptr);
 
-        bs_test_case_report(&test, enabled);
+        bs_test_case_report(&test, set_ptr, enabled);
     }
 
     bs_test_set_report(set_ptr, &set_report);
@@ -661,9 +675,16 @@ void bs_test_case_prepare(bs_test_t *test_ptr,
 {
     *test_ptr = (bs_test_t){
         .case_idx = case_idx,
-        .case_ptr = set_ptr->case_ptr + case_idx,
+        .case_ptr = set_ptr->cases_ptr + case_idx,
         .failed = false,
     };
+
+    if (set_ptr->setup) {
+        test_ptr->setup_context_ptr = set_ptr->setup();
+        if (NULL == test_ptr->setup_context_ptr) {
+            BS_TEST_FAIL(test_ptr, "Failed setup() [%p]", set_ptr->setup);
+        }
+    }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -672,10 +693,17 @@ void bs_test_case_prepare(bs_test_t *test_ptr,
  *
  * @param test_ptr
  */
-void bs_test_case_report(const bs_test_t *test_ptr, bool enabled)
+void bs_test_case_report(const bs_test_t *test_ptr,
+                         const bs_test_set_t *set_ptr,
+                         bool enabled)
 {
     const char                *outcome_ptr;
     int                       attr;
+
+    if (NULL != set_ptr->teardown &&
+        NULL != test_ptr->setup_context_ptr) {
+        set_ptr->teardown(test_ptr->setup_context_ptr);
+    }
 
     if (!enabled) {
         attr = BS_TEST_ATTR_SKIP;
@@ -765,15 +793,20 @@ char *bs_test_case_create_full_name(
 
 static void bs_test_test_report(bs_test_t *test_ptr);
 static void bs_test_eq_neq_tests(bs_test_t *test_ptr);
+static void bs_test_context_setup_ok(bs_test_t *test_ptr);
+static void bs_test_context_setup_fail(bs_test_t *test_ptr);
 
 /** Unit test cases. */
 static const bs_test_case_t bs_test_test_cases[] = {
     { true, "succeed/fail reporting", bs_test_test_report },
     { true, "eq/neq tests", bs_test_eq_neq_tests },
-    { false, NULL, NULL }  /* sentinel. */
+    { true, "context_setup_ok", bs_test_context_setup_ok },
+    { true, "context_setup_fail", bs_test_context_setup_fail },
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bs_test_test_set = { true, "test", bs_test_test_cases };
+const bs_test_set_t bs_test_test_set = BS_TEST_SET(
+    true, "test", bs_test_test_cases);
 
 void bs_test_test_fail(bs_test_t *test_ptr)
 {
@@ -797,9 +830,8 @@ void bs_test_test_fail_succeed(bs_test_t *test_ptr)
     bs_test_succeed(test_ptr, "success");
 }
 
-/**
- * Tests bs_test_fail and bs_test_succeed.
- */
+/* ------------------------------------------------------------------------- */
+/** Tests bs_test_fail and bs_test_succeed. */
 void bs_test_test_report(bs_test_t *test_ptr)
 {
     bs_test_t                 sub_test = {};
@@ -823,9 +855,8 @@ void bs_test_test_report(bs_test_t *test_ptr)
     BS_TEST_VERIFY_TRUE(test_ptr, bs_test_failed(&sub_test));
 }
 
-/**
- * Tests the EQ / NEQ macros.
- */
+/* ------------------------------------------------------------------------- */
+/** Tests the EQ / NEQ macros. */
 void bs_test_eq_neq_tests(bs_test_t *test_ptr)
 {
     BS_TEST_VERIFY_EQ(test_ptr, 1, 1);
@@ -835,6 +866,61 @@ void bs_test_eq_neq_tests(bs_test_t *test_ptr)
     BS_TEST_VERIFY_STRMATCH(test_ptr, "asdf", "^[a-z]+$");
 
     BS_TEST_VERIFY_MEMEQ(test_ptr, "asdf", "asdf", 4);
+}
+
+static int _teardown_calls = 0;
+
+static void *_bs_test_setup_succeed(void) {
+    _teardown_calls = 0;
+    return &_teardown_calls;
+};
+static void *_bs_test_setup_fail(void) {
+    _teardown_calls = 0;
+    return NULL; };
+static void _bs_test_teardown(void *ctx_ptr) {
+    int *calls_ptr = BS_ASSERT_NOTNULL(ctx_ptr);
+    *calls_ptr += 1;
+}
+static void _bs_test_verify_context_context(bs_test_t *test_ptr) {
+    BS_TEST_VERIFY_EQ(test_ptr, &_teardown_calls, bs_test_context(test_ptr));
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_test_context_setup_ok(bs_test_t *test_ptr)
+{
+    static const bs_test_case_t cases[] = {
+        { true, "test", _bs_test_verify_context_context },
+        BS_TEST_CASE_SENTINEL()
+    };
+    static const bs_test_set_t set = BS_TEST_SET_CONTEXT(
+        true,
+        "test_setup_teardown",
+        cases,
+        _bs_test_setup_succeed,
+        _bs_test_teardown);
+    static const bs_test_set_t *sets[] = { &set, NULL };
+
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_test_sets(sets, 0, NULL, NULL));
+    BS_TEST_VERIFY_EQ(test_ptr, 1, _teardown_calls);
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_test_context_setup_fail(bs_test_t *test_ptr)
+{
+    static const bs_test_case_t cases[] = {
+        { true, "test", _bs_test_verify_context_context },
+        BS_TEST_CASE_SENTINEL()
+    };
+    static const bs_test_set_t set = BS_TEST_SET_CONTEXT(
+        true,
+        "test_setup_teardown",
+        cases,
+        _bs_test_setup_fail,
+        _bs_test_teardown);
+    static const bs_test_set_t *sets[] = { &set, NULL };
+
+    BS_TEST_VERIFY_EQ(test_ptr, 1, bs_test_sets(sets, 0, NULL, NULL));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, _teardown_calls);
 }
 
 /** @endcond */

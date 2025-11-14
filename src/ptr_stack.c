@@ -135,12 +135,11 @@ static void large_test(bs_test_t *test_ptr);
 static const bs_test_case_t   bs_ptr_stack_test_cases[] = {
     { true, "basic", basic_test },
     { true, "large", large_test },
-    { false, NULL, NULL }  // sentinel.
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bs_ptr_stack_test_set = {
-    true, "ptr_stack", bs_ptr_stack_test_cases
-};
+const bs_test_set_t bs_ptr_stack_test_set = BS_TEST_SET(
+    true, "ptr_stack", bs_ptr_stack_test_cases);
 
 /* ------------------------------------------------------------------------- */
 /** Basic functionality: init, empty pop, push, pop, empty pop, fini. */

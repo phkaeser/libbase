@@ -37,7 +37,6 @@
 #include <time.h>
 #include <unistd.h>
 
-
 /* == Data ================================================================= */
 
 bs_log_severity_t      bs_log_severity = BS_WARNING;
@@ -230,10 +229,11 @@ static void test_log(bs_test_t *test_ptr);
 static const bs_test_case_t   bs_log_test_cases[] = {
     { true, "basename", test_strip_prefix },
     { true, "log", test_log },
-    { false, NULL, NULL }
+    BS_TEST_CASE_SENTINEL(),
 };
 
-const bs_test_set_t bs_log_test_set = { true, "log", bs_log_test_cases };
+const bs_test_set_t bs_log_test_set = BS_TEST_SET(
+    true, "log", bs_log_test_cases);
 
 /* ------------------------------------------------------------------------- */
 void test_strip_prefix(bs_test_t *test_ptr)

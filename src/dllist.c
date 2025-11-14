@@ -318,9 +318,8 @@ static const bs_test_case_t   bs_dllist_test_cases[] = {
     { false, NULL, NULL }
 };
 
-const bs_test_set_t           bs_dllist_test_set = {
-    true, "dllist", bs_dllist_test_cases
-};
+const bs_test_set_t           bs_dllist_test_set = BS_TEST_SET(
+    true, "dllist", bs_dllist_test_cases);
 
 /* ------------------------------------------------------------------------- */
 /**
