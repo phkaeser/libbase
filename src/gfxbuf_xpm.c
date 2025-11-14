@@ -347,9 +347,8 @@ static const bs_test_case_t   bs_gfxbuf_xpm_test_cases[] = {
     { false, NULL, NULL }
 };
 
-const bs_test_set_t bs_gfxbuf_xpm_test_set = {
-    true, "gfxbuf_xpm", bs_gfxbuf_xpm_test_cases
-};
+const bs_test_set_t bs_gfxbuf_xpm_test_set = BS_TEST_SET(
+    true, "gfxbuf_xpm", bs_gfxbuf_xpm_test_cases);
 
 static char *test_xpm_data[] = {
     "2 2 3 1",

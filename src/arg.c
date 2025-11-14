@@ -690,9 +690,8 @@ static const bs_test_case_t   bs_arg_test_cases[] = {
     { false, NULL, NULL }
 };
 
-const bs_test_set_t           bs_arg_test_set = {
-    true, "arg", bs_arg_test_cases
-};
+const bs_test_set_t bs_arg_test_set = BS_TEST_SET(
+    true, "arg", bs_arg_test_cases);
 
 static const bs_arg_enum_table_t enum_test_table[] = {
     { "alpha", 1 }, { "bravo", 42 }, { "charlie", 7 }, { NULL, 0 } };

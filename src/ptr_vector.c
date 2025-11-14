@@ -135,12 +135,11 @@ static void large_test(bs_test_t *test_ptr);
 static const bs_test_case_t   bs_ptr_vector_test_cases[] = {
     { true, "basic", basic_test },
     { true, "large", large_test },
-    { false, NULL, NULL }
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bs_ptr_vector_test_set = {
-    true, "ptr_vector", bs_ptr_vector_test_cases
-};
+const bs_test_set_t bs_ptr_vector_test_set = BS_TEST_SET(
+    true, "ptr_vector", bs_ptr_vector_test_cases);
 
 /* ------------------------------------------------------------------------- */
 /** Tests basic functionality. */

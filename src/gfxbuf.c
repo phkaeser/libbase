@@ -361,12 +361,11 @@ static const bs_test_case_t   bs_gfxbuf_test_cases[] = {
     { true, "cairo", test_cairo },
     { true, "equals_png", test_equals_png },
 #endif  // HAVE_CAIRO
-    { false, NULL, NULL }
+    BS_TEST_CASE_SENTINEL(),
 };
 
-const bs_test_set_t bs_gfxbuf_test_set = {
-    true, "gfxbuf", bs_gfxbuf_test_cases
-};
+const bs_test_set_t bs_gfxbuf_test_set = BS_TEST_SET(
+    true, "gfxbuf", bs_gfxbuf_test_cases);
 
 /* ------------------------------------------------------------------------- */
 void test_copy_area(bs_test_t *test_ptr)
@@ -458,12 +457,11 @@ static const bs_test_case_t   bs_gfxbuf_benchmarks[] = {
     { true, "benchmark-gfxbuf_clear-black", benchmark_clear },
     { true, "benchmark-gfxbuf_clear-nonblack", benchmark_clear_nonblack },
     { true, "benchmark-gfxbuf_copy", benchmark_copy },
-    { false, NULL, NULL }
+    BS_TEST_CASE_SENTINEL(),
 };
 
-const bs_test_set_t bs_gfxbuf_benchmarks_set = {
-    true, "bs_gfxbuf", bs_gfxbuf_benchmarks
-};
+const bs_test_set_t bs_gfxbuf_benchmarks_set = BS_TEST_SET(
+    true, "bs_gfxbuf", bs_gfxbuf_benchmarks);
 
 /* ------------------------------------------------------------------------- */
 static void benchmark_clear(bs_test_t *test_ptr)

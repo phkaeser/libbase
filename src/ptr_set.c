@@ -153,12 +153,11 @@ static void bs_ptr_set_test(bs_test_t *test_ptr);
 /** Unit test cases. */
 static const bs_test_case_t   bs_ptr_set_test_cases[] = {
     { 1, "test", bs_ptr_set_test },
-    { 0, NULL, NULL }
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bs_ptr_set_test_set = {
-    true, "ptr_set", bs_ptr_set_test_cases
-};
+const bs_test_set_t bs_ptr_set_test_set = BS_TEST_SET(
+    true, "ptr_set", bs_ptr_set_test_cases);
 
 void bs_ptr_set_test(bs_test_t *test_ptr)
 {

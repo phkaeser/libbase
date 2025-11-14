@@ -666,12 +666,11 @@ static const bs_test_case_t bspl_decode_test_cases[] = {
     { true, "encode_bool", test_encode_bool },
     { true, "encode_enum", test_encode_enum },
     { true, "encode_string", test_encode_string },
-    { false, NULL, NULL },
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bspl_decode_test_set = {
-    true, "decode", bspl_decode_test_cases
-};
+const bs_test_set_t bspl_decode_test_set = BS_TEST_SET(
+    true, "decode", bspl_decode_test_cases);
 
 static bool _bspl_test_custom_decode(
     bspl_object_t *object_ptr,

@@ -306,9 +306,8 @@ static const bs_test_case_t   bs_dynbuf_test_cases[] = {
     { false, NULL, NULL },
 };
 
-const bs_test_set_t           bs_dynbuf_test_set = {
-    true, "dynbuf", bs_dynbuf_test_cases
-};
+const bs_test_set_t           bs_dynbuf_test_set = BS_TEST_SET(
+    true, "dynbuf", bs_dynbuf_test_cases);
 
 /* ------------------------------------------------------------------------- */
 void test_dynbuf_ctor_dtor(bs_test_t *test_ptr)

@@ -26,9 +26,7 @@
 
 #if defined(__cplusplus) || defined(__clang__)
 
-const bs_test_set_t           bs_atomic_test_set = {
-    false, NULL, NULL
-};
+const bs_test_set_t bs_atomic_test_set = BS_TEST_SET(false, NULL, NULL);
 
 #else  // defined(__cplusplus) || !defined(__clang__)
 
@@ -44,9 +42,8 @@ static const bs_test_case_t   bs_atomic_test_cases[] = {
     { false, NULL, NULL }
 };
 
-const bs_test_set_t           bs_atomic_test_set = {
-    true, "atomic", bs_atomic_test_cases
-};
+const bs_test_set_t bs_atomic_test_set = BS_TEST_SET(
+    true, "atomic", bs_atomic_test_cases);
 
 /* ------------------------------------------------------------------------- */
 void bs_atomic_test_int32(bs_test_t *test_ptr)

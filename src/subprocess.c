@@ -766,12 +766,11 @@ const bs_test_case_t          bs_subprocess_test_cases[] = {
     { true, "split_command", test_split_command },
     { true, "hang", test_hang },
     { true, "nonexisting", test_nonexisting },
-    { false, NULL, NULL }
+    BS_TEST_CASE_SENTINEL()
 };
 
-const bs_test_set_t bs_subprocess_test_set = {
-    true, "bs_subprocess", bs_subprocess_test_cases
-};
+const bs_test_set_t bs_subprocess_test_set = BS_TEST_SET(
+    true, "bs_subprocess", bs_subprocess_test_cases);
 
 static const char             *test_args[] = { NULL, "alpha", NULL };
 

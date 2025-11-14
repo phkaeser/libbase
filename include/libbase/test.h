@@ -52,6 +52,9 @@ struct _bs_test_case_t {
     bs_test_fn_t              test_fn;
 };
 
+/** Sentinel, to add at the end of a list of @ref bs_test_case_t. */
+#define BS_TEST_CASE_SENTINEL() { .enabled = false, .name_ptr = NULL }
+
 /** Test set. */
 struct _bs_test_set_t {
     /** Whether the set is enabled. */
@@ -59,8 +62,29 @@ struct _bs_test_set_t {
     /** Name of the test set. */
     const char                *name_ptr;
     /** Array of test cases for that set. */
-    const bs_test_case_t      *case_ptr;
+    const bs_test_case_t      *cases_ptr;
+
+    /** Optional: Method to setup environment. Executed before each case. */
+    void *(*setup)(void);
+    /** Optional: Method to tear down environment. Executed after each case. */
+    void (*teardown)(void *setup_context_ptr);
 };
+
+/** Defines a plain test set, no setup/teardown methods. */
+#define BS_TEST_SET(_enabled ,_name, _cases) { \
+        .enabled = _enabled,                   \
+        .name_ptr = _name,                     \
+        .cases_ptr = _cases                    \
+    }
+
+/** A test set with methods to setup & teardown context for each case. */
+#define BS_TEST_SET_CONTEXT(_enabled ,_name, _cases, _setup, _teardown) { \
+        .enabled = _enabled,                   \
+        .name_ptr = _name,                     \
+        .cases_ptr = _cases,                   \
+        .setup = _setup,                       \
+        .teardown = _teardown                  \
+    }
 
 /** Test parameters. */
 typedef struct {
@@ -103,6 +127,15 @@ void bs_test_fail_at(
  * @return Whether the test has failed.
  */
 bool bs_test_failed(bs_test_t *test_ptr);
+
+/**
+ * Returns the context returned by @ref bs_test_set_t::setup, or NULL.
+ *
+ * @param test_ptr
+ *
+ * @return The context, or NULL if @ref bs_test_set_t::setup was not provided.
+ */
+void *bs_test_context(bs_test_t *test_ptr);
 
 /**
  * Runs test sets.
@@ -365,6 +398,8 @@ const char *bs_test_resolve_path(const char *fname_ptr);
 
 /** Unit test set. */
 extern const bs_test_set_t   bs_test_test_set;
+/** Test set with setup and teardown of a context. */
+extern const bs_test_set_t bs_test_test_setup_teardown_set;
 
 #ifdef __cplusplus
 }  // extern "C"
