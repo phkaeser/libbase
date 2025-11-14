@@ -674,17 +674,24 @@ static void bs_arg_test_set_defaults(bs_test_t *test_ptr);
 static void bs_arg_test_parse(bs_test_t *test_ptr);
 static void bs_arg_test_check_arg(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_arg_test_cases[] = {
-    { 1, "get_match_type for bool values", bs_arg_test_get_match_type_bool },
-    { 1, "get_match_type for non-bool values", bs_arg_test_get_match_type_nonbool },
-    { 1, "find_matching_args", bs_arg_test_find_matching_arg },
-    { 1, "parse_arg_for_bool", bs_arg_test_parse_arg_for_bool },
-    { 1, "parse_arg_for_uint32", bs_arg_test_parse_arg_for_uint32 },
-    { 1, "parse_arg_for_enum", bs_arg_test_parse_arg_for_enum },
-    { 1, "set_defaults", bs_arg_test_set_defaults },
-    { 1, "parse", bs_arg_test_parse },
-    { 1, "check_arg", bs_arg_test_check_arg },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t   bs_arg_test_cases[] = {
+    { true, "get_match_type for bool values",
+      bs_arg_test_get_match_type_bool },
+    { true, "get_match_type for non-bool values",
+      bs_arg_test_get_match_type_nonbool },
+    { true, "find_matching_args", bs_arg_test_find_matching_arg },
+    { true, "parse_arg_for_bool", bs_arg_test_parse_arg_for_bool },
+    { true, "parse_arg_for_uint32", bs_arg_test_parse_arg_for_uint32 },
+    { true, "parse_arg_for_enum", bs_arg_test_parse_arg_for_enum },
+    { true, "set_defaults", bs_arg_test_set_defaults },
+    { true, "parse", bs_arg_test_parse },
+    { true, "check_arg", bs_arg_test_check_arg },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t           bs_arg_test_set = {
+    true, "arg", bs_arg_test_cases
 };
 
 static const bs_arg_enum_table_t enum_test_table[] = {

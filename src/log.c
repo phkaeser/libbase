@@ -226,11 +226,14 @@ void verify_log_output_equals_at(
 static void test_strip_prefix(bs_test_t *test_ptr);
 static void test_log(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_log_test_cases[] = {
-    { 1, "basename", test_strip_prefix },
-    { 1, "log", test_log },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t   bs_log_test_cases[] = {
+    { true, "basename", test_strip_prefix },
+    { true, "log", test_log },
+    { false, NULL, NULL }
 };
+
+const bs_test_set_t bs_log_test_set = { true, "log", bs_log_test_cases };
 
 /* ------------------------------------------------------------------------- */
 void test_strip_prefix(bs_test_t *test_ptr)

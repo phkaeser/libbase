@@ -339,11 +339,16 @@ static void test_parse_color(bs_test_t *test_ptr);
 static void test_parse_xpm(bs_test_t *test_ptr);
 static void test_create_xpm(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_gfxbuf_xpm_test_cases[] = {
-    { 1, "parse_color", test_parse_color },
-    { 1, "parse_xpm", test_parse_xpm },
-    { 1, "create_xpm", test_create_xpm },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t   bs_gfxbuf_xpm_test_cases[] = {
+    { true, "parse_color", test_parse_color },
+    { true, "parse_xpm", test_parse_xpm },
+    { true, "create_xpm", test_create_xpm },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t bs_gfxbuf_xpm_test_set = {
+    true, "gfxbuf_xpm", bs_gfxbuf_xpm_test_cases
 };
 
 static char *test_xpm_data[] = {

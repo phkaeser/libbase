@@ -304,17 +304,22 @@ static void bs_dllist_test_for_each_dtor(bs_test_t *test_ptr);
 static void bs_dllist_test_all(bs_test_t *test_ptr);
 static void bs_dllist_test_iterator(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_dllist_test_cases[] = {
-    { 1, "push/pop back", bs_dllist_test_back },
-    { 1, "push/pop front", bs_dllist_test_front },
-    { 1, "remove", bs_dllist_test_remove },
-    { 1, "insert", bs_dllist_test_insert },
-    { 1, "find", bs_dllist_test_find },
-    { 1, "for_each", bs_dllist_test_for_each },
-    { 1, "for_each_dtor", bs_dllist_test_for_each_dtor },
-    { 1, "all", bs_dllist_test_all },
-    { 1, "iterator", bs_dllist_test_iterator },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t   bs_dllist_test_cases[] = {
+    { true, "push/pop back", bs_dllist_test_back },
+    { true, "push/pop front", bs_dllist_test_front },
+    { true, "remove", bs_dllist_test_remove },
+    { true, "insert", bs_dllist_test_insert },
+    { true, "find", bs_dllist_test_find },
+    { true, "for_each", bs_dllist_test_for_each },
+    { true, "for_each_dtor", bs_dllist_test_for_each_dtor },
+    { true, "all", bs_dllist_test_all },
+    { true, "iterator", bs_dllist_test_iterator },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t           bs_dllist_test_set = {
+    true, "dllist", bs_dllist_test_cases
 };
 
 /* ------------------------------------------------------------------------- */

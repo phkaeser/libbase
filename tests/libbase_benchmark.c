@@ -22,16 +22,12 @@
 #include <libbase/libbase.h>
 #include <stddef.h>
 
-/** Unit tests. */
-const bs_test_set_t           libbase_benchmarks[] = {
-    { 1, "bs_gfxbuf", bs_gfxbuf_benchmarks },
-    { 0, NULL, NULL }
-};
-
 /** Main program, runs all unit tests. */
 int main(int argc, const char **argv)
 {
-    return bs_test(libbase_benchmarks, argc, argv, NULL);
+    const bs_test_param_t param = {};
+    const bs_test_set_t* sets[] = { &bs_gfxbuf_benchmarks_set, NULL };
+    return bs_test_sets(sets, argc, argv, &param);
 }
 
 /* == End of libbase_benchmark.c =========================================== */

@@ -131,10 +131,15 @@ bool _bs_ptr_vector_grow(bs_ptr_vector_t *ptr_vector_ptr)
 static void basic_test(bs_test_t *test_ptr);
 static void large_test(bs_test_t *test_ptr);
 
-const bs_test_case_t bs_ptr_vector_test_cases[] = {
-    { 1, "basic", basic_test },
-    { 1, "large", large_test },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t   bs_ptr_vector_test_cases[] = {
+    { true, "basic", basic_test },
+    { true, "large", large_test },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t bs_ptr_vector_test_set = {
+    true, "ptr_vector", bs_ptr_vector_test_cases
 };
 
 /* ------------------------------------------------------------------------- */

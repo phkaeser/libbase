@@ -494,8 +494,8 @@ bool bspl_enum_value_to_name(
     int value,
     const char **name_ptr_ptr);
 
-/** Unit tests. */
-extern const bs_test_case_t bspl_decode_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t bspl_decode_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

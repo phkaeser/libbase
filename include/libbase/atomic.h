@@ -462,8 +462,8 @@ static inline void bs_atomic_int64_xchg(bs_atomic_int64_t *a_ptr,
 
 #endif  // defined(__cplusplus)
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_atomic_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_atomic_test_set;
 
 #endif /* __LIBBASE_ATOMIC_H__ */
 /* == End of atomic.h ====================================================== */

@@ -158,8 +158,8 @@ static inline bs_dllist_node_t *bs_dllist_node_iterator_backward(
     return dlnode_ptr ? dlnode_ptr->prev_ptr : dlnode_ptr;
 }
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_dllist_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_dllist_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

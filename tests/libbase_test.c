@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <poll.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -40,9 +41,14 @@ static void test_def(bs_test_t *test_ptr);
 
 /** Further tests of definitions, without .c file. */
 static const bs_test_case_t bs_header_only_test_cases[] = {
-    { 1, "assert", test_assert },
-    { 1, "def", test_def },
-    { 0, NULL, NULL }
+    { true, "assert", test_assert },
+    { true, "def", test_def },
+    { false, NULL, NULL }
+};
+
+/** Test set of the cases without .c file. */
+static const bs_test_set_t bs_header_only_test_set = {
+    true, "header_only", bs_header_only_test_cases
 };
 
 static void test_failure(bs_test_t *test_ptr);
@@ -53,36 +59,15 @@ static void test_success_twice(bs_test_t *test_ptr);
 
 static const char             *test_args[] = { "binary", "alpha", NULL };
 const bs_test_case_t          bs_subprocess_extra_test_cases[] = {
-    { 1, "failure", test_failure },
-    { 1, "sigpipe", test_sigpipe },
-    { 1, "success", test_success },
-    { 1, "success_cmdline", test_success_cmdline },
-    { 1, "success_twice", test_success_twice },
-    { 0, NULL, NULL }
+    { true, "failure", test_failure },
+    { true, "sigpipe", test_sigpipe },
+    { true, "success", test_success },
+    { true, "success_cmdline", test_success_cmdline },
+    { true, "success_twice", test_success_twice },
+    { false , NULL, NULL }
 };
-
-/** Unit tests. */
-const bs_test_set_t           libbase_tests[] = {
-    { 1, "atomic", bs_atomic_test_cases },
-    { 1, "arg", bs_arg_test_cases },
-    { 1, "avltree", bs_avltree_test_cases },
-    { 1, "dequeue", bs_dequeue_test_cases },
-    { 1, "dllist", bs_dllist_test_cases },
-    { 1, "dynbuf", bs_dynbuf_test_cases },
-    { 1, "file", bs_file_test_cases },
-    { 1, "gfxbuf", bs_gfxbuf_test_cases },
-    { 1, "gfxbuf_xpm", bs_gfxbuf_xpm_test_cases },
-    { 1, "header_only", bs_header_only_test_cases },
-    { 1, "log", bs_log_test_cases },
-    { 1, "ptr_set", bs_ptr_set_test_cases },
-    { 1, "ptr_stack", bs_ptr_stack_test_cases },
-    { 1, "ptr_vector", bs_ptr_vector_test_cases },
-    { 1, "subprocess", bs_subprocess_test_cases },
-    { 1, "subprocess_extra", bs_subprocess_extra_test_cases },
-    { 1, "strutil", bs_strutil_test_cases },
-    { 1, "test", bs_test_test_cases },
-    { 1, "time", bs_time_test_cases },
-    { 0, NULL, NULL }
+static const bs_test_set_t    bs_subprocess_extra_test_set = {
+    true, "subprocess_extra", bs_subprocess_extra_test_cases
 };
 
 /* ------------------------------------------------------------------------- */
@@ -270,7 +255,30 @@ int main(int argc, const char **argv)
         .test_data_dir_ptr   = BS_TEST_DATA_DIR
     };
 
-    return bs_test(libbase_tests, argc, argv, &params);
+    const bs_test_set_t *sets[] = {
+        &bs_atomic_test_set,
+        &bs_arg_test_set,
+        &bs_avltree_test_set,
+        &bs_dequeue_test_set,
+        &bs_dllist_test_set,
+        &bs_dynbuf_test_set,
+        &bs_file_test_set,
+        &bs_gfxbuf_test_set,
+        &bs_gfxbuf_xpm_test_set,
+        &bs_header_only_test_set,
+        &bs_log_test_set,
+        &bs_ptr_set_test_set,
+        &bs_ptr_stack_test_set,
+        &bs_ptr_vector_test_set,
+        &bs_subprocess_test_set,
+        &bs_subprocess_extra_test_set,
+        &bs_strutil_test_set,
+        &bs_test_test_set,
+        &bs_time_test_set,
+        NULL
+    };
+
+    return bs_test_sets(sets, argc, argv, &params);
 }
 
 /* == End of libbase_test.c ================================================ */

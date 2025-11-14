@@ -38,8 +38,8 @@ extern "C" {
  */
 bs_gfxbuf_t *bs_gfxbuf_xpm_create_from_data(char **xpm_data_ptr);
 
-/** Unit test cases. */
-extern const bs_test_case_t bs_gfxbuf_xpm_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_gfxbuf_xpm_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

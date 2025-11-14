@@ -93,8 +93,8 @@ static inline bs_dequeue_node_t *bs_dequeue_pop(bs_dequeue_t *queue_ptr)
     return node_ptr;
 }
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_dequeue_test_cases[];
+/** Unit tests set. */
+extern const bs_test_set_t    bs_dequeue_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -85,8 +85,8 @@ bool bs_ptr_vector_erase(bs_ptr_vector_t *ptr_vector_ptr,
 /** @return the element at `pos`. It must be `pos` < size. */
 void* bs_ptr_vector_at(bs_ptr_vector_t *ptr_vector_ptr, size_t pos);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_ptr_vector_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_ptr_vector_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -21,12 +21,13 @@
 
 #include <libbase/atomic.h>
 #include <libbase/test.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 #if defined(__cplusplus) || defined(__clang__)
 
-const bs_test_case_t          bs_atomic_test_cases[] = {
-    { 0, NULL, NULL }
+const bs_test_set_t           bs_atomic_test_set = {
+    false, NULL, NULL
 };
 
 #else  // defined(__cplusplus) || !defined(__clang__)
@@ -36,10 +37,15 @@ const bs_test_case_t          bs_atomic_test_cases[] = {
 static void bs_atomic_test_int32(bs_test_t *test_ptr);
 static void bs_atomic_test_int64(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_atomic_test_cases[] = {
-    { 1, "int32 unit tests", bs_atomic_test_int32 },
-    { 1, "int64 unit tests", bs_atomic_test_int64 },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t   bs_atomic_test_cases[] = {
+    { true, "int32 unit tests", bs_atomic_test_int32 },
+    { true, "int64 unit tests", bs_atomic_test_int64 },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t           bs_atomic_test_set = {
+    true, "atomic", bs_atomic_test_cases
 };
 
 /* ------------------------------------------------------------------------- */

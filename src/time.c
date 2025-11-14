@@ -26,6 +26,7 @@
 #include <libbase/log.h>
 #include <libbase/test.h>
 #include <libbase/time.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -67,11 +68,14 @@ uint64_t bs_mono_nsec(void)
 static void bs_time_test_usec(bs_test_t *test_ptr);
 static void bs_time_test_nsec(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_time_test_cases[] = {
+/** Unit test cases. */
+static const bs_test_case_t   bs_time_test_cases[] = {
     { 1, "time usec", bs_time_test_usec },
     { 1, "time_mono_nsec", bs_time_test_nsec },
     { 0, NULL, NULL }
 };
+
+const bs_test_set_t bs_time_test_set = { true, "time", bs_time_test_cases };
 
 /* ------------------------------------------------------------------------- */
 void bs_time_test_usec(bs_test_t *test_ptr)

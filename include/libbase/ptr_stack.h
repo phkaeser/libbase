@@ -104,8 +104,8 @@ void *bs_ptr_stack_pop(bs_ptr_stack_t *ptr_stack_ptr);
 void *bs_ptr_stack_peek(bs_ptr_stack_t *ptr_stack_ptr,
                         size_t index);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_ptr_stack_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_ptr_stack_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

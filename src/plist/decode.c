@@ -649,23 +649,28 @@ static void test_encode_bool(bs_test_t *test_ptr);
 static void test_encode_enum(bs_test_t *test_ptr);
 static void test_encode_string(bs_test_t *test_ptr);
 
-const bs_test_case_t bspl_decode_test_cases[] = {
-    { 1, "init_defaults", test_init_defaults },
-    { 1, "enum_translate", test_enum_translate },
-    { 1, "dict", test_decode_dict },
-    { 1, "number", test_decode_number },
-    { 1, "argb32", test_decode_argb32 },
-    { 1, "bool", test_decode_bool },
-    { 1, "enum", test_decode_enum },
-    { 1, "string", test_decode_string },
-    { 1, "charbuf", test_decode_charbuf },
-    { 1, "encode_dict", test_encode_dict },
-    { 1, "encode_number", test_encode_number },
-    { 1, "encode_argb32", test_encode_argb32 },
-    { 1, "encode_bool", test_encode_bool },
-    { 1, "encode_enum", test_encode_enum },
-    { 1, "encode_string", test_encode_string },
-    { 0, NULL, NULL },
+/** Unit test cases. */
+static const bs_test_case_t bspl_decode_test_cases[] = {
+    { true, "init_defaults", test_init_defaults },
+    { true, "enum_translate", test_enum_translate },
+    { true, "dict", test_decode_dict },
+    { true, "number", test_decode_number },
+    { true, "argb32", test_decode_argb32 },
+    { true, "bool", test_decode_bool },
+    { true, "enum", test_decode_enum },
+    { true, "string", test_decode_string },
+    { true, "charbuf", test_decode_charbuf },
+    { true, "encode_dict", test_encode_dict },
+    { true, "encode_number", test_encode_number },
+    { true, "encode_argb32", test_encode_argb32 },
+    { true, "encode_bool", test_encode_bool },
+    { true, "encode_enum", test_encode_enum },
+    { true, "encode_string", test_encode_string },
+    { false, NULL, NULL },
+};
+
+const bs_test_set_t bspl_decode_test_set = {
+    true, "decode", bspl_decode_test_cases
 };
 
 static bool _bspl_test_custom_decode(

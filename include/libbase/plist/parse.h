@@ -67,8 +67,8 @@ bspl_object_t *bspl_create_object_from_dynbuf(bs_dynbuf_t *dynbuf_ptr);
  */
 bspl_object_t *bspl_create_object_from_plist_file(const char *fname_ptr);
 
-/** Unit tests for the plist parser. */
-extern const bs_test_case_t bspl_plist_test_cases[];
+/** Unit test setfor the plist parser. */
+extern const bs_test_set_t bspl_plist_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -230,11 +230,10 @@ void bs_test_gfxbuf_equals_png_at(
 
 #endif  // HAVE_CAIRO
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_gfxbuf_test_cases[];
-
+/** Unit tests set. */
+extern const bs_test_set_t    bs_gfxbuf_test_set;
 /** Benchmarks, in the form of an unit test. */
-extern const bs_test_case_t   bs_gfxbuf_benchmarks[];
+extern const bs_test_set_t    bs_gfxbuf_benchmarks_set;
 
 #ifdef __cplusplus
 }  // extern "C"

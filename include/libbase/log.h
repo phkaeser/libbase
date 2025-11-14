@@ -84,8 +84,8 @@ static inline bool bs_will_log(bs_log_severity_t severity)
         }                                                               \
     }
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_log_test_cases[];
+/** Unit testset. */
+extern const bs_test_set_t    bs_log_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

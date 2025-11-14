@@ -23,14 +23,6 @@
 #include <libbase/libbase.h>
 #include <libbase/plist.h>
 
-/** plist module unit tests. */
-const bs_test_set_t plist_tests[] = {
-    { 1, "decode", bspl_decode_test_cases },
-    { 1, "model", bspl_model_test_cases },
-    { 1, "plist", bspl_plist_test_cases },
-    { 0, NULL, NULL },
-};
-
 #if !defined(TEST_DATA_DIR)
 /** Directory root for looking up test data. See `bs_test_resolve_path`. */
 #define TEST_DATA_DIR "./"
@@ -42,7 +34,13 @@ int main(__UNUSED__ int argc, __UNUSED__ const char **argv)
     const bs_test_param_t params = {
         .test_data_dir_ptr   = TEST_DATA_DIR
     };
-    return bs_test(plist_tests, argc, argv, &params);
+    const bs_test_set_t* set_ptrs[] = {
+        &bspl_decode_test_set,
+        &bspl_model_test_set,
+        &bspl_plist_test_set,
+        NULL
+    };
+    return bs_test_sets(set_ptrs, argc, argv, &params);
 
 }
 

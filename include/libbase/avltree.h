@@ -152,8 +152,8 @@ bs_avltree_node_t *bs_avltree_node_prev(bs_avltree_t *tree_ptr,
 int bs_avltree_cmp_ptr(const void *node_key_ptr,
                        const void *key_ptr);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_avltree_test_cases[];
+/** Unit tests set. */
+extern const bs_test_set_t    bs_avltree_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"
