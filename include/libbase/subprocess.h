@@ -147,8 +147,8 @@ void bs_subprocess_get_fds(bs_subprocess_t *subprocess_ptr,
  */
 pid_t bs_subprocess_pid(bs_subprocess_t *subprocess_ptr);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_subprocess_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_subprocess_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

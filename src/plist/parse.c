@@ -24,6 +24,7 @@
 #include "parser_context.h"
 #include <libbase/libbase.h>
 #include <libbase/plist.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -132,13 +133,18 @@ static void test_from_data(bs_test_t *test_ptr);
 static void test_from_dynbuf(bs_test_t *test_ptr);
 static void test_escaped_string(bs_test_t *test_ptr);
 
-const bs_test_case_t bspl_plist_test_cases[] = {
-    { 1, "from_string", test_from_string },
-    { 1, "from_file", test_from_file },
-    { 1, "from_data", test_from_data },
-    { 1, "from_dynbuf", test_from_dynbuf },
-    { 1, "escaped_string", test_escaped_string },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t bspl_plist_test_cases[] = {
+    { true, "from_string", test_from_string },
+    { true, "from_file", test_from_file },
+    { true, "from_data", test_from_data },
+    { true, "from_dynbuf", test_from_dynbuf },
+    { true, "escaped_string", test_escaped_string },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t bspl_plist_test_set = {
+    true, "plist", bspl_plist_test_cases
 };
 
 static const uint8_t _test_data[] = { 'v', 'a', 'l', 'u', 'e' };

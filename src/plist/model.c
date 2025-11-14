@@ -757,14 +757,19 @@ static void test_write_string(bs_test_t *test_ptr);
 static void test_write_dict(bs_test_t *test_ptr);
 static void test_write_array(bs_test_t *test_ptr);
 
-const bs_test_case_t bspl_model_test_cases[] = {
-    { 1, "string", test_string },
-    { 1, "dict", test_dict },
-    { 1, "array", test_array },
-    { 1, "write_string", test_write_string },
-    { 1, "write_dict", test_write_dict },
-    { 1, "write_array", test_write_array },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t bspl_model_test_cases[] = {
+    { true, "string", test_string },
+    { true, "dict", test_dict },
+    { true, "array", test_array },
+    { true, "write_string", test_write_string },
+    { true, "write_dict", test_write_dict },
+    { true, "write_array", test_write_array },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t bspl_model_test_set = {
+    true, "model", bspl_model_test_cases
 };
 
 /* ------------------------------------------------------------------------- */

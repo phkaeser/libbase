@@ -44,8 +44,8 @@ typedef void (*bs_test_fn_t)(bs_test_t *test_ptr);
 
 /** Descriptor for a test case. */
 struct _bs_test_case_t {
-    /** 0 if the test is disabled */
-    int                       enabled;
+    /** Whether the test is enabled. */
+    bool                       enabled;
     /** Name of the test, for informational purpose. */
     const char                *name_ptr;
     /** Test function for this testcase. */
@@ -54,8 +54,8 @@ struct _bs_test_case_t {
 
 /** Test set. */
 struct _bs_test_set_t {
-    /** 0 if the set is disabled. */
-    int                       enabled;
+    /** Whether the set is enabled. */
+    bool                       enabled;
     /** Name of the test set. */
     const char                *name_ptr;
     /** Array of test cases for that set. */
@@ -117,6 +117,23 @@ bool bs_test_failed(bs_test_t *test_ptr);
  */
 int bs_test(
     const bs_test_set_t *test_sets,
+    int argc,
+    const char **argv,
+    const bs_test_param_t *param_ptr);
+
+/**
+ * Runs test sets.
+ *
+ * @param test_set_ptrs       A NULL-terminated array of pointers to test sets.
+ * @param argc
+ * @param argv
+ * @param param_ptr           Optional, points to a @ref bs_test_param_t and
+ *                            specifies parameters for the test environment.
+ *
+ * @return 0 on success or the number of failed test sets.
+ */
+int bs_test_sets(
+    const bs_test_set_t **test_set_ptrs,
     int argc,
     const char **argv,
     const bs_test_param_t *param_ptr);
@@ -346,8 +363,8 @@ const char *bs_test_resolve_path(const char *fname_ptr);
             (_test), __FILE__, __LINE__, _a, #_a, _b, #_b, _size);      \
     }
 
-/** Test cases. */
-extern const bs_test_case_t   bs_test_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t   bs_test_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -275,8 +275,8 @@ static inline const char *bspl_array_string_value_at(
         bspl_string_from_object(bspl_array_at(array_ptr, idx)));
 }
 
-/** Unit tests for the config data model. */
-extern const bs_test_case_t bspl_model_test_cases[];
+/** Unit test set for the config data model. */
+extern const bs_test_set_t bspl_model_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

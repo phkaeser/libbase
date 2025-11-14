@@ -96,8 +96,8 @@ void *bs_ptr_set_any(bs_ptr_set_t *set_ptr);
  */
 bool bs_ptr_set_empty(bs_ptr_set_t *set_ptr);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_ptr_set_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_ptr_set_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

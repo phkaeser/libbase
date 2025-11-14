@@ -800,7 +800,7 @@ bs_avltree_node_t *bs_avltree_node_max(bs_avltree_node_t *node_ptr)
     return bs_avltree_node_max(node_ptr->right_ptr);
 }
 
-/* == Test Functions ======================================================= */
+/* == Unit tests ======================================================== */
 /** @cond TEST */
 
 #define BS_AVLTREE_TEST_VALUES          4096
@@ -821,9 +821,14 @@ static const void *bs_avltree_test_node_key(const bs_avltree_node_t *node_ptr);
 
 static void bs_avltree_test_random(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_avltree_test_cases[] = {
-    { 1, "random", bs_avltree_test_random },
-    { 0, NULL, NULL }
+/** Unit test cases. */
+static const bs_test_case_t   bs_avltree_test_cases[] = {
+    { true, "random", bs_avltree_test_random },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t           bs_avltree_test_set = {
+    true, "avltree", bs_avltree_test_cases
 };
 
 /* ------------------------------------------------------------------------- */

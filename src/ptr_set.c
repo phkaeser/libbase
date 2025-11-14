@@ -150,9 +150,14 @@ int elem_compare(const bs_avltree_node_t *node_ptr, const void *key_ptr)
 
 static void bs_ptr_set_test(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_ptr_set_test_cases[] = {
+/** Unit test cases. */
+static const bs_test_case_t   bs_ptr_set_test_cases[] = {
     { 1, "test", bs_ptr_set_test },
     { 0, NULL, NULL }
+};
+
+const bs_test_set_t bs_ptr_set_test_set = {
+    true, "ptr_set", bs_ptr_set_test_cases
 };
 
 void bs_ptr_set_test(bs_test_t *test_ptr)

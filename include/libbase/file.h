@@ -145,8 +145,8 @@ bool bs_file_mkdir_p(const char *dirname_ptr, int mode);
  */
 bool bs_file_realpath_is(const char *fname_ptr, int mode_type);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_file_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_file_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

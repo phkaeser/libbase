@@ -202,7 +202,8 @@ static void strconvert_double_test(bs_test_t *test_ptr);
 static void test_startswith(bs_test_t *test_ptr);
 static void test_strdupf(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_strutil_test_cases[] = {
+/** Unit test cases. */
+static const bs_test_case_t   bs_strutil_test_cases[] = {
     { 1, "strappend", test_strappend },
     { 1, "strconvert_uint64", strconvert_uint64_test },
     { 1, "strconvert_int64", strconvert_int64_test },
@@ -210,6 +211,10 @@ const bs_test_case_t          bs_strutil_test_cases[] = {
     { 1, "startswith", test_startswith },
     { 1, "strdupf", test_strdupf },
     { 0, NULL, NULL }
+};
+
+const bs_test_set_t bs_strutil_test_set = {
+    true, "strutil", bs_strutil_test_cases
 };
 
 /* -- Append to string buffer ---------------------------------------------- */

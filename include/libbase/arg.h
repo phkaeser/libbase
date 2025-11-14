@@ -205,8 +205,8 @@ void bs_arg_cleanup(const bs_arg_t *arg_ptr);
  */
 int bs_arg_print_usage(FILE *stream_ptr, const bs_arg_t *arg_ptr);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_arg_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_arg_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

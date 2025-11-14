@@ -237,14 +237,17 @@ static void test_lookup(bs_test_t *test_ptr);
 static void test_mkdir_p(bs_test_t *test_ptr);
 static void test_realpath_is(bs_test_t *test_ptr);
 
-const bs_test_case_t bs_file_test_cases[] = {
-    { 1, "resolve_path", test_resolve_path },
-    { 1, "join_resolve_path", test_join_resolve_path },
-    { 1, "lookup", test_lookup },
-    { 1, "mkdir_p", test_mkdir_p },
-    { 1, "realpath_is", test_realpath_is },
-    { 0, NULL, NULL }  // sentinel.
+/** Unit test cases. */
+static const bs_test_case_t bs_file_test_cases[] = {
+    { true, "resolve_path", test_resolve_path },
+    { true, "join_resolve_path", test_join_resolve_path },
+    { true, "lookup", test_lookup },
+    { true, "mkdir_p", test_mkdir_p },
+    { true, "realpath_is", test_realpath_is },
+    { false, NULL, NULL }  // sentinel.
 };
+
+const bs_test_set_t bs_file_test_set = { true, "file", bs_file_test_cases };
 
 /* ------------------------------------------------------------------------- */
 void test_resolve_path(bs_test_t *test_ptr)

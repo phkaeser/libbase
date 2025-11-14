@@ -760,12 +760,17 @@ static void test_split_command(bs_test_t *test_ptr);
 static void test_hang(bs_test_t *test_ptr);
 static void test_nonexisting(bs_test_t *test_ptr);
 
+/** Unit test cases. */
 const bs_test_case_t          bs_subprocess_test_cases[] = {
-    { 1, "is_variable_assignment", test_is_variable_assignment },
-    { 1, "split_command", test_split_command },
-    { 1, "hang", test_hang },
-    { 1, "nonexisting", test_nonexisting },
-    { 0, NULL, NULL }
+    { true, "is_variable_assignment", test_is_variable_assignment },
+    { true, "split_command", test_split_command },
+    { true, "hang", test_hang },
+    { true, "nonexisting", test_nonexisting },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t bs_subprocess_test_set = {
+    true, "bs_subprocess", bs_subprocess_test_cases
 };
 
 static const char             *test_args[] = { NULL, "alpha", NULL };

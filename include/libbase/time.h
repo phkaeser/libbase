@@ -35,8 +35,8 @@ uint64_t bs_usec(void);
 /** Returns a monotonous time counter in nsec, as CLOCK_MONOTONIC. */
 uint64_t bs_mono_nsec(void);
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_time_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_time_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"

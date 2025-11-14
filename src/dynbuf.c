@@ -296,13 +296,18 @@ static void test_dynbuf_read_capped(bs_test_t *test_ptr);
 static void test_dynbuf_write(bs_test_t *test_ptr);
 static void test_dynbuf_append(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_dynbuf_test_cases[] = {
-    { 1, "ctor_dtor", test_dynbuf_ctor_dtor },
-    { 1, "read", test_dynbuf_read },
-    { 1, "read_capped", test_dynbuf_read_capped },
-    { 1, "write", test_dynbuf_write },
-    { 1, "append", test_dynbuf_append },
-    { 0, NULL, NULL },
+/** Unit test cases. */
+static const bs_test_case_t   bs_dynbuf_test_cases[] = {
+    { true, "ctor_dtor", test_dynbuf_ctor_dtor },
+    { true, "read", test_dynbuf_read },
+    { true, "read_capped", test_dynbuf_read_capped },
+    { true, "write", test_dynbuf_write },
+    { true, "append", test_dynbuf_append },
+    { false, NULL, NULL },
+};
+
+const bs_test_set_t           bs_dynbuf_test_set = {
+    true, "dynbuf", bs_dynbuf_test_cases
 };
 
 /* ------------------------------------------------------------------------- */

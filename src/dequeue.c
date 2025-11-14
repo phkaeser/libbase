@@ -20,6 +20,7 @@
 
 #include <libbase/dequeue.h>
 #include <libbase/test.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 /* == Tests =============================================================== */
@@ -27,10 +28,15 @@
 static void bs_dequeue_front_test(bs_test_t *test_ptr);
 static void bs_dequeue_back_test(bs_test_t *test_ptr);
 
-const bs_test_case_t          bs_dequeue_test_cases[] = {
-    { 1, "push front & pop", bs_dequeue_front_test },
-    { 1, "push back & pop", bs_dequeue_back_test },
-    { 0, NULL, NULL }  // sentinel.
+/** Unit test cases. */
+static const bs_test_case_t   bs_dequeue_test_cases[] = {
+    { true, "push front & pop", bs_dequeue_front_test },
+    { true, "push back & pop", bs_dequeue_back_test },
+    { false, NULL, NULL }  // sentinel.
+};
+
+const bs_test_set_t           bs_dequeue_test_set = {
+    true, "dequeue", bs_dequeue_test_cases
 };
 
 /* ------------------------------------------------------------------------- */

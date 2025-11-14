@@ -353,14 +353,19 @@ static void test_cairo(bs_test_t *test_ptr);
 static void test_equals_png(bs_test_t *test_ptr);
 #endif  // HAVE_CAIRO
 
-const bs_test_case_t          bs_gfxbuf_test_cases[] = {
-    { 1, "copy_area", test_copy_area },
-    { 1, "argb8888_fo_floats", test_argb8888_to_floats },
+/** Unit test cases. */
+static const bs_test_case_t   bs_gfxbuf_test_cases[] = {
+    { true, "copy_area", test_copy_area },
+    { true, "argb8888_fo_floats", test_argb8888_to_floats },
 #ifdef HAVE_CAIRO
-    { 1, "cairo", test_cairo },
-    { 1, "equals_png", test_equals_png },
+    { true, "cairo", test_cairo },
+    { true, "equals_png", test_equals_png },
 #endif  // HAVE_CAIRO
-    { 0, NULL, NULL }
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t bs_gfxbuf_test_set = {
+    true, "gfxbuf", bs_gfxbuf_test_cases
 };
 
 /* ------------------------------------------------------------------------- */
@@ -448,11 +453,16 @@ static void benchmark_copy(bs_test_t *test_ptr);
 /* set benchmarks to last for 2.5s each */
 static const uint64_t benchmark_duration = 2500000;
 
-const bs_test_case_t          bs_gfxbuf_benchmarks[] = {
-    { 1, "benchmark-gfxbuf_clear-black", benchmark_clear },
-    { 1, "benchmark-gfxbuf_clear-nonblack", benchmark_clear_nonblack },
-    { 1, "benchmark-gfxbuf_copy", benchmark_copy },
-    { 0, NULL, NULL }
+/** Benchmark cases. */
+static const bs_test_case_t   bs_gfxbuf_benchmarks[] = {
+    { true, "benchmark-gfxbuf_clear-black", benchmark_clear },
+    { true, "benchmark-gfxbuf_clear-nonblack", benchmark_clear_nonblack },
+    { true, "benchmark-gfxbuf_copy", benchmark_copy },
+    { false, NULL, NULL }
+};
+
+const bs_test_set_t bs_gfxbuf_benchmarks_set = {
+    true, "bs_gfxbuf", bs_gfxbuf_benchmarks
 };
 
 /* ------------------------------------------------------------------------- */

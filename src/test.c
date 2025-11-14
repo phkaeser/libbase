@@ -239,6 +239,83 @@ int bs_test(
     return report.failed;
 }
 
+/* ------------------------------------------------------------------------- */
+int bs_test_sets(
+    const bs_test_set_t** test_set_ptrs,
+    int argc,
+    const char **argv,
+    const bs_test_param_t *param_ptr)
+{
+    struct bs_test_report     report = {};
+    int                       i;
+    bool                      run_set;
+    bs_dllist_t               failed_tests = {};
+
+    if (!bs_arg_parse(bs_test_args, BS_ARG_MODE_EXTRA_VALUES, &argc, argv)) {
+        bs_arg_print_usage(stderr, bs_test_args);
+        return -1;
+    }
+
+    if (NULL == bs_test_data_dir_ptr &&
+        NULL != param_ptr &&
+        NULL != param_ptr->test_data_dir_ptr) {
+        bs_test_data_dir_ptr = logged_strdup(param_ptr->test_data_dir_ptr);
+        if (NULL == bs_test_data_dir_ptr) return -1;
+    }
+
+    bs_test_tcode_init();
+
+    const bs_test_set_t *set_ptr;
+    while (NULL != (set_ptr = *test_set_ptrs++)) {
+        // If any args are given, check if the name matches.
+        run_set = 1 >= argc;
+        for (i = 1; i < argc; i++) {
+            if (0 == strcmp(argv[i], set_ptr->name_ptr)) {
+                run_set = true;;
+            }
+        }
+
+        if (run_set && set_ptr->enabled) {
+            if (bs_test_set(set_ptr, bs_test_filter_ptr, &failed_tests)) {
+                report.failed++;
+            } else {
+                report.succeeded++;
+            }
+        } else {
+            report.skipped++;
+        }
+
+        report.total++;
+    }
+
+    if (report.failed) {
+        bs_test_attr(BS_TEST_ATTR_FAIL);
+        bs_test_puts("FAILED: % 66d/% 3d\n",
+                     report.failed, report.total);
+
+        /* Print all failed tests. */
+        struct bs_test_fail_node *fnode_ptr;
+        while (NULL != (fnode_ptr = (struct bs_test_fail_node*)
+                        bs_dllist_pop_front(&failed_tests))) {
+            bs_test_puts(" %s\n", fnode_ptr->full_name_ptr);
+            bs_test_case_fail_node_destroy(fnode_ptr);
+        }
+        bs_test_attr(BS_TEST_ATTR_RESET);
+    } else if (report.succeeded) {
+        bs_test_attr(BS_TEST_ATTR_SUCCESS);
+        bs_test_puts("SUCCESS: % 65d/% 3d\n",
+                     report.succeeded, report.total);
+        bs_test_attr(BS_TEST_ATTR_RESET);
+    }
+    if (report.skipped) {
+        bs_test_attr(BS_TEST_ATTR_SKIP);
+        bs_test_puts("SKIPPED: % 65d/% 3d\n", report.skipped, report.total);
+        bs_test_attr(BS_TEST_ATTR_RESET);
+    }
+
+    bs_arg_cleanup(bs_test_args);
+    return report.failed;
+}
 
 /* ------------------------------------------------------------------------- */
 void bs_test_succeed(bs_test_t *test, const char *fmt_ptr, ...)
@@ -689,11 +766,14 @@ char *bs_test_case_create_full_name(
 static void bs_test_test_report(bs_test_t *test_ptr);
 static void bs_test_eq_neq_tests(bs_test_t *test_ptr);
 
-const bs_test_case_t bs_test_test_cases[] = {
-    { 1, "succeed/fail reporting", bs_test_test_report },
-    { 1, "eq/neq tests", bs_test_eq_neq_tests },
-    { 0, NULL, NULL }  /* sentinel. */
+/** Unit test cases. */
+static const bs_test_case_t bs_test_test_cases[] = {
+    { true, "succeed/fail reporting", bs_test_test_report },
+    { true, "eq/neq tests", bs_test_eq_neq_tests },
+    { false, NULL, NULL }  /* sentinel. */
 };
+
+const bs_test_set_t bs_test_test_set = { true, "test", bs_test_test_cases };
 
 void bs_test_test_fail(bs_test_t *test_ptr)
 {

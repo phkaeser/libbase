@@ -207,8 +207,8 @@ static inline bool bs_dynbuf_maybe_indent(
     return true;
 }
 
-/** Unit tests. */
-extern const bs_test_case_t   bs_dynbuf_test_cases[];
+/** Unit test set. */
+extern const bs_test_set_t    bs_dynbuf_test_set;
 
 #ifdef __cplusplus
 }  // extern "C"
