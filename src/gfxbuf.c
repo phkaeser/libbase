@@ -24,6 +24,7 @@
 #include <libbase/gfxbuf.h>
 #include <libbase/log.h>
 #include <libbase/log_wrappers.h>
+#include <libbase/strutil.h>
 #include <libbase/test.h>
 #include <libbase/time.h>
 #include <math.h>
@@ -248,6 +249,8 @@ void bs_test_gfxbuf_equals_png_at(
     const bs_gfxbuf_t *gfxbuf_ptr,
     const char *png_fname_ptr)
 {
+    static int32_t png_iterator = 0;
+
     if (NULL == png_fname_ptr) {
         bs_test_fail_at(
             test_ptr, fname_ptr, line, "PNG file name is NULL");
@@ -270,6 +273,11 @@ void bs_test_gfxbuf_equals_png_at(
                         png_fname_ptr);
     }
 
+    const char *p = bs_test_path(test_ptr);
+    if (NULL == p) return;
+    char *tested_gfxbuf_name_ptr = bs_strdupf(
+        "%s/out-%08"PRIx32".png", p, png_iterator++);
+
     if ((unsigned)cairo_image_surface_get_width(png_surface_ptr) !=
         gfxbuf_ptr->width) {
         bs_test_fail_at(
@@ -278,7 +286,7 @@ void bs_test_gfxbuf_equals_png_at(
             "Expected output: \"%s\", gfxbuf under test: \"%s\"",
             gfxbuf_ptr->width,
             cairo_image_surface_get_width(png_surface_ptr),
-            png_fname_ptr, "/tmp/out.png");
+            png_fname_ptr, tested_gfxbuf_name_ptr);
     }
     if ((unsigned)cairo_image_surface_get_height(png_surface_ptr) !=
         gfxbuf_ptr->height) {
@@ -288,7 +296,7 @@ void bs_test_gfxbuf_equals_png_at(
             "Expected output: \"%s\", gfxbuf under test: \"%s\"",
             gfxbuf_ptr->width,
             cairo_image_surface_get_height(png_surface_ptr),
-            png_fname_ptr, "/tmp/out.png");
+            png_fname_ptr, tested_gfxbuf_name_ptr);
     }
     if ((unsigned)cairo_image_surface_get_stride(png_surface_ptr) <
         gfxbuf_ptr->width * sizeof(uint32_t)) {
@@ -298,7 +306,7 @@ void bs_test_gfxbuf_equals_png_at(
             "Expected output: \"%s\", gfxbuf under test: \"%s\"",
             gfxbuf_ptr->width, sizeof(uint32_t),
             cairo_image_surface_get_stride(png_surface_ptr),
-            png_fname_ptr, "/tmp/out.png");
+            png_fname_ptr, tested_gfxbuf_name_ptr);
     }
 
     if (!bs_test_failed(test_ptr)) {
@@ -312,33 +320,40 @@ void bs_test_gfxbuf_equals_png_at(
                     test_ptr, fname_ptr, line,
                     "gfxbuf content at line %u differs from expected PNG. "
                     "Expected output: \"%s\", gfxbuf under test: \"%s\"",
-                    l, png_fname_ptr, "/tmp/out.png");
+                    l, png_fname_ptr, tested_gfxbuf_name_ptr);
             }
         }
     }
 
     cairo_surface_destroy(png_surface_ptr);
 
-    if (!bs_test_failed(test_ptr)) return;
+    if (!bs_test_failed(test_ptr)) {
+        free(tested_gfxbuf_name_ptr);
+        return;
+    }
 
     cairo_t *cairo_ptr = cairo_create_from_bs_gfxbuf(gfxbuf_ptr);
     if (NULL == cairo_ptr) {
         bs_log(BS_ERROR, "Failed cairo_create_from_bs_gfxbuf");
+        free(tested_gfxbuf_name_ptr);
         return;
     }
     cairo_surface_t *surface_ptr = cairo_get_target(cairo_ptr);
     if (NULL == cairo_ptr) {
         bs_log(BS_ERROR, "Failed cairo_get_target");
         cairo_destroy(cairo_ptr);
+        free(tested_gfxbuf_name_ptr);
         return;
     }
 
-    cairo_status_t status = cairo_surface_write_to_png(surface_ptr, "/tmp/out.png");
+    cairo_status_t status = cairo_surface_write_to_png(
+        surface_ptr, tested_gfxbuf_name_ptr);
     if (CAIRO_STATUS_SUCCESS != status) {
-        bs_log(BS_ERROR, "Failed cairo_surface_write_to_png(%p, \"/tmp/out.png\")",
-               surface_ptr);
+        bs_log(BS_ERROR, "Failed cairo_surface_write_to_png(%p, \"%s\")",
+               surface_ptr, tested_gfxbuf_name_ptr);
     }
 
+    free(tested_gfxbuf_name_ptr);
     cairo_destroy(cairo_ptr);
 }
 
