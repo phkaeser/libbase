@@ -13,3 +13,6 @@
 
 * When skipping tests, don't clutter the output with the full skipped test.
 * Store the failure position for failed tests, include in test summary.
+* Eliminate the globals.
+* Eliminate bs_test().
+* Make it easy to run a single case, or a single set.
