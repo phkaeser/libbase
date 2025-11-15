@@ -394,13 +394,10 @@ void test_dynbuf_read_capped(bs_test_t *test_ptr)
 void test_dynbuf_write(bs_test_t *test_ptr)
 {
     struct stat stat_buffer;
-    char tmp_path[] = "/tmp/dynbuf-XXXXXX";
 
-    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, mkdtemp(tmp_path));
-
-    char *fn1 = bs_strdupf("%s/sub/file.txt", tmp_path);
+    char *fn1 = bs_strdupf("%s/sub/file.txt", bs_test_path(test_ptr));
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn1);
-    char *fn2 = bs_strdupf("%s/sub/file.txt.old", tmp_path);
+    char *fn2 = bs_strdupf("%s/sub/file.txt.old", bs_test_path(test_ptr));
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn2);
 
     char content[8] = {};
@@ -442,7 +439,6 @@ void test_dynbuf_write(bs_test_t *test_ptr)
     rmdir(dirname(fn1));
     free(fn2);
     free(fn1);
-    BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));
 }
 
 /* ------------------------------------------------------------------------- */
