@@ -252,6 +252,22 @@ void bs_test_verify_memeq_at(
  */
 const char *bs_test_resolve_path(const char *fname_ptr);
 
+/**
+ * Creates a temporary directory for test files and returns the path.
+ *
+ * The directory name is cached, ie. further calls to @ref bs_test_path within
+ * the same @ref bs_test_t will return the same name. When the test completes,
+ * it will attempt to rmdir() the directory. The test will get marked as
+ * failed, if rmdir() fails, eg. if the directory is not empty.
+ *
+ * @param test_ptr
+ *
+ * @return The path name to the created directory, or NULL on error. If the
+ *     function fails, `test_ptr` is marked as failed. The path name will be
+ *     cleaned up during test teardown.
+ */
+const char *bs_test_path(bs_test_t *test_ptr);
+
 /* == Verification macros ================================================== */
 
 /**

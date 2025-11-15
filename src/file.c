@@ -327,10 +327,7 @@ void test_lookup(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_mkdir_p(bs_test_t *test_ptr)
 {
-    char tmp_path[] = "/tmp/file-mkdir_p-XXXXXX";
-    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, mkdtemp(tmp_path));
-
-    char *dirname_ptr = bs_strdupf("%s/a/b", tmp_path);
+    char *dirname_ptr = bs_strdupf("%s/a/b", bs_test_path(test_ptr));
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, dirname_ptr);
 
     // The temp dir was just created: First attempt must succeed.
@@ -342,19 +339,16 @@ void test_mkdir_p(bs_test_t *test_ptr)
     rmdir(dirname_ptr);
     rmdir(dirname(dirname_ptr));
     free(dirname_ptr);
-    BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));
 }
 
 /* ------------------------------------------------------------------------- */
 void test_realpath_is(bs_test_t *test_ptr)
 {
-    char tmp_path[] = "/tmp/file-mkdir_p-XXXXXX";
-    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, mkdtemp(tmp_path));
+    const char *p = bs_test_path(test_ptr);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(p, S_IFDIR));
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(p, S_IFREG));
 
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(tmp_path, S_IFDIR));
-    BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(tmp_path, S_IFREG));
-
-    char *fn = bs_strdupf("%s/a", tmp_path);
+    char *fn = bs_strdupf("%s/a", p);
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn);
     BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(fn, S_IFDIR));
     BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(fn, S_IFREG));
@@ -365,7 +359,6 @@ void test_realpath_is(bs_test_t *test_ptr)
 
     unlink(fn);
     free(fn);
-    BS_TEST_VERIFY_EQ(test_ptr, 0, rmdir(tmp_path));
 }
 
 /* == End of file.c ======================================================== */

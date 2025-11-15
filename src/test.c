@@ -19,6 +19,7 @@
  */
 
 #include <curses.h>
+#include <errno.h>
 #include <fnmatch.h>
 #include <libbase/arg.h>
 #include <libbase/assert.h>
@@ -27,6 +28,7 @@
 #include <libbase/file.h>
 #include <libbase/log.h>
 #include <libbase/log_wrappers.h>
+#include <libbase/strutil.h>
 #include <libbase/test.h>
 #include <limits.h>
 #include <regex.h>
@@ -35,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <term.h>
 #include <threads.h>
 #include <unistd.h>
@@ -45,9 +48,13 @@ struct _bs_test_t {
     int                       case_idx;
     /** Current test case descriptor. */
     const bs_test_case_t      *case_ptr;
+    /** Test set the case belongs to. */
+    const bs_test_set_t       *set_ptr;
 
     /** Return value of @ref bs_test_set_t::setup. */
     void                      *setup_context_ptr;
+    /** Temporary path, see @ref bs_test_path. */
+    char                      *test_path_ptr;
 
     /** Test outcome: Failed? */
     bool                      failed;
@@ -116,7 +123,7 @@ static int bs_test_set(const bs_test_set_t *set_ptr,
 static void bs_test_case_prepare(bs_test_t *test_ptr,
                                  const bs_test_set_t *set_ptr,
                                  int case_idx);
-static void bs_test_case_report(const bs_test_t *test_ptr,
+static void bs_test_case_report(bs_test_t *test_ptr,
                                 const bs_test_set_t *set_ptr,
                                 bool enabled);
 
@@ -459,6 +466,33 @@ const char *bs_test_resolve_path(const char *fname_ptr)
     }
     return resolved_path_ptr;
 }
+
+/* ------------------------------------------------------------------------- */
+const char *bs_test_path(bs_test_t *test_ptr)
+{
+    if (NULL != test_ptr->test_path_ptr) return test_ptr->test_path_ptr;
+
+    test_ptr->test_path_ptr = bs_strdupf(
+        "/tmp/test-%p.%x-XXXXXX",
+        test_ptr->set_ptr,
+        test_ptr->case_idx);
+    if (NULL != test_ptr->test_path_ptr) {
+        if (NULL != mkdtemp(test_ptr->test_path_ptr)) {
+            return test_ptr->test_path_ptr;
+        }
+        BS_TEST_FAIL(test_ptr, "Failed mkdtemp(\"%s\"): %s",
+                     test_ptr->test_path_ptr, strerror(errno));
+        free(test_ptr->test_path_ptr);
+        test_ptr->test_path_ptr = NULL;
+    } else {
+        BS_TEST_FAIL(test_ptr,
+                     "Failed bs_strdupf(\"/tmp/test-%p.%x-XXXXXX\")",
+                     test_ptr->set_ptr,
+                     test_ptr->case_idx);
+    }
+    return NULL;
+}
+
 /* == Static (Local) Functions ============================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -685,6 +719,7 @@ void bs_test_case_prepare(bs_test_t *test_ptr,
             BS_TEST_FAIL(test_ptr, "Failed setup() [%p]", set_ptr->setup);
         }
     }
+    test_ptr->set_ptr = set_ptr;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -693,7 +728,7 @@ void bs_test_case_prepare(bs_test_t *test_ptr,
  *
  * @param test_ptr
  */
-void bs_test_case_report(const bs_test_t *test_ptr,
+void bs_test_case_report(bs_test_t *test_ptr,
                          const bs_test_set_t *set_ptr,
                          bool enabled)
 {
@@ -703,6 +738,14 @@ void bs_test_case_report(const bs_test_t *test_ptr,
     if (NULL != set_ptr->teardown &&
         NULL != test_ptr->setup_context_ptr) {
         set_ptr->teardown(test_ptr->setup_context_ptr);
+    }
+
+    if (NULL != test_ptr->test_path_ptr) {
+        if (0 != rmdir(test_ptr->test_path_ptr)) {
+            BS_TEST_FAIL(test_ptr, "Failed rmdir(\"%s\"): %s",
+                         test_ptr->test_path_ptr, strerror(errno));
+        }
+        free(test_ptr->test_path_ptr);
     }
 
     if (!enabled) {
@@ -791,40 +834,42 @@ char *bs_test_case_create_full_name(
 /* == Unit self-tests ====================================================== */
 /** @cond TEST */
 
-static void bs_test_test_report(bs_test_t *test_ptr);
-static void bs_test_eq_neq_tests(bs_test_t *test_ptr);
-static void bs_test_context_setup_ok(bs_test_t *test_ptr);
-static void bs_test_context_setup_fail(bs_test_t *test_ptr);
+static void _bs_test_test_report(bs_test_t *test_ptr);
+static void _bs_test_eq_neq_tests(bs_test_t *test_ptr);
+static void _bs_test_context_setup_ok(bs_test_t *test_ptr);
+static void _bs_test_context_setup_fail(bs_test_t *test_ptr);
+static void _bs_test_path(bs_test_t *test_ptr);
 
 /** Unit test cases. */
 static const bs_test_case_t bs_test_test_cases[] = {
-    { true, "succeed/fail reporting", bs_test_test_report },
-    { true, "eq/neq tests", bs_test_eq_neq_tests },
-    { true, "context_setup_ok", bs_test_context_setup_ok },
-    { true, "context_setup_fail", bs_test_context_setup_fail },
+    { true, "succeed/fail reporting", _bs_test_test_report },
+    { true, "eq/neq tests", _bs_test_eq_neq_tests },
+    { true, "context_setup_ok", _bs_test_context_setup_ok },
+    { true, "context_setup_fail", _bs_test_context_setup_fail },
+    { true, "path", _bs_test_path },
     BS_TEST_CASE_SENTINEL()
 };
 
 const bs_test_set_t bs_test_test_set = BS_TEST_SET(
     true, "test", bs_test_test_cases);
 
-void bs_test_test_fail(bs_test_t *test_ptr)
+void _bs_test_test_fail(bs_test_t *test_ptr)
 {
     BS_TEST_FAIL(test_ptr, "fail");
 }
 
-void bs_test_test_succeed(bs_test_t *test_ptr)
+void _bs_test_test_succeed(bs_test_t *test_ptr)
 {
     bs_test_succeed(test_ptr, "success");
 }
 
-void bs_test_test_succeed_fail(bs_test_t *test_ptr)
+void _bs_test_test_succeed_fail(bs_test_t *test_ptr)
 {
     bs_test_succeed(test_ptr, "success");
     BS_TEST_FAIL(test_ptr, "fail");
 }
 
-void bs_test_test_fail_succeed(bs_test_t *test_ptr)
+void _bs_test_test_fail_succeed(bs_test_t *test_ptr)
 {
     BS_TEST_FAIL(test_ptr, "fail");
     bs_test_succeed(test_ptr, "success");
@@ -832,32 +877,32 @@ void bs_test_test_fail_succeed(bs_test_t *test_ptr)
 
 /* ------------------------------------------------------------------------- */
 /** Tests bs_test_fail and bs_test_succeed. */
-void bs_test_test_report(bs_test_t *test_ptr)
+void _bs_test_test_report(bs_test_t *test_ptr)
 {
     bs_test_t                 sub_test = {};
 
-    bs_test_test_fail(&sub_test);
+    _bs_test_test_fail(&sub_test);
     BS_TEST_VERIFY_TRUE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_test_failed(&sub_test));
     sub_test = (bs_test_t){};
-    bs_test_test_succeed(&sub_test);
+    _bs_test_test_succeed(&sub_test);
     BS_TEST_VERIFY_FALSE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_FALSE(test_ptr, bs_test_failed(&sub_test));
 
     /** bs_test_fail takes precedence over bs_test_succeed. */
     sub_test = (bs_test_t){};
-    bs_test_test_succeed_fail(&sub_test);
+    _bs_test_test_succeed_fail(&sub_test);
     BS_TEST_VERIFY_TRUE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_test_failed(&sub_test));
     sub_test = (bs_test_t){};
-    bs_test_test_fail_succeed(&sub_test);
+    _bs_test_test_fail_succeed(&sub_test);
     BS_TEST_VERIFY_TRUE(test_ptr, sub_test.failed);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_test_failed(&sub_test));
 }
 
 /* ------------------------------------------------------------------------- */
 /** Tests the EQ / NEQ macros. */
-void bs_test_eq_neq_tests(bs_test_t *test_ptr)
+void _bs_test_eq_neq_tests(bs_test_t *test_ptr)
 {
     BS_TEST_VERIFY_EQ(test_ptr, 1, 1);
     BS_TEST_VERIFY_NEQ(test_ptr, 1, 2);
@@ -886,7 +931,7 @@ static void _bs_test_verify_context_context(bs_test_t *test_ptr) {
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_test_context_setup_ok(bs_test_t *test_ptr)
+void _bs_test_context_setup_ok(bs_test_t *test_ptr)
 {
     static const bs_test_case_t cases[] = {
         { true, "test", _bs_test_verify_context_context },
@@ -905,7 +950,7 @@ void bs_test_context_setup_ok(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_test_context_setup_fail(bs_test_t *test_ptr)
+void _bs_test_context_setup_fail(bs_test_t *test_ptr)
 {
     static const bs_test_case_t cases[] = {
         { true, "test", _bs_test_verify_context_context },
@@ -921,6 +966,14 @@ void bs_test_context_setup_fail(bs_test_t *test_ptr)
 
     BS_TEST_VERIFY_EQ(test_ptr, 1, bs_test_sets(sets, 0, NULL, NULL));
     BS_TEST_VERIFY_EQ(test_ptr, 0, _teardown_calls);
+}
+
+/* ------------------------------------------------------------------------- */
+void _bs_test_path(bs_test_t *test_ptr)
+{
+    const char *tmp_path = bs_test_path(test_ptr);
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, tmp_path);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(tmp_path, S_IFDIR));
 }
 
 /** @endcond */
