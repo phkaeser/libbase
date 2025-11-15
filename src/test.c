@@ -473,7 +473,7 @@ const char *bs_test_path(bs_test_t *test_ptr)
     if (NULL != test_ptr->test_path_ptr) return test_ptr->test_path_ptr;
 
     test_ptr->test_path_ptr = bs_strdupf(
-        "/tmp/test-%p.%x-XXXXXX",
+        "/tmp/test-%p-%x-XXXXXX",
         test_ptr->set_ptr,
         test_ptr->case_idx);
     if (NULL != test_ptr->test_path_ptr) {

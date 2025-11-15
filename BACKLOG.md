@@ -11,9 +11,5 @@
 
 ## bs_test
 
-* Expand test method to create a test directory from within test, including
-  automatic rmdir when the test succeeds.
 * When skipping tests, don't clutter the output with the full skipped test.
 * Store the failure position for failed tests, include in test summary.
-* Look into providing temporary file (names), so that the PNG verification
-  tests don't keep re-using the same file.
