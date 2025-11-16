@@ -169,15 +169,26 @@ bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr)
 /* ------------------------------------------------------------------------- */
 char *bs_strdupf(const char *fmt_ptr, ...)
 {
-    size_t size = 1;
+    char *rv;
+
+    va_list ap;
+    va_start(ap, fmt_ptr);
+    rv = bs_vstrdupf(fmt_ptr, ap);
+    va_end(ap);
+    return rv;
+}
+
+/* ------------------------------------------------------------------------- */
+char *bs_vstrdupf(const char *fmt_ptr, va_list ap)
+{
+    size_t size = 16;  // No point in using a string shorter than a paragraph.
     while (true) {
         char *str = logged_malloc(size);
         if (NULL == str) return NULL;
 
-        va_list ap;
-        va_start(ap, fmt_ptr);
-        int rv = vsnprintf(str, size, fmt_ptr, ap);
-        va_end(ap);
+        va_list iter_ap;
+        va_copy(iter_ap, ap);
+        int rv = vsnprintf(str, size, fmt_ptr, iter_ap);
 
         if (0 > rv) {
             bs_log(BS_WARNING, "Failed vsnprintf(%p, %zu, \"%s\", ...)",
@@ -191,6 +202,7 @@ char *bs_strdupf(const char *fmt_ptr, ...)
         size = (size_t)rv + 1;
     }
     return NULL;
+
 }
 
 /* == Test functions ======================================================= */
