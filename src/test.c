@@ -26,11 +26,10 @@
 #include <libbase/def.h>
 #include <libbase/dllist.h>
 #include <libbase/file.h>
-#include <libbase/log.h>
 #include <libbase/log_wrappers.h>
+#include <libbase/ptr_stack.h>
 #include <libbase/strutil.h>
 #include <libbase/test.h>
-#include <limits.h>
 #include <regex.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -39,21 +38,25 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <term.h>
-#include <threads.h>
 #include <unistd.h>
 
 /** Information on current test case. */
 struct _bs_test_t {
+    /** Allocated pointers through the test, collected for later cleanup. */
+    bs_ptr_stack_t            allocated_ptrs;
+
     /** Index of current test case (for information only). */
     int                       case_idx;
     /** Current test case descriptor. */
     const bs_test_case_t      *case_ptr;
     /** Test set the case belongs to. */
     const bs_test_set_t       *set_ptr;
+    /** Test environment. */
+    const struct bs_test_env  *env_ptr;
 
     /** Return value of @ref bs_test_set_t::setup. */
     void                      *setup_context_ptr;
-    /** Temporary path, see @ref bs_test_path. */
+    /** Temporary path, see @ref bs_test_data_path. */
     char                      *test_path_ptr;
 
     /** Test outcome: Failed? */
@@ -106,6 +109,19 @@ struct bs_test_report {
     int                      total;
 };
 
+/** Test environment. */
+struct bs_test_env {
+    /** Filter applied for selecting tests. See `--test_filter` arg. */
+    char                      *filter_ptr;
+    /**
+     * Directory where test data is stored. From `--test_data_directory`, or
+     * passed through @ref bs_test_param_t.
+     *
+     * See @ref bs_test_data_path.
+     */
+    char                      *data_dir_ptr;
+};
+
 /* Other helpers */
 static void bs_test_tcode_init(void);
 static int bs_test_putc(int c);
@@ -116,12 +132,13 @@ static void bs_test_attr(int attr);
 static void bs_test_set_report(const bs_test_set_t *set_ptr,
                                const struct bs_test_report *set_report_ptr);
 static int bs_test_set(const bs_test_set_t *set_ptr,
-                       const char *pattern_ptr,
+                       const struct bs_test_env *env_ptr,
                        bs_dllist_t *failed_tests_ptr);
 
 /* Testcase helpers. */
-static void bs_test_case_prepare(bs_test_t *test_ptr,
+static bool bs_test_case_prepare(bs_test_t *test_ptr,
                                  const bs_test_set_t *set_ptr,
+                                 const struct bs_test_env *env_ptr,
                                  int case_idx);
 static void bs_test_case_report(bs_test_t *test_ptr,
                                 const bs_test_set_t *set_ptr,
@@ -148,25 +165,6 @@ static const char             *bs_test_report_separator_ptr =
     "========================================"
     "=======================================";
 
-static char                  *bs_test_filter_ptr = NULL;
-static char                  *bs_test_data_dir_ptr = NULL;
-
-static const bs_arg_t        bs_test_args[] = {
-    BS_ARG_STRING(
-        "test_filter",
-        "Filter to apply for selecting tests. Uses fnmatch on the full name.",
-        "*",
-        &bs_test_filter_ptr),
-    BS_ARG_STRING(
-        "test_data_directory",
-        "Directory to use for test data. Setting this flag takes precedence "
-        "over the parameter specified through the `bs_test_param_t` arg to "
-        "bs_test().",
-        NULL,
-        &bs_test_data_dir_ptr),
-    BS_ARG_SENTINEL()
-};
-
 /* == Exported Functions =================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -180,6 +178,22 @@ int bs_test(
     int                       i;
     bool                      run_set;
     bs_dllist_t               failed_tests = {};
+    struct bs_test_env        env = {};
+    const bs_arg_t            bs_test_args[] = {
+        BS_ARG_STRING(
+            "test_filter",
+            "Filter to apply for selecting tests. Uses fnmatch on the full name.",
+            "*",
+            &env.filter_ptr),
+        BS_ARG_STRING(
+            "test_data_directory",
+            "Directory to use for test data. Setting this flag takes precedence "
+            "over the parameter specified through the `bs_test_param_t` arg to "
+            "bs_test().",
+            NULL,
+            &env.data_dir_ptr),
+        BS_ARG_SENTINEL()
+    };
 
     if (NULL == test_sets) return 0;
     if (!bs_arg_parse(bs_test_args, BS_ARG_MODE_NO_EXTRA, &argc, argv)) {
@@ -187,11 +201,11 @@ int bs_test(
         return -1;
     }
 
-    if (NULL == bs_test_data_dir_ptr &&
+    if (NULL == env.data_dir_ptr &&
         NULL != param_ptr &&
         NULL != param_ptr->test_data_dir_ptr) {
-        bs_test_data_dir_ptr = logged_strdup(param_ptr->test_data_dir_ptr);
-        if (NULL == bs_test_data_dir_ptr) return -1;
+        env.data_dir_ptr = logged_strdup(param_ptr->test_data_dir_ptr);
+        if (NULL == env.data_dir_ptr) return -1;
     }
 
     bs_test_tcode_init();
@@ -208,7 +222,7 @@ int bs_test(
         }
 
         if (run_set && test_sets->enabled) {
-            if (bs_test_set(test_sets, bs_test_filter_ptr, &failed_tests)) {
+            if (bs_test_set(test_sets, &env, &failed_tests)) {
                 report.failed++;
             } else {
                 report.succeeded++;
@@ -263,17 +277,34 @@ int bs_test_sets(
     bool                      run_set;
     bs_dllist_t               failed_tests = {};
 
+    struct bs_test_env        env = {};
+    const bs_arg_t            bs_test_args[] = {
+        BS_ARG_STRING(
+            "test_filter",
+            "Filter to apply for selecting tests. Uses fnmatch on the full name.",
+            "*",
+            &env.filter_ptr),
+        BS_ARG_STRING(
+            "test_data_directory",
+            "Directory to use for test data. Setting this flag takes precedence "
+            "over the parameter specified through the `bs_test_param_t` arg to "
+            "bs_test().",
+            NULL,
+            &env.data_dir_ptr),
+        BS_ARG_SENTINEL()
+    };
+
     if (NULL != argv &&
         !bs_arg_parse(bs_test_args, BS_ARG_MODE_EXTRA_VALUES, &argc, argv)) {
         bs_arg_print_usage(stderr, bs_test_args);
         return -1;
     }
 
-    if (NULL == bs_test_data_dir_ptr &&
+    if (NULL == env.data_dir_ptr &&
         NULL != param_ptr &&
         NULL != param_ptr->test_data_dir_ptr) {
-        bs_test_data_dir_ptr = logged_strdup(param_ptr->test_data_dir_ptr);
-        if (NULL == bs_test_data_dir_ptr) return -1;
+        env.data_dir_ptr = logged_strdup(param_ptr->test_data_dir_ptr);
+        if (NULL == env.data_dir_ptr) return -1;
     }
 
     bs_test_tcode_init();
@@ -289,7 +320,7 @@ int bs_test_sets(
         }
 
         if (run_set && set_ptr->enabled) {
-            if (bs_test_set(set_ptr, bs_test_filter_ptr, &failed_tests)) {
+            if (bs_test_set(set_ptr, &env, &failed_tests)) {
                 report.failed++;
             } else {
                 report.succeeded++;
@@ -452,23 +483,30 @@ void bs_test_verify_memeq_at(
 }
 
 /* ------------------------------------------------------------------------- */
-const char *bs_test_resolve_path(const char *fname_ptr)
+const char *bs_test_data_path(
+    bs_test_t *test_ptr,
+    const char *fname_ptr)
 {
-    // POSIX doesn't really say whether the terminating NUL would fit.
-    // Add a spare byte for that.
-    static thread_local char resolved_path[PATH_MAX + 1];
-    const char *resolved_path_ptr = bs_file_join_resolve_path(
-        bs_test_data_dir_ptr, fname_ptr, resolved_path);
+    char *resolved_path_ptr = bs_file_join_resolve_path(
+        test_ptr->env_ptr->data_dir_ptr, fname_ptr, NULL);
     if (NULL == resolved_path_ptr) {
-        bs_log(BS_ERROR | BS_ERRNO,
-               "Failed bs_file_join_resolve_path(%s, %s, %p)",
-               bs_test_data_dir_ptr, fname_ptr, resolved_path);
+        BS_TEST_FAIL(test_ptr,
+                     "Failed bs_file_join_resolve_path(\"%s\", \"%s\", NULL)",
+                     test_ptr->env_ptr->data_dir_ptr, fname_ptr);
+        return NULL;
     }
+
+    if (!bs_ptr_stack_push(&test_ptr->allocated_ptrs, resolved_path_ptr)) {
+        BS_TEST_FAIL(test_ptr, "Failed bs_ptr_stack_push(%p, %p)",
+                     &test_ptr->allocated_ptrs, resolved_path_ptr);
+        free(resolved_path_ptr);
+        return NULL;
+    }
+
     return resolved_path_ptr;
 }
 
-/* ------------------------------------------------------------------------- */
-const char *bs_test_path(bs_test_t *test_ptr)
+static const char *_bs_test_get_mkdtemp(bs_test_t *test_ptr)
 {
     if (NULL != test_ptr->test_path_ptr) return test_ptr->test_path_ptr;
 
@@ -489,6 +527,31 @@ const char *bs_test_path(bs_test_t *test_ptr)
                      "Failed bs_strdupf(\"/tmp/test-%p.%x-XXXXXX\")",
                      test_ptr->set_ptr,
                      test_ptr->case_idx);
+    }
+    return NULL;
+}
+
+/* ------------------------------------------------------------------------- */
+const char *bs_test_temp_path(
+    bs_test_t *test_ptr,
+    const char *fname_ptr)
+{
+    const char *dir_ptr = _bs_test_get_mkdtemp(test_ptr);
+    if (NULL == dir_ptr) return NULL;
+
+    if (NULL == fname_ptr) return dir_ptr;
+
+    char *path_ptr = bs_strdupf("%s/%s", dir_ptr, fname_ptr);
+    if (NULL != path_ptr) {
+        if (bs_ptr_stack_push(&test_ptr->allocated_ptrs, path_ptr)) {
+            return path_ptr;
+        }
+        BS_TEST_FAIL(test_ptr, "Failed bs_stack_push(%p, %p)",
+                     &test_ptr->allocated_ptrs, path_ptr);
+        free(path_ptr);
+    } else {
+        BS_TEST_FAIL(test_ptr, "Failed bs_strdupf(\"%s/%s\")",
+                     dir_ptr, fname_ptr);
     }
     return NULL;
 }
@@ -631,14 +694,14 @@ void bs_test_set_report(const bs_test_set_t *set_ptr,
  * Runs the test cases of the specified test set.
  *
  * @param test_ptr            Test state.
- * @param pattern_ptr         Which tests to run, using fnmatch.
+ * @param env_ptr
  * @param set_ptr             Set to run.
  *
  * @return 0, if all tests of the test reported success, or the number of
  *     failed test cases.
  */
 int bs_test_set(const bs_test_set_t *set_ptr,
-                const char *pattern_ptr,
+                const struct bs_test_env *env_ptr,
                 bs_dllist_t *failed_tests_ptr)
 {
     const bs_test_case_t      *case_ptr;
@@ -658,14 +721,15 @@ int bs_test_set(const bs_test_set_t *set_ptr,
 
         case_ptr = set_ptr->cases_ptr + case_idx;
         bs_test_puts("%s\n", bs_test_linesep_ptr);
-        bs_test_case_prepare(&test, set_ptr, case_idx);
+        bs_test_case_prepare(&test, set_ptr, env_ptr, case_idx);
         bool enabled = case_ptr->enabled;
 
         char *full_name_ptr = bs_test_case_create_full_name(set_ptr, case_ptr);
         if (NULL == full_name_ptr) {
             test.failed = true;
         } else {
-            if (fnmatch(pattern_ptr, full_name_ptr, 0)) {
+            if (NULL != env_ptr->filter_ptr &&
+                fnmatch(env_ptr->filter_ptr, full_name_ptr, 0)) {
                 enabled = false;
             }
             if (enabled) {
@@ -701,10 +765,12 @@ int bs_test_set(const bs_test_set_t *set_ptr,
  *
  * @param test_ptr            Test state.
  * @param set_ptr             Test set.
+ * @param env_ptr             Environment.
  * @param case_idx            Index of the test case within the set.
  */
-void bs_test_case_prepare(bs_test_t *test_ptr,
+bool bs_test_case_prepare(bs_test_t *test_ptr,
                           const bs_test_set_t *set_ptr,
+                          const struct bs_test_env *env_ptr,
                           int case_idx)
 {
     *test_ptr = (bs_test_t){
@@ -720,6 +786,9 @@ void bs_test_case_prepare(bs_test_t *test_ptr,
         }
     }
     test_ptr->set_ptr = set_ptr;
+    test_ptr->env_ptr = env_ptr;
+
+    return bs_ptr_stack_init(&test_ptr->allocated_ptrs);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -747,6 +816,12 @@ void bs_test_case_report(bs_test_t *test_ptr,
         }
         free(test_ptr->test_path_ptr);
     }
+
+    void *p;
+    while (NULL != (p = bs_ptr_stack_pop(&test_ptr->allocated_ptrs))) {
+        free(p);
+    }
+    bs_ptr_stack_fini(&test_ptr->allocated_ptrs);
 
     if (!enabled) {
         attr = BS_TEST_ATTR_SKIP;
@@ -838,7 +913,7 @@ static void _bs_test_test_report(bs_test_t *test_ptr);
 static void _bs_test_eq_neq_tests(bs_test_t *test_ptr);
 static void _bs_test_context_setup_ok(bs_test_t *test_ptr);
 static void _bs_test_context_setup_fail(bs_test_t *test_ptr);
-static void _bs_test_path(bs_test_t *test_ptr);
+static void _bs_test_temp_path(bs_test_t *test_ptr);
 
 /** Unit test cases. */
 static const bs_test_case_t bs_test_test_cases[] = {
@@ -846,7 +921,7 @@ static const bs_test_case_t bs_test_test_cases[] = {
     { true, "eq/neq tests", _bs_test_eq_neq_tests },
     { true, "context_setup_ok", _bs_test_context_setup_ok },
     { true, "context_setup_fail", _bs_test_context_setup_fail },
-    { true, "path", _bs_test_path },
+    { true, "temp_path", _bs_test_temp_path },
     BS_TEST_CASE_SENTINEL()
 };
 
@@ -969,9 +1044,9 @@ void _bs_test_context_setup_fail(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
-void _bs_test_path(bs_test_t *test_ptr)
+void _bs_test_temp_path(bs_test_t *test_ptr)
 {
-    const char *tmp_path = bs_test_path(test_ptr);
+    const char *tmp_path = bs_test_temp_path(test_ptr, NULL);
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, tmp_path);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(tmp_path, S_IFDIR));
 }

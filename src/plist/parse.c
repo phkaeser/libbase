@@ -245,7 +245,7 @@ void test_from_file(bs_test_t *test_ptr)
     bspl_object_t *object_ptr, *v_ptr;
 
     object_ptr = bspl_create_object_from_plist_file(
-        bs_test_resolve_path("string.plist"));
+        bs_test_data_path(test_ptr, "string.plist"));
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, object_ptr);
     BS_TEST_VERIFY_STREQ(
         test_ptr,
@@ -254,7 +254,7 @@ void test_from_file(bs_test_t *test_ptr)
     bspl_object_unref(object_ptr);
 
     object_ptr = bspl_create_object_from_plist_file(
-        bs_test_resolve_path("dict.plist"));
+        bs_test_data_path(test_ptr, "dict.plist"));
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, object_ptr);
     bspl_dict_t *dict_ptr = bspl_dict_from_object(object_ptr);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, dict_ptr);
@@ -274,7 +274,7 @@ void test_from_file(bs_test_t *test_ptr)
     bspl_object_unref(object_ptr);
 
     object_ptr = bspl_create_object_from_plist_file(
-        bs_test_resolve_path("array.plist"));
+        bs_test_data_path(test_ptr, "array.plist"));
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, object_ptr);
     bspl_array_t *array_ptr = bspl_array_from_object(object_ptr);
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, array_ptr);
