@@ -225,7 +225,7 @@ void bs_test_gfxbuf_equals_png_at(
 #define BS_TEST_VERIFY_GFXBUF_EQUALS_PNG(_test, _gfxbuf_ptr, _png_name) { \
         bs_test_gfxbuf_equals_png_at(                                   \
             (_test), __FILE__, __LINE__, (_gfxbuf_ptr),                 \
-            bs_test_resolve_path(_png_name));                           \
+            bs_test_data_path(_test, _png_name));                       \
     }
 
 #endif  // HAVE_CAIRO

@@ -442,9 +442,7 @@ void test_equals_png(bs_test_t *test_ptr)
 {
     bs_gfxbuf_t *buf = bs_gfxbuf_create(1, 1);
     bs_gfxbuf_clear(buf, 0xff804020);
-    bs_test_gfxbuf_equals_png_at(
-        test_ptr, __FILE__, __LINE__, buf,
-        bs_test_data_path(test_ptr, "data/gfxbuf_equals.png"));
+    BS_TEST_VERIFY_GFXBUF_EQUALS_PNG(test_ptr, buf, "data/gfxbuf_equals.png");
     bs_gfxbuf_destroy(buf);
 }
 #endif  // HAVE_CAIRO
