@@ -141,6 +141,9 @@ bool bs_str_startswith(const char *string_ptr, const char *prefix_ptr);
  */
 char *bs_strdupf(const char *fmt_ptr, ...) __ARG_PRINTF__(1, 2);
 
+/** Same as @ref bs_strdupf, but with a `va_list` argument. */
+char *bs_vstrdupf(const char *fmt_ptr, va_list ap) __ARG_PRINTF__(1, 0);
+
 /** Test set. */
 extern const bs_test_set_t    bs_strutil_test_set;
 

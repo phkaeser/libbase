@@ -151,6 +151,7 @@ static void bs_test_case_fail_node_destroy(
 static char *bs_test_case_create_full_name(
     const bs_test_set_t *set_ptr,
     const bs_test_case_t *case_ptr);
+static const char *_bs_test_get_mkdtemp(bs_test_t *test_ptr);
 
 /* == Data ================================================================= */
 
@@ -485,14 +486,23 @@ void bs_test_verify_memeq_at(
 /* ------------------------------------------------------------------------- */
 const char *bs_test_data_path(
     bs_test_t *test_ptr,
-    const char *fname_ptr)
+    const char *fname_fmt_ptr,
+    ...)
 {
+    va_list ap;
+
+    va_start(ap, fname_fmt_ptr);
+    char *fname_ptr = bs_vstrdupf(fname_fmt_ptr, ap);
+    va_end(ap);
+    if (NULL == fname_ptr) {
+        BS_TEST_FAIL(test_ptr, "Failed bs_vstrdupf(...)");
+        return NULL;
+    }
     char *resolved_path_ptr = bs_file_join_resolve_path(
         test_ptr->env_ptr->data_dir_ptr, fname_ptr, NULL);
+    free(fname_ptr);
     if (NULL == resolved_path_ptr) {
-        BS_TEST_FAIL(test_ptr,
-                     "Failed bs_file_join_resolve_path(\"%s\", \"%s\", NULL)",
-                     test_ptr->env_ptr->data_dir_ptr, fname_ptr);
+        BS_TEST_FAIL(test_ptr, "Failed bs_file_join_resolve_path(...)");
         return NULL;
     }
 
@@ -506,42 +516,23 @@ const char *bs_test_data_path(
     return resolved_path_ptr;
 }
 
-static const char *_bs_test_get_mkdtemp(bs_test_t *test_ptr)
-{
-    if (NULL != test_ptr->test_path_ptr) return test_ptr->test_path_ptr;
-
-    test_ptr->test_path_ptr = bs_strdupf(
-        "/tmp/test-%p-%x-XXXXXX",
-        test_ptr->set_ptr,
-        test_ptr->case_idx);
-    if (NULL != test_ptr->test_path_ptr) {
-        if (NULL != mkdtemp(test_ptr->test_path_ptr)) {
-            return test_ptr->test_path_ptr;
-        }
-        BS_TEST_FAIL(test_ptr, "Failed mkdtemp(\"%s\"): %s",
-                     test_ptr->test_path_ptr, strerror(errno));
-        free(test_ptr->test_path_ptr);
-        test_ptr->test_path_ptr = NULL;
-    } else {
-        BS_TEST_FAIL(test_ptr,
-                     "Failed bs_strdupf(\"/tmp/test-%p.%x-XXXXXX\")",
-                     test_ptr->set_ptr,
-                     test_ptr->case_idx);
-    }
-    return NULL;
-}
-
 /* ------------------------------------------------------------------------- */
 const char *bs_test_temp_path(
     bs_test_t *test_ptr,
-    const char *fname_ptr)
+    const char *fname_fmt_ptr,
+    ...)
 {
     const char *dir_ptr = _bs_test_get_mkdtemp(test_ptr);
     if (NULL == dir_ptr) return NULL;
 
-    if (NULL == fname_ptr) return dir_ptr;
+    if (NULL == fname_fmt_ptr) return dir_ptr;
 
+    va_list ap;
+    va_start(ap, fname_fmt_ptr);
+    char *fname_ptr = bs_vstrdupf(fname_fmt_ptr, ap);
+    va_end(ap);
     char *path_ptr = bs_strdupf("%s/%s", dir_ptr, fname_ptr);
+    free(fname_ptr);
     if (NULL != path_ptr) {
         if (bs_ptr_stack_push(&test_ptr->allocated_ptrs, path_ptr)) {
             return path_ptr;
@@ -550,8 +541,7 @@ const char *bs_test_temp_path(
                      &test_ptr->allocated_ptrs, path_ptr);
         free(path_ptr);
     } else {
-        BS_TEST_FAIL(test_ptr, "Failed bs_strdupf(\"%s/%s\")",
-                     dir_ptr, fname_ptr);
+        BS_TEST_FAIL(test_ptr, "Failed bs_strdupf(...)");
     }
     return NULL;
 }
@@ -904,6 +894,32 @@ char *bs_test_case_create_full_name(
     full_name_ptr[strlen(set_ptr->name_ptr)] = '.';
     strcpy(full_name_ptr + strlen(set_ptr->name_ptr) + 1, case_ptr->name_ptr);
     return full_name_ptr;
+}
+
+/* ------------------------------------------------------------------------- */
+const char *_bs_test_get_mkdtemp(bs_test_t *test_ptr)
+{
+    if (NULL != test_ptr->test_path_ptr) return test_ptr->test_path_ptr;
+
+    test_ptr->test_path_ptr = bs_strdupf(
+        "/tmp/test-%p-%x-XXXXXX",
+        test_ptr->set_ptr,
+        test_ptr->case_idx);
+    if (NULL != test_ptr->test_path_ptr) {
+        if (NULL != mkdtemp(test_ptr->test_path_ptr)) {
+            return test_ptr->test_path_ptr;
+        }
+        BS_TEST_FAIL(test_ptr, "Failed mkdtemp(\"%s\"): %s",
+                     test_ptr->test_path_ptr, strerror(errno));
+        free(test_ptr->test_path_ptr);
+        test_ptr->test_path_ptr = NULL;
+    } else {
+        BS_TEST_FAIL(test_ptr,
+                     "Failed bs_strdupf(\"/tmp/test-%p.%x-XXXXXX\")",
+                     test_ptr->set_ptr,
+                     test_ptr->case_idx);
+    }
+    return NULL;
 }
 
 /* == Unit self-tests ====================================================== */
