@@ -238,35 +238,39 @@ void bs_test_verify_memeq_at(
     const size_t size);
 
 /**
- * Resolves a relative path into an absolute, with configured test directory.
- *
- * If fname_ptr is already an absolute path, this will return the resolved path
- * using realpath(3). Otherwise, it is joined with the configured test
- * directory, and resolved using realpath(3).
- *
- * @param fname_ptr
- *
- * @return A pointer to the resolved path or NULL on error. It points to a
- *     thread-local static store and does not need to be free()-ed. It may get
- *     overwritten by the next call to @ref bs_test_resolve_path.
- */
-const char *bs_test_resolve_path(const char *fname_ptr);
-
-/**
- * Creates a temporary directory for test files and returns the path.
- *
- * The directory name is cached, ie. further calls to @ref bs_test_path within
- * the same @ref bs_test_t will return the same name. When the test completes,
- * it will attempt to rmdir() the directory. The test will get marked as
- * failed, if rmdir() fails, eg. if the directory is not empty.
+ * Resolves `fname_ptr` (relative to test data directory) into absolute path.
  *
  * @param test_ptr
+ * @param fname_ptr
+ *
+ * @return A pointer to the resolved path or NULL on error. The memory will
+ *     remain reserved throughout lifetime of `test_ptr`, and will be freed
+ *     automatically.
+ *     Upon error, `test_ptr` will be marked as failed.
+ */
+const char *bs_test_data_path(
+    bs_test_t *test_ptr,
+    const char *fname_ptr);
+
+/**
+ * Returns a joined path into a temporary directory created for this test case.
+ *
+ * The directory name is cached, ie. further calls to @ref bs_test_temp_path
+ * within the same @ref bs_test_t will re-use the same directory. When the test
+ * completes, it will attempt to rmdir() the directory. The test will get marked
+ * as failed, if rmdir() fails, eg. if the directory is not empty.
+ *
+ * @param test_ptr
+ * @param fname_ptr           File name to join, or NULL to return just the
+ *                            test directory.
  *
  * @return The path name to the created directory, or NULL on error. If the
  *     function fails, `test_ptr` is marked as failed. The path name will be
  *     cleaned up during test teardown.
  */
-const char *bs_test_path(bs_test_t *test_ptr);
+const char *bs_test_temp_path(
+    bs_test_t *test_ptr,
+    const char *fname_ptr);
 
 /* == Verification macros ================================================== */
 

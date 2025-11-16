@@ -327,10 +327,10 @@ void test_dynbuf_read(bs_test_t *test_ptr)
     bs_dynbuf_t d;
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, bs_dynbuf_init(&d, 1, SIZE_MAX));
 
-    int fd = open(bs_test_resolve_path("data/abcd.txt"), 0);
+    int fd = open(bs_test_data_path(test_ptr, "data/abcd.txt"), 0);
     if (0 >= fd) {
         BS_TEST_FAIL(test_ptr, "Failed open(\"%s\", 0)",
-                     bs_test_resolve_path("data/string.plist"));
+                     bs_test_data_path(test_ptr, "data/string.plist"));
         return;
     }
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, 0 == bs_dynbuf_read(&d, fd));
@@ -342,10 +342,10 @@ void test_dynbuf_read(bs_test_t *test_ptr)
 
     char buf[6];
     bs_dynbuf_init_unmanaged(&d, buf, sizeof(buf));
-    fd = open(bs_test_resolve_path("data/abcd.txt"), 0);
+    fd = open(bs_test_data_path(test_ptr, "data/abcd.txt"), 0);
     if (0 >= fd) {
         BS_TEST_FAIL(test_ptr, "Failed open(\"%s\", 0)",
-                     bs_test_resolve_path("data/string.plist"));
+                     bs_test_data_path(test_ptr, "data/string.plist"));
         return;
     }
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, 0 == bs_dynbuf_read(&d, fd));
@@ -361,10 +361,10 @@ void test_dynbuf_read_capped(bs_test_t *test_ptr)
 {
     bs_dynbuf_t d;
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, bs_dynbuf_init(&d, 1, 3));
-    int fd = open(bs_test_resolve_path("data/abcd.txt"), 0);
+    int fd = open(bs_test_data_path(test_ptr, "data/abcd.txt"), 0);
     if (0 >= fd) {
         BS_TEST_FAIL(test_ptr, "Failed open(\"%s\", 0)",
-                     bs_test_resolve_path("data/string.plist"));
+                     bs_test_data_path(test_ptr, "data/string.plist"));
         return;
     }
     BS_TEST_VERIFY_TRUE(test_ptr, -1 == bs_dynbuf_read(&d, fd));
@@ -376,10 +376,10 @@ void test_dynbuf_read_capped(bs_test_t *test_ptr)
 
     char buf[3];
     bs_dynbuf_init_unmanaged(&d, buf, sizeof(buf));
-    fd = open(bs_test_resolve_path("data/abcd.txt"), 0);
+    fd = open(bs_test_data_path(test_ptr, "data/abcd.txt"), 0);
     if (0 >= fd) {
         BS_TEST_FAIL(test_ptr, "Failed open(\"%s\", 0)",
-                     bs_test_resolve_path("data/string.plist"));
+                     bs_test_data_path(test_ptr, "data/string.plist"));
         return;
     }
     BS_TEST_VERIFY_TRUE_OR_RETURN(test_ptr, -1 == bs_dynbuf_read(&d, fd));
@@ -395,9 +395,9 @@ void test_dynbuf_write(bs_test_t *test_ptr)
 {
     struct stat stat_buffer;
 
-    char *fn1 = bs_strdupf("%s/sub/file.txt", bs_test_path(test_ptr));
+    const char *fn1 = bs_test_temp_path(test_ptr, "sub/file.txt");
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn1);
-    char *fn2 = bs_strdupf("%s/sub/file.txt.old", bs_test_path(test_ptr));
+    const char *fn2 = bs_test_temp_path(test_ptr, "sub/file.txt.old");
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, fn2);
 
     char content[8] = {};
@@ -436,9 +436,7 @@ void test_dynbuf_write(bs_test_t *test_ptr)
     // Must be able to clean up the file.
     unlink(fn2);
     unlink(fn1);
-    rmdir(dirname(fn1));
-    free(fn2);
-    free(fn1);
+    rmdir(bs_test_temp_path(test_ptr, "sub"));
 }
 
 /* ------------------------------------------------------------------------- */

@@ -273,7 +273,7 @@ void bs_test_gfxbuf_equals_png_at(
                         png_fname_ptr);
     }
 
-    const char *p = bs_test_path(test_ptr);
+    const char *p = bs_test_temp_path(test_ptr, NULL);
     if (NULL == p) return;
     char *tested_gfxbuf_name_ptr = bs_strdupf(
         "%s/out-%08"PRIx32".png", p, png_iterator++);
@@ -453,7 +453,7 @@ void test_equals_png(bs_test_t *test_ptr)
     bs_gfxbuf_clear(buf, 0xff804020);
     bs_test_gfxbuf_equals_png_at(
         test_ptr, __FILE__, __LINE__, buf,
-        bs_test_resolve_path("data/gfxbuf_equals.png"));
+        bs_test_data_path(test_ptr, "data/gfxbuf_equals.png"));
     bs_gfxbuf_destroy(buf);
 }
 #endif  // HAVE_CAIRO

@@ -327,7 +327,7 @@ void test_lookup(bs_test_t *test_ptr)
 /* ------------------------------------------------------------------------- */
 void test_mkdir_p(bs_test_t *test_ptr)
 {
-    char *dirname_ptr = bs_strdupf("%s/a/b", bs_test_path(test_ptr));
+    const char *dirname_ptr = bs_test_temp_path(test_ptr, "a/b");
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, dirname_ptr);
 
     // The temp dir was just created: First attempt must succeed.
@@ -337,14 +337,13 @@ void test_mkdir_p(bs_test_t *test_ptr)
     BS_TEST_VERIFY_FALSE(test_ptr, bs_file_mkdir_p(dirname_ptr, 0700));
 
     rmdir(dirname_ptr);
-    rmdir(dirname(dirname_ptr));
-    free(dirname_ptr);
+    rmdir(bs_test_temp_path(test_ptr, "a"));
 }
 
 /* ------------------------------------------------------------------------- */
 void test_realpath_is(bs_test_t *test_ptr)
 {
-    const char *p = bs_test_path(test_ptr);
+    const char *p = bs_test_temp_path(test_ptr, NULL);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(p, S_IFDIR));
     BS_TEST_VERIFY_FALSE(test_ptr, bs_file_realpath_is(p, S_IFREG));
 
