@@ -61,12 +61,15 @@ static inline void *_logged_malloc(
 #define logged_malloc(size)                     \
     _logged_malloc(__FILE__, __LINE__, size)
 
-/** Helper: Calls strdup(3) and logs errors for given file & line. */
+/** Helper: Acts like strdup(3) and logs errors for given file & line. */
 static inline char *_logged_strdup(
     const char *filename_ptr, int line_no, const char *str)
 {
-    char *new_str = strdup(str);
-    if ((NULL == new_str) && (BS_ERROR >= bs_log_severity)) {
+    size_t len = strlen(str) + 1;
+    char *new_str = malloc(len);
+    if (NULL != new_str) {
+        memcpy(new_str, str, len);
+    } else if (BS_ERROR >= bs_log_severity) {
         bs_log_write((bs_log_severity_t)(BS_ERROR | BS_ERRNO), filename_ptr,
                      line_no, "Failed strdup(%s)", str);
     }
