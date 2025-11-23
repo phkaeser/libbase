@@ -17,7 +17,6 @@ SET(PUBLIC_HEADER_FILES
   assert.h
   atomic.h
   avltree.h
-  c2x_compat.h
   def.h
   dequeue.h
   dllist.h
@@ -43,7 +42,6 @@ SET(SOURCES
   arg.c
   atomic.c
   avltree.c
-  c2x_compat.c
   dequeue.c
   dllist.c
   dynbuf.c
