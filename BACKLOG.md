@@ -16,3 +16,7 @@
 * Eliminate bs_test().
 * Make it easy to run a single case, or a single set.
 * Use bs_test_case_init(), bs_test_case_fini() for the overloaded prepare/report.
+
+## c2x_compat
+
+* Eliminate this. C function overwrites cause build failures :-/
