@@ -24,7 +24,6 @@
 #include "log.h"
 
 #include <stdlib.h>
-#include "c2x_compat.h"
 
 #ifdef __cplusplus
 extern "C" {
