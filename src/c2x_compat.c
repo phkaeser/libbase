@@ -19,7 +19,6 @@
  */
 
 #include <libbase/c2x_compat.h>
-#include <libbase/log_wrappers.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +26,7 @@
 /* ------------------------------------------------------------------------- */
 char *strdup(const char *str) {
     size_t len = strlen(str);
-    char *new_ptr = logged_malloc(len + 1);
+    char *new_ptr = malloc(len + 1);
     if (NULL == new_ptr) return NULL;
     new_ptr[len] = '\0';
     memcpy(new_ptr, str, len);
