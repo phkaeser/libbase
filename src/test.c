@@ -1175,19 +1175,11 @@ void _bs_test_set_env(bs_test_t *test_ptr)
     static const bs_test_set_t set = BS_TEST_SET(true, "env", cases);
     static const bs_test_set_t *sets[] = { &set, NULL };
 
-    char *old_value_ptr = getenv("VAR");
-    if (NULL != old_value_ptr) {
-        old_value_ptr = BS_ASSERT_NOTNULL(strdup(old_value_ptr));
-    }
+    // Setup VAR. This will be over-written, verified & restored in the
+    // test set. We will verify it is back to it's original value after.
+    bs_test_setenv(test_ptr, "VAR", "original");
     BS_TEST_VERIFY_EQ(test_ptr, 0, bs_test_sets(sets, 0, NULL, NULL));
-
-    char *new_value_ptr = getenv("VAR");
-    if (NULL != old_value_ptr) {
-        BS_TEST_VERIFY_STREQ(test_ptr, old_value_ptr, new_value_ptr);
-        free(old_value_ptr);
-    } else {
-        BS_TEST_VERIFY_EQ(test_ptr, NULL, new_value_ptr);
-    }
+    BS_TEST_VERIFY_STREQ(test_ptr, "original", getenv("VAR"));
 }
 
 /** @endcond */
