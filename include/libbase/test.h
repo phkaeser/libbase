@@ -276,6 +276,24 @@ const char *bs_test_temp_path(
     const char *fname_fmt_ptr,
     ...) __ARG_PRINTF__(2, 3);
 
+/**
+ * Sets an environment variable in the process.
+ *
+ * This will first backup the current value of the environment variable, then
+ * call getenv(3) to change it. Upon test teardown, the original value of the
+ * environment variable is kept.
+ * Repeated calls to @ref bs_test_setenv will not overwrite the backup stored
+ * during the first call.
+ *
+ * @param test_ptr
+ * @param name_ptr
+ * @param value_fmt_ptr
+ */
+void bs_test_setenv(
+    bs_test_t *test_ptr,
+    const char *name_ptr,
+    const char *value_fmt_ptr, ...) __ARG_PRINTF__(3, 4);
+
 /* == Verification macros ================================================== */
 
 /**

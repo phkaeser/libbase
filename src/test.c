@@ -23,6 +23,7 @@
 #include <fnmatch.h>
 #include <libbase/arg.h>
 #include <libbase/assert.h>
+#include <libbase/avltree.h>
 #include <libbase/def.h>
 #include <libbase/dllist.h>
 #include <libbase/file.h>
@@ -53,6 +54,8 @@ struct _bs_test_t {
     const bs_test_set_t       *set_ptr;
     /** Test environment. */
     const struct bs_test_env  *env_ptr;
+    /** Tree holding environment variables and original values. */
+    bs_avltree_t              *env_tree_ptr;
 
     /** Return value of @ref bs_test_set_t::setup. */
     void                      *setup_context_ptr;
@@ -122,6 +125,16 @@ struct bs_test_env {
     char                      *data_dir_ptr;
 };
 
+/** Node holding environment variable. */
+struct bs_test_env_node {
+    /** Tree node. */
+    bs_avltree_node_t         avlnode;
+    /** Name of the environment variable. */
+    char                      *name_ptr;
+    /** Value originally held by this environment variable. */
+    char                      *value_ptr;
+};
+
 /* Other helpers */
 static void bs_test_tcode_init(void);
 static int bs_test_putc(int c);
@@ -134,6 +147,11 @@ static void bs_test_set_report(const bs_test_set_t *set_ptr,
 static int bs_test_set(const bs_test_set_t *set_ptr,
                        const struct bs_test_env *env_ptr,
                        bs_dllist_t *failed_tests_ptr);
+
+static int _bs_test_env_node_cmp(
+    const bs_avltree_node_t *node_ptr,
+    const void *key_ptr);
+static void _bs_test_env_node_destroy(bs_avltree_node_t *node_ptr);
 
 /* Testcase helpers. */
 static bool bs_test_case_prepare(bs_test_t *test_ptr,
@@ -546,6 +564,36 @@ const char *bs_test_temp_path(
     return NULL;
 }
 
+/* ------------------------------------------------------------------------- */
+void bs_test_setenv(
+    bs_test_t *test_ptr,
+    const char *name_ptr,
+    const char *value_fmt_ptr, ...)
+{
+    if (NULL == bs_avltree_lookup(test_ptr->env_tree_ptr, name_ptr)) {
+        struct bs_test_env_node *node_ptr = BS_ASSERT_NOTNULL(
+            logged_calloc(1, sizeof(struct bs_test_env_node)));
+        node_ptr->name_ptr = BS_ASSERT_NOTNULL(logged_strdup(name_ptr));
+        char *old_value_ptr = getenv(name_ptr);
+        if (NULL != old_value_ptr) {
+            node_ptr->value_ptr = BS_ASSERT_NOTNULL(
+                logged_strdup(old_value_ptr));
+        }
+        BS_ASSERT(bs_avltree_insert(
+                      test_ptr->env_tree_ptr,
+                      node_ptr->name_ptr,
+                      &node_ptr->avlnode,
+                      false));
+    }
+
+    va_list ap;
+    va_start(ap, value_fmt_ptr);
+    char *value_ptr = BS_ASSERT_NOTNULL(bs_vstrdupf(value_fmt_ptr, ap));
+    va_end(ap);
+    setenv(name_ptr, value_ptr, 1);
+    free(value_ptr);
+}
+
 /* == Static (Local) Functions ============================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -750,6 +798,33 @@ int bs_test_set(const bs_test_set_t *set_ptr,
 }
 
 /* ------------------------------------------------------------------------- */
+int _bs_test_env_node_cmp(
+    const bs_avltree_node_t *avlnode_ptr,
+    const void *key_ptr)
+{
+    struct bs_test_env_node *node_ptr = BS_CONTAINER_OF(
+        avlnode_ptr, struct bs_test_env_node, avlnode);
+    return strcmp(node_ptr->name_ptr, key_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
+void _bs_test_env_node_destroy(bs_avltree_node_t *avlnode_ptr)
+{
+    struct bs_test_env_node *node_ptr = BS_CONTAINER_OF(
+        avlnode_ptr, struct bs_test_env_node, avlnode);
+    if (NULL != node_ptr->name_ptr) {
+        if (NULL != node_ptr->value_ptr) {
+            setenv(node_ptr->name_ptr, node_ptr->value_ptr, 1);
+        } else {
+            unsetenv(node_ptr->name_ptr);
+        }
+        free(node_ptr->name_ptr);
+    }
+    if (NULL != node_ptr->value_ptr) free(node_ptr->value_ptr);
+    free(node_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
 /**
  * Prepares test_ptr for this test case.
  *
@@ -767,7 +842,13 @@ bool bs_test_case_prepare(bs_test_t *test_ptr,
         .case_idx = case_idx,
         .case_ptr = set_ptr->cases_ptr + case_idx,
         .failed = false,
+        .env_tree_ptr = bs_avltree_create(
+            _bs_test_env_node_cmp, _bs_test_env_node_destroy)
     };
+
+    if (NULL == test_ptr->env_tree_ptr) {
+        BS_TEST_FAIL(test_ptr, "Failed bs_avltree_create(...)");
+    }
 
     if (set_ptr->setup) {
         test_ptr->setup_context_ptr = set_ptr->setup();
@@ -805,6 +886,11 @@ void bs_test_case_report(bs_test_t *test_ptr,
                          test_ptr->test_path_ptr, strerror(errno));
         }
         free(test_ptr->test_path_ptr);
+    }
+
+    if (NULL != test_ptr->env_tree_ptr) {
+        bs_avltree_destroy(test_ptr->env_tree_ptr);
+        test_ptr->env_tree_ptr = NULL;
     }
 
     void *p;
@@ -930,6 +1016,7 @@ static void _bs_test_eq_neq_tests(bs_test_t *test_ptr);
 static void _bs_test_context_setup_ok(bs_test_t *test_ptr);
 static void _bs_test_context_setup_fail(bs_test_t *test_ptr);
 static void _bs_test_temp_path(bs_test_t *test_ptr);
+static void _bs_test_set_env(bs_test_t *test_ptr);
 
 /** Unit test cases. */
 static const bs_test_case_t bs_test_test_cases[] = {
@@ -938,6 +1025,7 @@ static const bs_test_case_t bs_test_test_cases[] = {
     { true, "context_setup_ok", _bs_test_context_setup_ok },
     { true, "context_setup_fail", _bs_test_context_setup_fail },
     { true, "temp_path", _bs_test_temp_path },
+    { true, "set_env", _bs_test_set_env },
     BS_TEST_CASE_SENTINEL()
 };
 
@@ -1065,6 +1153,41 @@ void _bs_test_temp_path(bs_test_t *test_ptr)
     const char *tmp_path = bs_test_temp_path(test_ptr, NULL);
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, tmp_path);
     BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(tmp_path, S_IFDIR));
+}
+
+/* ------------------------------------------------------------------------- */
+/** Set and verify an env variable. Used in @ref _bs_test_set_env. */
+void _bs_test_set_and_verify_env(bs_test_t *test_ptr)
+{
+    bs_test_setenv(test_ptr, "VAR", "value");
+    char *value_ptr = getenv("VAR");
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, value_ptr);
+    BS_TEST_VERIFY_STREQ(test_ptr, "value", value_ptr);
+}
+
+/** Use environment variables, and ensure they're cleared on teardown. */
+void _bs_test_set_env(bs_test_t *test_ptr)
+{
+    static const bs_test_case_t cases [] = {
+        { true, "set_and_verify_env", _bs_test_set_and_verify_env },
+        BS_TEST_CASE_SENTINEL()
+    };
+    static const bs_test_set_t set = BS_TEST_SET(true, "env", cases);
+    static const bs_test_set_t *sets[] = { &set, NULL };
+
+    char *old_value_ptr = getenv("VAR");
+    if (NULL != old_value_ptr) {
+        old_value_ptr = BS_ASSERT_NOTNULL(strdup(old_value_ptr));
+    }
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_test_sets(sets, 0, NULL, NULL));
+
+    char *new_value_ptr = getenv("VAR");
+    if (NULL != old_value_ptr) {
+        BS_TEST_VERIFY_STREQ(test_ptr, old_value_ptr, new_value_ptr);
+        free(old_value_ptr);
+    } else {
+        BS_TEST_VERIFY_EQ(test_ptr, NULL, new_value_ptr);
+    }
 }
 
 /** @endcond */
