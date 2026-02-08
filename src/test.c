@@ -518,11 +518,15 @@ const char *bs_test_data_path(
     }
     char *resolved_path_ptr = bs_file_join_resolve_path(
         test_ptr->env_ptr->data_dir_ptr, fname_ptr, NULL);
-    free(fname_ptr);
     if (NULL == resolved_path_ptr) {
-        BS_TEST_FAIL(test_ptr, "Failed bs_file_join_resolve_path(...)");
-        return NULL;
+        BS_TEST_FAIL(
+            test_ptr,
+            "Failed bs_file_join_resolve_path(\"%s\", \"%s\", NULL)",
+            test_ptr->env_ptr->data_dir_ptr,
+            fname_ptr);
     }
+    free(fname_ptr);
+    if (NULL == resolved_path_ptr) return NULL;
 
     if (!bs_ptr_stack_push(&test_ptr->allocated_ptrs, resolved_path_ptr)) {
         BS_TEST_FAIL(test_ptr, "Failed bs_ptr_stack_push(%p, %p)",
