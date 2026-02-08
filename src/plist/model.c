@@ -143,6 +143,7 @@ static void _bspl_dict_item_node_destroy(
 /* ------------------------------------------------------------------------- */
 bspl_object_t *bspl_object_ref(bspl_object_t *object_ptr)
 {
+    if (NULL == object_ptr) return NULL;
     ++object_ptr->references;
     return object_ptr;
 }
@@ -794,6 +795,7 @@ void test_string(bs_test_t *test_ptr)
     bspl_string_t *string_ptr;
 
     BS_TEST_VERIFY_EQ(test_ptr, NULL, bspl_string_create(NULL));
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, bspl_string_ref(NULL));
 
     string_ptr = bspl_string_create("a test");
     BS_TEST_VERIFY_NEQ(test_ptr, NULL, string_ptr);
@@ -827,6 +829,8 @@ void test_string(bs_test_t *test_ptr)
 /** Tests the bspl_dict_t methods. */
 void test_dict(bs_test_t *test_ptr)
 {
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, bspl_dict_ref(NULL));
+
     bspl_dict_t *dict_ptr = bspl_dict_create();
 
     bspl_object_t *obj0_ptr = BS_ASSERT_NOTNULL(
@@ -875,6 +879,8 @@ void test_dict(bs_test_t *test_ptr)
 /** Tests the bspl_array_t methods. */
 void test_array(bs_test_t *test_ptr)
 {
+    BS_TEST_VERIFY_EQ(test_ptr, NULL, bspl_array_ref(NULL));
+
     bspl_array_t *array_ptr = bspl_array_create();
 
     bspl_object_t *obj0_ptr = BS_ASSERT_NOTNULL(

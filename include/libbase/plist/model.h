@@ -226,6 +226,13 @@ bspl_object_t *bspl_array_at(
 
 /* -- Static & inlined methods: Convenience wrappers ----------------------- */
 
+/** Gets a reference to `string_ptr`. */
+static inline bspl_string_t *bspl_string_ref(bspl_string_t *string_ptr)
+{
+    return bspl_string_from_object(
+        bspl_object_ref(bspl_object_from_string(string_ptr)));
+}
+
 /** Unreferences the string. Wraps to @ref bspl_object_unref. */
 static inline void bspl_string_unref(bspl_string_t *string_ptr)
 {
@@ -263,6 +270,12 @@ static inline const char *bspl_dict_get_string_value(
         bspl_string_from_object(bspl_dict_get(dict_ptr, key_ptr)));
 }
 
+/** Gets a reference to `array_ptr`. */
+static inline bspl_array_t *bspl_array_ref(bspl_array_t *array_ptr)
+{
+    return bspl_array_from_object(
+        bspl_object_ref(bspl_object_from_array(array_ptr)));
+}
 /** Unreferences the array. Wraps to @ref bspl_object_unref. */
 static inline void bspl_array_unref(bspl_array_t *array_ptr) {
     bspl_object_unref(bspl_object_from_array(array_ptr));
