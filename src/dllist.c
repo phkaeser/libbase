@@ -239,6 +239,20 @@ bool bs_dllist_all(
     return true;
 }
 
+/* ------------------------------------------------------------------------- */
+bool bs_dllist_any(
+    const bs_dllist_t *list_ptr,
+    bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
+    void *ud_ptr)
+{
+    for (bs_dllist_node_t *dlnode_ptr = list_ptr->head_ptr;
+         dlnode_ptr != NULL;
+         dlnode_ptr = dlnode_ptr->next_ptr) {
+        if (func(dlnode_ptr, ud_ptr)) return true;
+    }
+    return false;
+}
+
 /* == Local methods ======================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -302,6 +316,7 @@ static void bs_dllist_test_find(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each_dtor(bs_test_t *test_ptr);
 static void bs_dllist_test_all(bs_test_t *test_ptr);
+static void bs_dllist_test_any(bs_test_t *test_ptr);
 static void bs_dllist_test_iterator(bs_test_t *test_ptr);
 
 /** Unit test cases. */
@@ -314,6 +329,7 @@ static const bs_test_case_t   bs_dllist_test_cases[] = {
     { true, "for_each", bs_dllist_test_for_each },
     { true, "for_each_dtor", bs_dllist_test_for_each_dtor },
     { true, "all", bs_dllist_test_all },
+    { true, "any", bs_dllist_test_any },
     { true, "iterator", bs_dllist_test_iterator },
     { false, NULL, NULL }
 };
@@ -577,6 +593,40 @@ void bs_dllist_test_all(bs_test_t *test_ptr)
     bs_dllist_push_back(&list, &n3);
     calls = 0;
     BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_all(&list, test_all, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, calls);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Callback for @ref bs_dllist_any. Return true for 2nd call. */
+static bool test_any(__UNUSED__ bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
+{
+    int *i_ptr = ud_ptr;
+    *i_ptr += 1;
+    return *i_ptr == 2;
+}
+
+/** Tests @ref bs_dllist_any. */
+void bs_dllist_test_any(bs_test_t *test_ptr)
+{
+    bs_dllist_t list = {};
+    bs_dllist_node_t n1 = {}, n2 = {}, n3 = {};
+    int calls = 0;
+
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_any(&list, test_any, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, calls);
+
+    bs_dllist_push_back(&list, &n1);
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_dllist_any(&list, test_any, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 1, calls);
+
+    bs_dllist_push_back(&list, &n2);
+    calls = 0;
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_any(&list, test_any, &calls));
+    BS_TEST_VERIFY_EQ(test_ptr, 2, calls);
+
+    bs_dllist_push_back(&list, &n3);
+    calls = 0;
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_any(&list, test_any, &calls));
     BS_TEST_VERIFY_EQ(test_ptr, 2, calls);
 }
 
