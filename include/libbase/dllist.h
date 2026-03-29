@@ -123,6 +123,22 @@ bool bs_dllist_all(
     void *ud_ptr);
 
 /**
+ * Runs |func()| and returns whether it is true for any node in |list_ptr|.
+ *
+ * Returns on the first |func()| call that returned true.
+ *
+ * @param list_ptr
+ * @param func
+ * @param ud_ptr
+ *
+ * @return Whether |func()| was true for for any. false if|list_ptr| was empty.
+ */
+bool bs_dllist_any(
+    const bs_dllist_t *list_ptr,
+    bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
+    void *ud_ptr);
+
+/**
  * Defines an iterator for the node.
  *
  * @param dlnode_ptr
