@@ -308,7 +308,7 @@ void bs_test_setenv(
 /** Verifies that _expr is true, and returns (stops tests) if not. */
 #define BS_TEST_VERIFY_TRUE_OR_RETURN(_test, _expr) { \
         BS_TEST_VERIFY_TRUE(_test, _expr);            \
-        if (bs_test_failed(test_ptr)) return;         \
+        if (bs_test_failed(_test)) return;            \
     }
 
 /**
@@ -327,7 +327,7 @@ void bs_test_setenv(
 /** Verifies that _expr is false, and reutrns (stop tests) if not. */
 #define BS_TEST_VERIFY_FALSE_OR_RETURN(_test, _expr) {  \
         BS_TEST_VERIFY_FALSE(_test, _expr);             \
-        if (bs_test_failed(test_ptr)) return;           \
+        if (bs_test_failed(_test)) return;              \
     }
 
 /**
@@ -346,7 +346,7 @@ void bs_test_setenv(
 /** Verifies that _a == _b, and reutrns (stop tests) if not. */
 #define BS_TEST_VERIFY_EQ_OR_RETURN(_test, _a, _b) {    \
         BS_TEST_VERIFY_EQ(_test, _a, _b);               \
-        if (bs_test_failed(test_ptr)) return;           \
+        if (bs_test_failed(_test)) return;              \
     }
 
 /**
@@ -386,7 +386,7 @@ void bs_test_setenv(
 /** Verifies that the strings _a == _b. Returns (stop test) if not. */
 #define BS_TEST_VERIFY_STREQ_OR_RETURN(_test, _a, _b) { \
         BS_TEST_VERIFY_STREQ(_test, _a, _b);            \
-        if (bs_test_failed(test_ptr)) return;           \
+        if (bs_test_failed(_test)) return;              \
     }
 
 /**
@@ -404,7 +404,7 @@ void bs_test_setenv(
 /** Verifies that the string _a matches _regex.. Returns (stop test) if not. */
 #define BS_TEST_VERIFY_STRMATCH_OR_RETURN(_test, _a, _regex) { \
         BS_TEST_VERIFY_STRMATCH(_test, _a, _regex);            \
-        if (bs_test_failed(test_ptr)) return;                  \
+        if (bs_test_failed(_test)) return;                     \
     }
 
 /**
@@ -422,7 +422,7 @@ void bs_test_setenv(
 /** Verifies that the memory buffers _a == _b. Returns (stop tests) if not. */
 #define BS_TEST_VERIFY_MEMEQ_OR_RETURN(_test, _a, _b, _size) {  \
         BS_TEST_VERIFY_MEMEQ(_test, _a, _b, _size);             \
-        if (bs_test_failed(test_ptr)) return;                   \
+        if (bs_test_failed(_test)) return;                      \
     }
 
 /**
