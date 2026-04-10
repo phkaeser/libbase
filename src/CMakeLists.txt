@@ -30,6 +30,7 @@ SET(PUBLIC_HEADER_FILES
   ptr_set.h
   ptr_stack.h
   ptr_vector.h
+  ref.h
   sock.h
   strutil.h
   subprocess.h
@@ -52,6 +53,7 @@ SET(SOURCES
   ptr_set.c
   ptr_stack.c
   ptr_vector.c
+  ref.c
   sock.c
   strutil.c
   subprocess.c
