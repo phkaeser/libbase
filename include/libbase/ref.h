@@ -21,7 +21,7 @@ struct _bs_ref_t {
     /** Number of references. */
     int                       count;
     /** dtor. */
-    void                      (*destroy_fn)(void *ref_ptr);
+    void                      (*destroy_fn)(bs_ref_t *ref_ptr);
     /** Obtain the value from this @ref bs_ref_t. */
     const void*               (*const_value_from_ref_fn)(bs_ref_t *ref_ptr);
 };
@@ -37,7 +37,7 @@ struct _bs_ref_t {
  */
 void bs_ref_init(
     bs_ref_t *ref_ptr,
-    void (*destroy_fn)(void *value_ptr),
+    void (*destroy_fn)(bs_ref_t *ref_ptr),
     const void *(*const_value_from_ref_fn)(bs_ref_t *ref_ptr));
 
 /**
