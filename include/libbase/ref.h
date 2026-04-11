@@ -22,8 +22,6 @@ struct _bs_ref_t {
     int                       count;
     /** dtor. */
     void                      (*destroy_fn)(bs_ref_t *ref_ptr);
-    /** Obtain the value from this @ref bs_ref_t. */
-    const void*               (*const_value_from_ref_fn)(bs_ref_t *ref_ptr);
 };
 
 /* == Exported methods ===================================================== */
@@ -33,21 +31,17 @@ struct _bs_ref_t {
  *
  * @param ref_ptr
  * @param destroy_fn
- * @param const_value_from_ref_fn
  */
 void bs_ref_init(
     bs_ref_t *ref_ptr,
-    void (*destroy_fn)(bs_ref_t *ref_ptr),
-    const void *(*const_value_from_ref_fn)(bs_ref_t *ref_ptr));
+    void (*destroy_fn)(bs_ref_t *ref_ptr));
 
 /**
  * Retain a reference to `ref_ptr`.
  *
  * @param ref_ptr
- *
- * @return The value.
  */
-const void *bs_ref(bs_ref_t *ref_ptr);
+void bs_ref_retain(bs_ref_t *ref_ptr);
 
 /**
  * Releases a reference to `ref_ptr`.
@@ -56,7 +50,7 @@ const void *bs_ref(bs_ref_t *ref_ptr);
  *
  * @param ref_ptr
  */
-void bs_unref(bs_ref_t *ref_ptr);
+void bs_ref_release(bs_ref_t *ref_ptr);
 
 /** Unit tests. */
 extern const bs_test_set_t bs_ref_test_set;
