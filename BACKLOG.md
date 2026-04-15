@@ -5,6 +5,10 @@
 * Split non-core functionality out of libbase/libbase.h and require explicit
   includes. While doing so, benchmark compilation time.
 
+## bs_arg
+
+* Support "extra" arguments of no type, eg. for `--help` or `--version`.
+
 ## bs_file
 
 * Merge write_buffer and read_buffer with bs_dynbuf.
