@@ -22,6 +22,7 @@
 #ifndef __LIBBASE_FILE_H__
 #define __LIBBASE_FILE_H__
 
+#include <fts.h>
 #include <sys/types.h>
 #include "test.h"
 
@@ -144,6 +145,29 @@ bool bs_file_mkdir_p(const char *dirname_ptr, int mode);
  *     `mode_type`.
  */
 bool bs_file_realpath_is(const char *fname_ptr, int mode_type);
+
+/**
+ * Walks the directory tree from `path_ptr` and issues `callback` for all.
+ *
+ * @param path_ptr            Root path for starting the directory walk.
+ * @param pattern_ptr         Optional: Restrict `callback` to only those files
+ *                            that fnmatch the pattern. NULL to ignore.
+ * @param mode_type           Optional: Restrict `callback` to only the
+ *                            specified file types (eg. S_IFDIR or S_IFREG).
+ *                            Set to 0 to call for all types.
+ * @param sorted              Whether to sort all files.
+ * @param callback
+ * @param ud_ptr
+ *
+ * @return true on success.
+ */
+bool bs_file_walk_tree(
+    const char *path_ptr,
+    const char *pattern_ptr,
+    int mode_type,
+    bool sorted,
+    bool (*callback)(const char *, const FTSENT *, void *),
+    void *ud_ptr);
 
 /** Unit test set. */
 extern const bs_test_set_t    bs_file_test_set;
