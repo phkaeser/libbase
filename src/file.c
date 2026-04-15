@@ -20,6 +20,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
+#include <fts.h>
 #include <libbase/file.h>
 #include <libbase/log.h>
 #include <libbase/strutil.h>
@@ -29,6 +31,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -36,6 +39,16 @@
 #include "libbase/log_wrappers.h"
 
 /* == Declarations ========================================================= */
+
+#if defined __linux__
+static int _bs_file_walk_compare(
+    const FTSENT **a,
+    const FTSENT **b);
+#else
+static int _bs_file_walk_compare(
+    const FTSENT * const *a,
+    const FTSENT * const *b);
+#endif
 
 /* == Exported methods ===================================================== */
 
@@ -227,7 +240,81 @@ bool bs_file_realpath_is(const char *fname_ptr, int mode_type)
     return rv;
 }
 
+/* ------------------------------------------------------------------------- */
+bool bs_file_walk_tree(
+    const char *path_ptr,
+    const char *pattern_ptr,
+    int mode_type,
+    bool sorted,
+    bool (*callback)(const char *, const FTSENT *, void *),
+    void *ud_ptr)
+{
+    char *const paths[2] = { (char*)path_ptr, NULL };
+
+    FTS *fts_ptr = fts_open(
+        paths,
+        FTS_PHYSICAL,
+        sorted ? _bs_file_walk_compare : NULL);
+    if (NULL == fts_ptr) {
+        bs_log(BS_ERROR | BS_ERRNO,
+               "Failed fts_open({\"%s\", NULL}, FTS_PHYSICAL, NULL)",
+               path_ptr);
+        return false;
+    }
+
+    FTSENT *ftsent_ptr = NULL;
+    bool rv = true;
+    while (NULL != (ftsent_ptr = fts_read(fts_ptr))) {
+
+        // Restrict to files & directories. Omit the FTS_DP post-pass, as it
+        // would make directories show up twice.
+        if (ftsent_ptr->fts_info != FTS_D &&
+            ftsent_ptr->fts_info != FTS_DEFAULT &&
+            ftsent_ptr->fts_info != FTS_SL &&
+            ftsent_ptr->fts_info != FTS_F) continue;
+
+        // Restrict to requested mode, if given.
+        if (0 != mode_type &&
+            (ftsent_ptr->fts_statp->st_mode & S_IFMT) != (mode_t)mode_type) {
+            continue;
+        }
+
+        // Optional pattern match.
+        if (NULL != pattern_ptr &&
+            0 != fnmatch(pattern_ptr, ftsent_ptr->fts_name, 0)) continue;
+
+        char *resolved_path_ptr = realpath(ftsent_ptr->fts_accpath, NULL);
+        if (NULL == resolved_path_ptr) {
+            bs_log(BS_ERROR | BS_ERRNO, "Failed realpath(\"%s\", NULL)",
+                   ftsent_ptr->fts_accpath);
+            rv = false;
+            break;
+        }
+        rv &= callback(resolved_path_ptr, ftsent_ptr, ud_ptr);
+        free(resolved_path_ptr);
+
+        if (!rv) break;
+    }
+
+    fts_close(fts_ptr);
+    return rv;
+}
+
 /* == Static (local) functions ============================================= */
+
+/** Comparator to fts_open() (see fts(3)). Used when sorting is requested. */
+#if defined __linux__
+static int _bs_file_walk_compare(
+    const FTSENT **a,
+    const FTSENT **b)
+#else
+static int _bs_file_walk_compare(
+    const FTSENT * const *a,
+    const FTSENT * const *b)
+#endif
+{
+    return strcmp((*a)->fts_name, (*b)->fts_name);
+}
 
 /* == Test Functions ======================================================= */
 
@@ -236,6 +323,7 @@ static void test_join_resolve_path(bs_test_t *test_ptr);
 static void test_lookup(bs_test_t *test_ptr);
 static void test_mkdir_p(bs_test_t *test_ptr);
 static void test_realpath_is(bs_test_t *test_ptr);
+static void test_walk_tree(bs_test_t *test_ptr);
 
 /** Unit test cases. */
 static const bs_test_case_t bs_file_test_cases[] = {
@@ -244,6 +332,7 @@ static const bs_test_case_t bs_file_test_cases[] = {
     { true, "lookup", test_lookup },
     { true, "mkdir_p", test_mkdir_p },
     { true, "realpath_is", test_realpath_is },
+    { true, "walk_tree", test_walk_tree },
     { false, NULL, NULL }  // sentinel.
 };
 
@@ -358,6 +447,56 @@ void test_realpath_is(bs_test_t *test_ptr)
 
     unlink(fn);
     free(fn);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Argument to @ref _test_walk_cb. */
+struct _test_walk_arg {
+    /** Number of calls. */
+    size_t count;
+    /** Unit test. */
+    bs_test_t *test_ptr;
+};
+
+/** Mirrors sorted contents of all plist files in the test directory. */
+static const char* const _test_walk_files[] = {
+    "array.plist", "dict.plist", "string.plist" };
+
+/** Callback for @ref bs_file_walk_tree. */
+bool _test_walk_cb(const char *path_ptr,
+                   const FTSENT *ftsent_ptr,
+                   void *ud_ptr)
+{
+    struct _test_walk_arg *arg_ptr = ud_ptr;
+
+    if (arg_ptr->count >= (sizeof(_test_walk_files) / sizeof(char*))) {
+        return false;
+    }
+    int rv = strcmp(_test_walk_files[arg_ptr->count], ftsent_ptr->fts_name);
+    if (rv) {
+        BS_TEST_FAIL(arg_ptr->test_ptr,
+                     "Expected file \"%s\", found \"%s\" at %zu",
+                     path_ptr, ftsent_ptr->fts_name, arg_ptr->count);
+    }
+
+    ++arg_ptr->count;
+    return 0 == rv;
+}
+
+/** Tests @ref bs_file_walk_tree. */
+void test_walk_tree(bs_test_t *test_ptr)
+{
+    struct _test_walk_arg arg = { .test_ptr = test_ptr };
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_file_walk_tree(bs_test_data_path(test_ptr, "/"),
+                          "*.plist",
+                          0,  // no particular mode.
+                          true,
+                          _test_walk_cb,
+                          &arg));
+    BS_TEST_VERIFY_EQ(
+        test_ptr, sizeof(_test_walk_files) / sizeof(char*), arg.count);
 }
 
 /* == End of file.c ======================================================== */
