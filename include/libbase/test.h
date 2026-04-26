@@ -140,23 +140,6 @@ void *bs_test_context(bs_test_t *test_ptr);
 /**
  * Runs test sets.
  *
- * @param test_sets
- * @param argc
- * @param argv
- * @param param_ptr           Optional, points to a @ref bs_test_param_t and
- *                            specifies parameters for the test environment.
- *
- * @return 0 on success or the number of failed test sets.
- */
-int bs_test(
-    const bs_test_set_t *test_sets,
-    int argc,
-    const char **argv,
-    const bs_test_param_t *param_ptr);
-
-/**
- * Runs test sets.
- *
  * @param test_set_ptrs       A NULL-terminated array of pointers to test sets.
  * @param argc
  * @param argv
