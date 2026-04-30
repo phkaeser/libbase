@@ -23,6 +23,8 @@
 
 #include "test.h"
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -71,6 +73,9 @@ void bs_dllist_insert_node_before(
     bs_dllist_t *list_ptr,
     bs_dllist_node_t *reference_node_ptr,
     bs_dllist_node_t *new_node_ptr);
+
+/** Appends `appendix_ptr` to `list_ptr`. */
+void bs_dllist_append(bs_dllist_t *list_ptr, bs_dllist_t *appendix_ptr);
 
 /** Returns whether |list_ptr| contains |dlnode_ptr|. */
 bool bs_dllist_contains(
@@ -137,6 +142,16 @@ bool bs_dllist_any(
     const bs_dllist_t *list_ptr,
     bool (*func)(bs_dllist_node_t *dlnode_ptr, void *ud_ptr),
     void *ud_ptr);
+
+/**
+ * Sorts the list using the provided `compare_fn`.
+ *
+ * @param list_ptr
+ * @param compare_fn          Similar to strcmp(3).
+ */
+void bs_dllist_sort(
+    bs_dllist_t *list_ptr,
+    int (*compare_fn)(const bs_dllist_node_t *, const bs_dllist_node_t*));
 
 /**
  * Defines an iterator for the node.

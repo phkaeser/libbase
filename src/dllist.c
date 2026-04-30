@@ -29,6 +29,16 @@ static bool find_is(bs_dllist_node_t *dlnode_ptr, void *ud_ptr);
 static void assert_consistency(const bs_dllist_t *list_ptr);
 static bool node_orphaned(const bs_dllist_node_t *dlnode_ptr);
 
+
+void _bs_dllist_sort_split_and_merge(
+    bs_dllist_t *list_ptr,
+    size_t list_size,
+    int (*compare_fn)(const bs_dllist_node_t *, const bs_dllist_node_t*));
+static bs_dllist_t _bs_dllist_sort_merge(
+    bs_dllist_t *left_ptr,
+    bs_dllist_t *right_ptr,
+    int (*compare_fn)(const bs_dllist_node_t *, const bs_dllist_node_t*));
+
 /* == Exported Functions =================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -190,6 +200,22 @@ void bs_dllist_insert_node_before(
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_dllist_append(bs_dllist_t *list_ptr, bs_dllist_t *appendix_ptr)
+{
+    if (bs_dllist_empty(appendix_ptr)) return;
+    if (bs_dllist_empty(list_ptr)) {
+        *list_ptr = *appendix_ptr;
+        *appendix_ptr = (bs_dllist_t){};
+        return;
+    }
+
+    list_ptr->tail_ptr->next_ptr = appendix_ptr->head_ptr;
+    appendix_ptr->head_ptr->prev_ptr = list_ptr->tail_ptr;
+    list_ptr->tail_ptr = appendix_ptr->tail_ptr;
+    *appendix_ptr = (bs_dllist_t){};
+}
+
+/* ------------------------------------------------------------------------- */
 bool bs_dllist_contains(
     const bs_dllist_t *list_ptr,
     bs_dllist_node_t *dlnode_ptr)
@@ -253,6 +279,15 @@ bool bs_dllist_any(
     return false;
 }
 
+/* ------------------------------------------------------------------------- */
+void bs_dllist_sort(
+    bs_dllist_t *list_ptr,
+    int (*compare_fn)(const bs_dllist_node_t *, const bs_dllist_node_t*))
+{
+    _bs_dllist_sort_split_and_merge(
+        list_ptr, bs_dllist_size(list_ptr), compare_fn);
+}
+
 /* == Local methods ======================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -306,17 +341,72 @@ bool node_orphaned(const bs_dllist_node_t *dlnode_ptr)
     return (NULL == dlnode_ptr->prev_ptr) && (NULL == dlnode_ptr->next_ptr);
 }
 
+/* ------------------------------------------------------------------------- */
+/** Implements merge sort for `list_ptr` with known size. */
+void _bs_dllist_sort_split_and_merge(
+    bs_dllist_t *list_ptr,
+    size_t list_size,
+    int (*compare_fn)(const bs_dllist_node_t *, const bs_dllist_node_t*))
+{
+    if (1 >= list_size) return;
+
+    // Split the lists. Since n >= 2, we have non-zero elements on each side.
+    bs_dllist_t left = {}, right = {};
+    size_t left_size = 0;
+    bs_dllist_node_t *dln = list_ptr->head_ptr;
+    for (; left_size < list_size / 2; ++left_size) dln = dln->next_ptr;
+    left = (bs_dllist_t){
+        .head_ptr = list_ptr->head_ptr,
+        .tail_ptr = dln->prev_ptr
+    };
+    right = (bs_dllist_t){
+        .head_ptr = dln,
+        .tail_ptr = list_ptr->tail_ptr
+    };
+    left.tail_ptr->next_ptr = NULL;
+    right.head_ptr->prev_ptr = NULL;
+
+    _bs_dllist_sort_split_and_merge(&left, left_size, compare_fn);
+    _bs_dllist_sort_split_and_merge(&right, list_size - left_size, compare_fn);
+
+    *list_ptr = _bs_dllist_sort_merge(&left, &right, compare_fn);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Sorted merge lists. `left_ptr` and `right_ptr` expected to be sorted. */
+bs_dllist_t _bs_dllist_sort_merge(
+    bs_dllist_t *left_ptr,
+    bs_dllist_t *right_ptr,
+    int (*compare_fn)(const bs_dllist_node_t *, const bs_dllist_node_t*))
+{
+    bs_dllist_t merged = {};
+    while (NULL != left_ptr->head_ptr && NULL != right_ptr->head_ptr) {
+        if (0 >= compare_fn(left_ptr->head_ptr, right_ptr->head_ptr)) {
+            bs_dllist_push_back(&merged, bs_dllist_pop_front(left_ptr));
+        } else {
+            bs_dllist_push_back(&merged, bs_dllist_pop_front(right_ptr));
+        }
+    }
+
+    bs_dllist_append(&merged, left_ptr);
+    bs_dllist_append(&merged, right_ptr);
+    return merged;
+}
+
 /* == Tests =============================================================== */
 
 static void bs_dllist_test_back(bs_test_t *test_ptr);
 static void bs_dllist_test_front(bs_test_t *test_ptr);
 static void bs_dllist_test_remove(bs_test_t *test_ptr);
 static void bs_dllist_test_insert(bs_test_t *test_ptr);
+static void bs_dllist_test_append(bs_test_t *test_ptr);
 static void bs_dllist_test_find(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each(bs_test_t *test_ptr);
 static void bs_dllist_test_for_each_dtor(bs_test_t *test_ptr);
 static void bs_dllist_test_all(bs_test_t *test_ptr);
 static void bs_dllist_test_any(bs_test_t *test_ptr);
+static void bs_dllist_test_sort(bs_test_t *test_ptr);
+static void bs_dllist_test_sort_random(bs_test_t *test_ptr);
 static void bs_dllist_test_iterator(bs_test_t *test_ptr);
 
 /** Unit test cases. */
@@ -325,11 +415,14 @@ static const bs_test_case_t   bs_dllist_test_cases[] = {
     { true, "push/pop front", bs_dllist_test_front },
     { true, "remove", bs_dllist_test_remove },
     { true, "insert", bs_dllist_test_insert },
+    { true, "append", bs_dllist_test_append },
     { true, "find", bs_dllist_test_find },
     { true, "for_each", bs_dllist_test_for_each },
     { true, "for_each_dtor", bs_dllist_test_for_each_dtor },
     { true, "all", bs_dllist_test_all },
     { true, "any", bs_dllist_test_any },
+    { true, "sort", bs_dllist_test_sort },
+    { true, "sort_random", bs_dllist_test_sort_random },
     { true, "iterator", bs_dllist_test_iterator },
     { false, NULL, NULL }
 };
@@ -481,6 +574,35 @@ void bs_dllist_test_insert(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_dllist_test_append(bs_test_t *test_ptr)
+{
+    bs_dllist_t               l1 = {}, l2 = {};
+    bs_dllist_node_t          n1 = {}, n2 = {};
+
+    bs_dllist_append(&l1, &l2);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_dllist_size(&l1));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_dllist_size(&l2));
+
+    bs_dllist_push_back(&l2, &n1);
+    bs_dllist_append(&l1, &l2);
+    BS_TEST_VERIFY_EQ(test_ptr, 1, bs_dllist_size(&l1));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_dllist_size(&l2));
+
+    // Append again, must not change anything.
+    bs_dllist_append(&l1, &l2);
+    BS_TEST_VERIFY_EQ(test_ptr, 1, bs_dllist_size(&l1));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_dllist_size(&l2));
+
+    bs_dllist_push_back(&l2, &n2);
+    bs_dllist_append(&l1, &l2);
+    BS_TEST_VERIFY_EQ(test_ptr, 2, bs_dllist_size(&l1));
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_dllist_size(&l2));
+
+    BS_TEST_VERIFY_EQ(test_ptr, &n1, l1.head_ptr);
+    BS_TEST_VERIFY_EQ(test_ptr, &n2, l1.tail_ptr);
+}
+
+/* ------------------------------------------------------------------------- */
 /** Function to use in the test for @ref bs_dllist_any. */
 static bool test_find(bs_dllist_node_t *dlnode_ptr, void *ud_ptr)
 {
@@ -628,6 +750,96 @@ void bs_dllist_test_any(bs_test_t *test_ptr)
     calls = 0;
     BS_TEST_VERIFY_TRUE(test_ptr, bs_dllist_any(&list, test_any, &calls));
     BS_TEST_VERIFY_EQ(test_ptr, 2, calls);
+}
+
+/* ------------------------------------------------------------------------- */
+/** Test struct, for sorting. Node with a value. */
+struct _bs_dllist_test_sort_node {
+    /** List node. */
+    bs_dllist_node_t          dlnode;
+    /** Value. */
+    int                       i;
+    /** Position. */
+    size_t                    pos;
+};
+/** Comparator, for testing. */
+static int _bs_dllist_test_sort_cmp(
+    const bs_dllist_node_t *left_node_ptr,
+    const bs_dllist_node_t *right_node_ptr) {
+    struct _bs_dllist_test_sort_node *lnp = BS_CONTAINER_OF(
+        left_node_ptr, struct _bs_dllist_test_sort_node, dlnode);
+    struct _bs_dllist_test_sort_node *rnp = BS_CONTAINER_OF(
+        right_node_ptr, struct _bs_dllist_test_sort_node, dlnode);
+    if (lnp->i < rnp->i) {
+        return -1;
+    } else if (lnp->i > rnp->i) {
+        return 1;
+    }
+    return 0;
+}
+
+/** Tests @ref bs_dllist_sort. */
+void bs_dllist_test_sort(bs_test_t *test_ptr)
+{
+    bs_dllist_t list = {};
+    struct _bs_dllist_test_sort_node n1 = { .i = 1 }, n2 = { .i = 2 },
+        n3 = { .i = 3 }, n4 = { .i = 4 }, other1 = { .i = 1 };
+
+    bs_dllist_sort(&list, _bs_dllist_test_sort_cmp);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, bs_dllist_size(&list));
+
+    bs_dllist_push_back(&list, &n3.dlnode);
+    bs_dllist_sort(&list, _bs_dllist_test_sort_cmp);
+    BS_TEST_VERIFY_EQ(test_ptr, &n3.dlnode, bs_dllist_pop_front(&list));
+
+    bs_dllist_push_back(&list, &n4.dlnode);
+    bs_dllist_push_back(&list, &n2.dlnode);
+    bs_dllist_sort(&list, _bs_dllist_test_sort_cmp);
+    BS_TEST_VERIFY_EQ(test_ptr, &n2.dlnode, bs_dllist_pop_front(&list));
+    BS_TEST_VERIFY_EQ(test_ptr, &n4.dlnode, bs_dllist_pop_front(&list));
+
+    bs_dllist_push_back(&list, &n4.dlnode);
+    bs_dllist_push_back(&list, &n2.dlnode);
+    bs_dllist_push_back(&list, &n3.dlnode);
+    bs_dllist_push_back(&list, &n1.dlnode);
+    bs_dllist_sort(&list, _bs_dllist_test_sort_cmp);
+    BS_TEST_VERIFY_EQ(test_ptr, &n1.dlnode, bs_dllist_pop_front(&list));
+    BS_TEST_VERIFY_EQ(test_ptr, &n2.dlnode, bs_dllist_pop_front(&list));
+    BS_TEST_VERIFY_EQ(test_ptr, &n3.dlnode, bs_dllist_pop_front(&list));
+    BS_TEST_VERIFY_EQ(test_ptr, &n4.dlnode, bs_dllist_pop_front(&list));
+
+    bs_dllist_push_back(&list, &n1.dlnode);
+    bs_dllist_push_back(&list, &other1.dlnode);
+    bs_dllist_sort(&list, _bs_dllist_test_sort_cmp);
+    BS_TEST_VERIFY_EQ(test_ptr, &n1.dlnode, bs_dllist_pop_front(&list));
+    BS_TEST_VERIFY_EQ(test_ptr, &other1.dlnode, bs_dllist_pop_front(&list));
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_dllist_test_sort_random(bs_test_t *test_ptr)
+{
+    bs_dllist_t list = {};
+    static const size_t n = 1024;
+    struct _bs_dllist_test_sort_node v[n];
+
+    srand(12345);
+    for (size_t i = 0; i < n; ++i) {
+        v[i] = (struct _bs_dllist_test_sort_node){ .i = rand(), .pos = i };
+        bs_dllist_push_back(&list, &v[i].dlnode);
+    }
+
+    bs_dllist_sort(&list, _bs_dllist_test_sort_cmp);
+
+    bs_dllist_node_t *n1 = bs_dllist_pop_front(&list);
+    bs_dllist_node_t *n2;
+    while (NULL != (n2 = bs_dllist_pop_front(&list))) {
+        struct _bs_dllist_test_sort_node *v1 = BS_CONTAINER_OF(
+            n1, struct _bs_dllist_test_sort_node, dlnode);
+        struct _bs_dllist_test_sort_node *v2 = BS_CONTAINER_OF(
+            n2, struct _bs_dllist_test_sort_node, dlnode);
+        BS_TEST_VERIFY_TRUE(test_ptr, v1->i <= v2->i);
+        if (v1->pos == v2->pos) BS_TEST_VERIFY_EQ(test_ptr, v1->pos, v2->pos);
+    }
 }
 
 /* ------------------------------------------------------------------------- */
