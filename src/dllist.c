@@ -816,6 +816,7 @@ void bs_dllist_test_sort(bs_test_t *test_ptr)
 }
 
 /* ------------------------------------------------------------------------- */
+/** Tests randomized sort. */
 void bs_dllist_test_sort_random(bs_test_t *test_ptr)
 {
     bs_dllist_t list = {};
@@ -831,8 +832,9 @@ void bs_dllist_test_sort_random(bs_test_t *test_ptr)
     bs_dllist_sort(&list, _bs_dllist_test_sort_cmp);
 
     bs_dllist_node_t *n1 = bs_dllist_pop_front(&list);
-    bs_dllist_node_t *n2;
-    while (NULL != (n2 = bs_dllist_pop_front(&list))) {
+    for (bs_dllist_node_t *n2 = bs_dllist_pop_front(&list);
+         n2 != NULL;
+         n1 = n2, n2 = bs_dllist_pop_front(&list)) {
         struct _bs_dllist_test_sort_node *v1 = BS_CONTAINER_OF(
             n1, struct _bs_dllist_test_sort_node, dlnode);
         struct _bs_dllist_test_sort_node *v2 = BS_CONTAINER_OF(
