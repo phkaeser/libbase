@@ -14,157 +14,157 @@
 #
 # Suggested configuration:
 #   cmake -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/.local -Dconfig_WERROR=ON -Dconfig_DEBUG=ON -DIWYU_MODE=FAIL -B build
-CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
-PROJECT(libbase VERSION 1.0
+cmake_minimum_required(VERSION 3.25)
+project(libbase VERSION 1.0
   DESCRIPTION "A small standard library for C"
   LANGUAGES C)
 
 # Requires out-of-source builds.
-FILE(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOCATION_PATH)
-IF(EXISTS "${LOCATION_PATH}")
-  MESSAGE(
+file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOCATION_PATH)
+if(EXISTS "${LOCATION_PATH}")
+  message(
     FATAL_ERROR
     "You cannot build into a source directory (containing a CMakeLists.txt file).\n"
     "Please make a build subdirectory, for example:\n"
     "cmake -B build\n"
     "(cd build && make)")
-ENDIF()
+endif()
 
 # Defaults to /usr/local/lib for installation.
-INCLUDE(CTest)
-INCLUDE(GNUInstallDirs)
-INCLUDE(FindCurses)
+include(CTest)
+include(GNUInstallDirs)
+include(FindCurses)
 
-IF(NOT CURSES_FOUND)
-  MESSAGE(
+if(NOT CURSES_FOUND)
+  message(
     FATAL_ERROR
     "Failed to find curses nor ncurses file and library.")
-ENDIF(NOT CURSES_FOUND)
+endif()
 
 # Configuration. Remove CMakeCache.txt to rerun...
-OPTION(config_DEBUG "Include debugging information" ON)
-OPTION(config_OPTIM "Optimizations" OFF)
-OPTION(config_COVERAGE "Build with test coverage" OFF)
-OPTION(config_WERROR "Make all compiler warnings into errors." OFF)
+option(config_DEBUG "Include debugging information" ON)
+option(config_OPTIM "Optimizations" OFF)
+option(config_COVERAGE "Build with test coverage" OFF)
+option(config_WERROR "Make all compiler warnings into errors." OFF)
 
-SET(IWYU_MODE "OFF" CACHE STRING "Whether to run `iwyu`. OFF, WARN or FAIL.")
-SET_PROPERTY(CACHE IWYU_MODE PROPERTY STRINGS "OFF" "WARN" "FAIL")
+set(IWYU_MODE OFF CACHE STRING "Whether to run `iwyu`. OFF, WARN or FAIL.")
+set_property(CACHE IWYU_MODE PROPERTY STRINGS "OFF" "WARN" "FAIL")
 
 # Toplevel compile options, for Clang and GCC.
-IF(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
-  IF(config_DEBUG)
-    ADD_COMPILE_OPTIONS(-ggdb -DDEBUG)
-  ENDIF(config_DEBUG)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+  if(config_DEBUG)
+    add_compile_options(-ggdb -DDEBUG)
+  endif()
 
-  IF(config_OPTIM)
-    ADD_COMPILE_OPTIONS(-O2)
-  ELSE(config_OPTIM)
-    ADD_COMPILE_OPTIONS(-O0)
-  ENDIF(config_OPTIM)
-  ADD_COMPILE_OPTIONS(-Wall -Wextra)
+  if(config_OPTIM)
+    add_compile_options(-O2)
+  else()
+    add_compile_options(-O0)
+  endif()
+  add_compile_options(-Wall -Wextra)
 
-  IF(config_WERROR)
-    ADD_COMPILE_OPTIONS(-Werror)
-  ENDIF(config_WERROR)
+  if(config_WERROR)
+    add_compile_options(-Werror)
+  endif()
 
   # CMake provides absolute paths to GCC, hence the __FILE__ macro includes the
   # full path. This option resets it to a path relative to project source.
-  ADD_COMPILE_OPTIONS(-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/src=.)
+  add_compile_options(-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/src=.)
 
   # Target system.
-  IF(LINUX)
-    ADD_COMPILE_OPTIONS(-D__LIBBASE_LINUX)
-  ENDIF(LINUX)
+  if(LINUX)
+    add_compile_options(-D__LIBBASE_LINUX)
+  endif()
 
   # Run iwyu when available.
-  IF((IWYU_MODE STREQUAL "WARN") OR (IWYU_MODE STREQUAL "FAIL"))
-    FIND_PROGRAM(iwyu_executable NAMES include-what-you-use iwyu REQUIRED)
+  if((IWYU_MODE STREQUAL "WARN") OR (IWYU_MODE STREQUAL "FAIL"))
+    find_program(iwyu_executable NAMES include-what-you-use iwyu REQUIRED)
 
-    IF(IWYU_MODE STREQUAL "FAIL")
-      SET(iwyu_error "1")
-    ELSE(IWYU_MODE STREQUAL "FAIL")
-      SET(iwyu_error "0")
-    ENDIF(IWYU_MODE STREQUAL "FAIL")
+    if(IWYU_MODE STREQUAL "FAIL")
+      set(iwyu_error "1")
+    else()
+      set(iwyu_error "0")
+    endif()
 
-    IF(iwyu_executable)
-      SET(iwyu_path_and_options
+    if(iwyu_executable)
+      set(iwyu_path_and_options
         ${iwyu_executable}
         -Xiwyu --error=${iwyu_error} -Xiwyu --transitive_includes_only -Xiwyu --mapping_file=${PROJECT_SOURCE_DIR}/iwyu-mappings.imp)
-    ENDIF(iwyu_executable)
+    endif()
 
-    MESSAGE(STATUS "Configured iwyu (${iwyu_executable}) to run in mode \"${IWYU_MODE}\"")
-  ELSEIF(IWYU_MODE STREQUAL "OFF")
+    message(STATUS "Configured iwyu (${iwyu_executable}) to run in mode \"${IWYU_MODE}\"")
+  elseif(IWYU_MODE STREQUAL "OFF")
     # Permitted value, we don't set iwyu_path_and_options.
-  ELSE()
-    MESSAGE(FATAL_ERROR
+  else()
+    message(FATAL_ERROR
       "Invalid value for IWYU_MODE: \"${IWYU_MODE}\". Must be OFF, WARN or FAIL")
-  ENDIF()
-ENDIF()
-SET(CMAKE_C_STANDARD 11)
+  endif()
+endif()
+set(CMAKE_C_STANDARD 11)
 
-FIND_PACKAGE(PkgConfig REQUIRED)
-PKG_CHECK_MODULES(CAIRO REQUIRED IMPORTED_TARGET cairo>=1.16.0)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CAIRO REQUIRED IMPORTED_TARGET cairo>=1.16.0)
 
 # Create pkg-config file from the template.
-CONFIGURE_FILE(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)
+configure_file(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)
 
-ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(src/plist)
-ADD_SUBDIRECTORY(tools)
+add_subdirectory(src)
+add_subdirectory(src/plist)
+add_subdirectory(tools)
 
 # Add 'install' target, but only if we're the toplevel project.
-IF(CMAKE_PROJECT_NAME STREQUAL libbase)
-  INSTALL(
+if(CMAKE_PROJECT_NAME STREQUAL libbase)
+  install(
     FILES ${CMAKE_BINARY_DIR}/libbase.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
   )
-ENDIF()
+endif()
 
 # Add test target, but only if we're the toplevel project.
-IF(CMAKE_PROJECT_NAME STREQUAL libbase)
-  ADD_SUBDIRECTORY(tests)
-ENDIF()
+if(CMAKE_PROJECT_NAME STREQUAL libbase)
+  add_subdirectory(tests)
+endif()
 
 # Adds 'doc' target, if doxygen is installed.
-FIND_PACKAGE(Doxygen)
-IF(DOXYGEN_FOUND)
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
   # Set input and output files.
-  SET(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
-  SET(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+  set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+  set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
   # Configure the file.
-  CONFIGURE_FILE(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-  ADD_CUSTOM_TARGET(
+  configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+  add_custom_target(
     libbase_doc
     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
     DEPENDS ${DOXYGEN_OUT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen."
     VERBATIM)
-  MESSAGE(NOTICE "Doxygen available, adding libbase documentation to 'doc' target.")
+  message(NOTICE "Doxygen available, adding libbase documentation to 'doc' target.")
 
   # Add as dependency to an existing 'doc' target, or create it.
-  IF(TARGET doc)
-    ADD_DEPENDENCIES(doc libbase_doc)
-  ELSE(TARGET doc)
-    ADD_CUSTOM_TARGET(doc DEPENDS libbase_doc)
-  ENDIF(TARGET doc)
+  if(TARGET doc)
+    add_dependencies(doc libbase_doc)
+  else()
+    add_custom_target(doc DEPENDS libbase_doc)
+  endif()
 
-ELSE(DOXYGEN_FOUND)
-  MESSAGE(NOTICE "Doxygen not found. Not adding 'doc' target to generate API documentation.")
-ENDIF(DOXYGEN_FOUND)
+else()
+  message(NOTICE "Doxygen not found. Not adding 'doc' target to generate API documentation.")
+endif()
 
 # Adds 'coverage' target, if configured. Needs 'gcovr'.
-IF(config_COVERAGE)
-  FIND_PROGRAM(GCOVR_FOUND gcovr OPTIONAL)
-  IF(GCOVR_FOUND)
-    ADD_COMPILE_OPTIONS(--coverage)
-    ADD_LINK_OPTIONS(--coverage)
+if(config_COVERAGE)
+  find_program(GCOVR_FOUND gcovr OPTIONAL)
+  if(GCOVR_FOUND)
+    add_compile_options(--coverage)
+    add_link_options(--coverage)
 
-    MESSAGE(NOTICE "Coverage configured, adding 'coverage' target.")
-    ADD_CUSTOM_TARGET(coverage
+    message(NOTICE "Coverage configured, adding 'coverage' target.")
+    add_custom_target(coverage
       COMMAND gcovr -r ${CMAKE_CURRENT_SOURCE_DIR} . --exclude _deps --print-summary --html-details --html-title "Unittest coverage" -o coverage.html)
-  ELSE(GCOVR_FOUND)
-    MESSAGE(WARNING "Coverage enabled, but 'govr' not found.")
-  ENDIF(GCOVR_FOUND)
-ENDIF()
+  else()
+    message(WARNING "Coverage enabled, but 'govr' not found.")
+  endif()
+endif()
