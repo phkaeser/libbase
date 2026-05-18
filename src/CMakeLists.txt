@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SET(PUBLIC_HEADER_FILES
+set(PUBLIC_HEADER_FILES
   arg.h
   assert.h
   atomic.h
@@ -39,7 +39,7 @@ SET(PUBLIC_HEADER_FILES
   time.h
   vector.h)
 
-SET(SOURCES
+set(SOURCES
   arg.c
   atomic.c
   avltree.c
@@ -61,37 +61,37 @@ SET(SOURCES
   thread.c
   time.c)
 
-ADD_LIBRARY(libbase STATIC)
-TARGET_SOURCES(libbase PRIVATE ${SOURCES})
-TARGET_INCLUDE_DIRECTORIES(
+add_library(libbase STATIC)
+target_sources(libbase PRIVATE ${SOURCES})
+target_include_directories(
   libbase
   PUBLIC
   $<INSTALL_INTERFACE:include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
-TARGET_INCLUDE_DIRECTORIES(libbase PRIVATE ${CURSES_INCLUDE_DIRS})
-TARGET_LINK_LIBRARIES(libbase PRIVATE ${CURSES_LIBRARIES})
-SET_TARGET_PROPERTIES(
+target_include_directories(libbase PRIVATE "${CURSES_INCLUDE_DIRS}")
+target_link_libraries(libbase PRIVATE "${CURSES_LIBRARIES}")
+set_target_properties(
   libbase PROPERTIES
   VERSION 1.0
   PUBLIC_HEADER "${PUBLIC_HEADER_FILES}"
 )
 
-IF(iwyu_path_and_options)
-  SET_TARGET_PROPERTIES(
+if(iwyu_path_and_options)
+  set_target_properties(
     libbase PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
-ENDIF(iwyu_path_and_options)
+endif()
 
-IF(CAIRO_FOUND)
-  TARGET_COMPILE_DEFINITIONS(libbase PUBLIC HAVE_CAIRO)
-  TARGET_INCLUDE_DIRECTORIES(libbase PUBLIC ${CAIRO_INCLUDE_DIRS})
-  TARGET_LINK_LIBRARIES(libbase PUBLIC PkgConfig::CAIRO)
-ENDIF(CAIRO_FOUND)
+if(CAIRO_FOUND)
+  target_compile_definitions(libbase PUBLIC HAVE_CAIRO)
+  target_include_directories(libbase PUBLIC ${CAIRO_INCLUDE_DIRS})
+  target_link_libraries(libbase PUBLIC PkgConfig::CAIRO)
+endif()
 
 # Add 'install' target, but only if we're the toplevel project.
-IF(CMAKE_PROJECT_NAME STREQUAL libbase)
-  INSTALL(
+if(CMAKE_PROJECT_NAME STREQUAL libbase)
+  install(
     TARGETS libbase
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libbase")
-ENDIF()
+endif()

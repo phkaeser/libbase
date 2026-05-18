@@ -12,59 +12,59 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FIND_PACKAGE(FLEX 2.6 REQUIRED)
-FLEX_TARGET(
+find_package(FLEX 2.6 REQUIRED)
+flex_target(
   analyzer
   analyzer.l
-  ${CMAKE_CURRENT_BINARY_DIR}/analyzer.c
-  DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/analyzer.h)
+  "${CMAKE_CURRENT_BINARY_DIR}/analyzer.c"
+  DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/analyzer.h")
 
-FIND_PACKAGE(BISON 3.0 REQUIRED)
-BISON_TARGET(
+find_package(BISON 3.0 REQUIRED)
+bison_target(
   grammar
   grammar.y
-  ${CMAKE_CURRENT_BINARY_DIR}/grammar.c
-  DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/grammar.h)
+  "${CMAKE_CURRENT_BINARY_DIR}/grammar.c"
+  DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/grammar.h")
 
-ADD_FLEX_BISON_DEPENDENCY(analyzer grammar)
+add_flex_bison_dependency(analyzer grammar)
 
-SET(PUBLIC_HEADER_FILES
-  ${PROJECT_SOURCE_DIR}/include/libbase/plist/decode.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/plist/model.h
-  ${PROJECT_SOURCE_DIR}/include/libbase/plist/parse.h)
+set(PUBLIC_HEADER_FILES
+  "${PROJECT_SOURCE_DIR}/include/libbase/plist/decode.h"
+  "${PROJECT_SOURCE_DIR}/include/libbase/plist/model.h"
+  "${PROJECT_SOURCE_DIR}/include/libbase/plist/parse.h")
 
-ADD_LIBRARY(libbase_plist STATIC)
-TARGET_SOURCES(libbase_plist PRIVATE
+add_library(libbase_plist STATIC)
+target_sources(libbase_plist PRIVATE
   decode.c
   model.c
   parse.c
-  ${CMAKE_CURRENT_BINARY_DIR}/analyzer.c
-  ${CMAKE_CURRENT_BINARY_DIR}/grammar.c)
-TARGET_INCLUDE_DIRECTORIES(
+  "${CMAKE_CURRENT_BINARY_DIR}/analyzer.c"
+  "${CMAKE_CURRENT_BINARY_DIR}/grammar.c")
+target_include_directories(
   libbase_plist
   PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}
+  "${CMAKE_CURRENT_SOURCE_DIR}"
   PUBLIC
-  ${CMAKE_CURRENT_BINARY_DIR}/)
+  "${CMAKE_CURRENT_BINARY_DIR}/")
 
 # TODO(kaeser@gubbe.ch):Remove, once updating post bison 3.8.2 (Aug 2022).
 # See: https://github.com/phkaeser/wlmaker/issues/53
-TARGET_COMPILE_OPTIONS(libbase_plist PRIVATE -Wno-unused-but-set-variable)
-TARGET_LINK_LIBRARIES(libbase_plist libbase)
-SET_TARGET_PROPERTIES(
+target_compile_options(libbase_plist PRIVATE -Wno-unused-but-set-variable)
+target_link_libraries(libbase_plist libbase)
+set_target_properties(
   libbase_plist
   PROPERTIES VERSION 1.0
   PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
-IF(iwyu_path_and_options)
-  SET_TARGET_PROPERTIES(
+if(iwyu_path_and_options)
+  set_target_properties(
     libbase_plist PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
-ENDIF(iwyu_path_and_options)
+endif()
 
 # Add 'install' target, but only if `libbase` is the toplevel project.
-IF(CMAKE_PROJECT_NAME STREQUAL libbase)
-  INSTALL(
+if(CMAKE_PROJECT_NAME STREQUAL libbase)
+  install(
     TARGETS libbase_plist
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libbase/plist")
-ENDIF()
+endif()

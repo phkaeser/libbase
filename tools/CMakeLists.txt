@@ -12,19 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ADD_EXECUTABLE(plist_parse plist_parse.c)
-TARGET_LINK_LIBRARIES(plist_parse libbase libbase_plist)
-TARGET_INCLUDE_DIRECTORIES(plist_parse PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/)
+add_executable(
+  plist_parse
+  plist_parse.c)
+target_link_libraries(
+  plist_parse
+  libbase
+  libbase_plist)
+target_include_directories(plist_parse PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/")
 
-IF(iwyu_path_and_options)
-  SET_TARGET_PROPERTIES(
+if(iwyu_path_and_options)
+  set_target_properties(
     plist_parse PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
-ENDIF(iwyu_path_and_options)
+endif()
 
 # Add 'install' target, but only if we're the toplevel project.
-IF(CMAKE_PROJECT_NAME STREQUAL libbase)
-  INSTALL(
+if(CMAKE_PROJECT_NAME STREQUAL libbase)
+  install(
     TARGETS plist_parse
-    DESTINATION ${CMAKE_INSTALL_BINDIR})
-ENDIF()
+    DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()

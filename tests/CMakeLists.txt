@@ -12,40 +12,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ADD_EXECUTABLE(libbase_test libbase_test.c)
-TARGET_LINK_LIBRARIES(libbase_test libbase)
+add_executable(
+  libbase_test
+  libbase_test.c)
+target_link_libraries(
+  libbase_test
+  libbase)
 # Refer to the source path for relative testdata.
-TARGET_COMPILE_DEFINITIONS(
+target_compile_definitions(
   libbase_test PUBLIC BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-TARGET_COMPILE_DEFINITIONS(
+target_compile_definitions(
   libbase_test PUBLIC BS_TEST_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
-ADD_EXECUTABLE(libbase_benchmark libbase_benchmark.c)
-TARGET_LINK_LIBRARIES(libbase_benchmark libbase)
+add_executable(
+  libbase_benchmark
+  libbase_benchmark.c)
+target_link_libraries(
+  libbase_benchmark
+  libbase)
 
-ADD_EXECUTABLE(subprocess_test_hang subprocess_test_hang.c)
-ADD_EXECUTABLE(subprocess_test_failure subprocess_test_failure.c)
-ADD_EXECUTABLE(subprocess_test_sigpipe subprocess_test_sigpipe.c)
-ADD_EXECUTABLE(subprocess_test_success subprocess_test_success.c)
+add_executable(
+  subprocess_test_hang
+  subprocess_test_hang.c)
+add_executable(
+  subprocess_test_failure
+  subprocess_test_failure.c)
+add_executable(
+  subprocess_test_sigpipe
+  subprocess_test_sigpipe.c)
+add_executable(
+  subprocess_test_success
+  subprocess_test_success.c)
 
-ADD_EXECUTABLE(plist_test plist_test.c)
-TARGET_LINK_LIBRARIES(plist_test libbase libbase_plist)
-TARGET_INCLUDE_DIRECTORIES(plist_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/)
-TARGET_COMPILE_DEFINITIONS(
+add_executable(
+  plist_test
+  plist_test.c)
+target_link_libraries(
+  plist_test
+  libbase
+  libbase_plist)
+target_include_directories(plist_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/")
+target_compile_definitions(
   plist_test PUBLIC TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-ADD_TEST(NAME libbase_test COMMAND libbase_test)
-ADD_TEST(NAME plist_test COMMAND plist_test)
+add_test(NAME libbase_test COMMAND libbase_test)
+add_test(NAME plist_test COMMAND plist_test)
 
-IF(iwyu_path_and_options)
-  SET_TARGET_PROPERTIES(
+if(iwyu_path_and_options)
+  set_target_properties(
     libbase_test PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
-  SET_TARGET_PROPERTIES(
+  set_target_properties(
     libbase_benchmark PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
-  SET_TARGET_PROPERTIES(
+  set_target_properties(
     plist_test PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
-ENDIF(iwyu_path_and_options)
+endif()
