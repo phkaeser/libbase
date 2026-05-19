@@ -20,8 +20,8 @@ project(libbase VERSION 1.0
   LANGUAGES C)
 
 # Requires out-of-source builds.
-file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOCATION_PATH)
-if(EXISTS "${LOCATION_PATH}")
+file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" location_path)
+if(EXISTS "${location_path}")
   message(
     FATAL_ERROR
     "You cannot build into a source directory (containing a CMakeLists.txt file).\n"
@@ -51,29 +51,31 @@ set(IWYU_MODE OFF CACHE STRING "Whether to run `iwyu`. OFF, WARN or FAIL.")
 set_property(CACHE IWYU_MODE PROPERTY STRINGS "OFF" "WARN" "FAIL")
 
 # Toplevel compile options, for Clang and GCC.
+add_library(libbase_compiler_flags INTERFACE)
+
 if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
   if(config_DEBUG)
-    add_compile_options(-ggdb -DDEBUG)
+    target_compile_options(libbase_compiler_flags INTERFACE -ggdb -DDEBUG)
   endif()
 
   if(config_OPTIM)
-    add_compile_options(-O2)
+    target_compile_options(libbase_compiler_flags INTERFACE -O2)
   else()
-    add_compile_options(-O0)
+    target_compile_options(libbase_compiler_flags INTERFACE -O0)
   endif()
-  add_compile_options(-Wall -Wextra)
+  target_compile_options(libbase_compiler_flags INTERFACE -Wall -Wextra)
 
   if(config_WERROR)
-    add_compile_options(-Werror)
+    target_compile_options(libbase_compiler_flags INTERFACE -Werror)
   endif()
 
   # CMake provides absolute paths to GCC, hence the __FILE__ macro includes the
   # full path. This option resets it to a path relative to project source.
-  add_compile_options(-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/src=.)
+  target_compile_options(libbase_compiler_flags INTERFACE -fmacro-prefix-map=${PROJECT_SOURCE_DIR}/src=.)
 
   # Target system.
   if(LINUX)
-    add_compile_options(-D__LIBBASE_LINUX)
+    target_compile_options(libbase_compiler_flags INTERFACE -D__LIBBASE_LINUX)
   endif()
 
   # Run iwyu when available.
@@ -129,15 +131,15 @@ endif()
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
   # Set input and output files.
-  set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
-  set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+  set(doxygen_in ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+  set(doxygen_out ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
   # Configure the file.
-  configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+  configure_file(${doxygen_in} ${doxygen_out} @ONLY)
   add_custom_target(
     libbase_doc
-    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-    DEPENDS ${DOXYGEN_OUT}
+    COMMAND ${DOXYGEN_EXECUTABLE} ${doxygen_out}
+    DEPENDS ${doxygen_out}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen."
     VERBATIM)
@@ -158,8 +160,8 @@ endif()
 if(config_COVERAGE)
   find_program(GCOVR_FOUND gcovr OPTIONAL)
   if(GCOVR_FOUND)
-    add_compile_options(--coverage)
-    add_link_options(--coverage)
+    target_compile_options(libbase_compiler_flags INTERFACE --coverage)
+    target_link_options(libbase_compiler_flags INTERFACE --coverage)
 
     message(NOTICE "Coverage configured, adding 'coverage' target.")
     add_custom_target(coverage
