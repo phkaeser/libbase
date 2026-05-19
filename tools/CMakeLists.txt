@@ -17,8 +17,10 @@ add_executable(
   plist_parse.c)
 target_link_libraries(
   plist_parse
+  PRIVATE
   libbase
-  libbase_plist)
+  libbase_plist
+  libbase_compiler_flags)
 target_include_directories(plist_parse PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/")
 
 if(iwyu_path_and_options)

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(PUBLIC_HEADER_FILES
+set(public_header_files
   arg.h
   assert.h
   atomic.h
@@ -39,7 +39,7 @@ set(PUBLIC_HEADER_FILES
   time.h
   vector.h)
 
-set(SOURCES
+set(sources
   arg.c
   atomic.c
   avltree.c
@@ -62,18 +62,18 @@ set(SOURCES
   time.c)
 
 add_library(libbase STATIC)
-target_sources(libbase PRIVATE ${SOURCES})
+target_sources(libbase PRIVATE ${sources})
 target_include_directories(
   libbase
   PUBLIC
   $<INSTALL_INTERFACE:include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
 target_include_directories(libbase PRIVATE "${CURSES_INCLUDE_DIRS}")
-target_link_libraries(libbase PRIVATE "${CURSES_LIBRARIES}")
+target_link_libraries(libbase PRIVATE "${CURSES_LIBRARIES}" libbase_compiler_flags)
 set_target_properties(
   libbase PROPERTIES
   VERSION 1.0
-  PUBLIC_HEADER "${PUBLIC_HEADER_FILES}"
+  PUBLIC_HEADER "${public_header_files}"
 )
 
 if(iwyu_path_and_options)

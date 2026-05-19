@@ -28,7 +28,7 @@ bison_target(
 
 add_flex_bison_dependency(analyzer grammar)
 
-set(PUBLIC_HEADER_FILES
+set(public_header_files
   "${PROJECT_SOURCE_DIR}/include/libbase/plist/decode.h"
   "${PROJECT_SOURCE_DIR}/include/libbase/plist/model.h"
   "${PROJECT_SOURCE_DIR}/include/libbase/plist/parse.h")
@@ -50,11 +50,11 @@ target_include_directories(
 # TODO(kaeser@gubbe.ch):Remove, once updating post bison 3.8.2 (Aug 2022).
 # See: https://github.com/phkaeser/wlmaker/issues/53
 target_compile_options(libbase_plist PRIVATE -Wno-unused-but-set-variable)
-target_link_libraries(libbase_plist libbase)
+target_link_libraries(libbase_plist PRIVATE libbase libbase_compiler_flags)
 set_target_properties(
   libbase_plist
   PROPERTIES VERSION 1.0
-  PUBLIC_HEADER "${PUBLIC_HEADER_FILES}")
+  PUBLIC_HEADER "${public_header_files}")
 if(iwyu_path_and_options)
   set_target_properties(
     libbase_plist PROPERTIES

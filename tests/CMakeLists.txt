@@ -17,44 +17,75 @@ add_executable(
   libbase_test.c)
 target_link_libraries(
   libbase_test
-  libbase)
+  PRIVATE
+  libbase
+  libbase_compiler_flags)
 # Refer to the source path for relative testdata.
 target_compile_definitions(
-  libbase_test PUBLIC BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  libbase_test
+  PUBLIC
+  BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(
-  libbase_test PUBLIC BS_TEST_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+  libbase_test
+  PUBLIC
+  BS_TEST_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
 add_executable(
   libbase_benchmark
   libbase_benchmark.c)
 target_link_libraries(
   libbase_benchmark
-  libbase)
+  PRIVATE
+  libbase
+  libbase_compiler_flags)
 
 add_executable(
   subprocess_test_hang
   subprocess_test_hang.c)
+target_link_libraries(
+  subprocess_test_hang
+  PRIVATE
+  libbase_compiler_flags)
+
 add_executable(
   subprocess_test_failure
   subprocess_test_failure.c)
+target_link_libraries(
+  subprocess_test_failure
+  PRIVATE
+  libbase_compiler_flags)
+
 add_executable(
   subprocess_test_sigpipe
   subprocess_test_sigpipe.c)
+target_link_libraries(
+  subprocess_test_sigpipe
+  PRIVATE
+  libbase_compiler_flags)
+
 add_executable(
   subprocess_test_success
   subprocess_test_success.c)
+target_link_libraries(
+  subprocess_test_success
+  PRIVATE
+  libbase_compiler_flags)
 
 add_executable(
   plist_test
   plist_test.c)
 target_link_libraries(
   plist_test
+  PRIVATE
   libbase
-  libbase_plist)
+  libbase_plist
+  libbase_compiler_flags)
 target_include_directories(plist_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/")
 target_compile_definitions(
-  plist_test PUBLIC TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+  plist_test
+  PUBLIC
+  TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 add_test(NAME libbase_test COMMAND libbase_test)
 add_test(NAME plist_test COMMAND plist_test)
