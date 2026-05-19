@@ -8,7 +8,7 @@ This document outlines the style conventions used in the CMake configuration fil
 ## 2. Indentation, Control Flow, and Line Wrapping
 * **Indentation:** 2-space indentation is used for commands inside control blocks (like `if` / `endif`).
 * **Control Flow:** Closing commands (e.g., `endif()`, `endforeach()`, `endmacro()`, `endfunction()`) must not repeat the condition or arguments of the opening command (e.g., use `endif()` instead of `endif(config_DEBUG)`).
-* **Argument Wrapping:** 
+* **Argument Wrapping:**
   * Short, simple commands are kept on a single line (e.g., `set(CMAKE_C_STANDARD 11)`).
   * Long commands or those with multiple arguments/keywords are wrapped, with each argument placed on a new line and indented by 2 spaces relative to the command (e.g., `add_executable`, `target_include_directories`).
   * The closing parenthesis `)` is either placed on the same line as the last argument or on its own line aligned with the command name (usually in block-style commands like `install` or `set_target_properties`).
@@ -27,4 +27,3 @@ This document outlines the style conventions used in the CMake configuration fil
 
 ## 6. Target-Based Configuration
 * **Prefer target-based configuration:** Define compile options, compile definitions, include directories, and link libraries on specific targets using `target_*` commands (e.g., `target_include_directories`, `target_compile_options`, `target_compile_definitions`, `target_link_libraries`) rather than modifying global/directory-wide settings (e.g., `add_compile_options`).
-
