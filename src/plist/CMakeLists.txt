@@ -50,6 +50,12 @@ target_include_directories(
 # TODO(kaeser@gubbe.ch):Remove, once updating post bison 3.8.2 (Aug 2022).
 # See: https://github.com/phkaeser/wlmaker/issues/53
 target_compile_options(libbase_plist PRIVATE -Wno-unused-but-set-variable)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+  set_source_files_properties(
+    "${CMAKE_CURRENT_BINARY_DIR}/analyzer.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/grammar.c"
+    PROPERTIES COMPILE_OPTIONS "-Wno-error")
+endif()
 target_link_libraries(libbase_plist PRIVATE libbase libbase_compiler_flags)
 set_target_properties(
   libbase_plist
