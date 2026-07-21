@@ -419,7 +419,8 @@ bspl_object_t *bspl_encode_dict_as_object(
 /**
  * Decodes the plist `dict_ptr` into `value_ptr` as described.
  *
- * @param dict_ptr
+ * @param dict_ptr            Dictionary to decode. May be NULL. If NULL, will
+ *                            be treated similar to an empty dictionary.
  * @param desc_ptr
  * @param value_ptr
  *

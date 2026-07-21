@@ -587,11 +587,6 @@ bool bspl_decode_dict_without_init(
     void *value_ptr)
 {
     bspl_dict_t *dict_ptr = bspl_dict_from_object(obj_ptr);
-    if (NULL == dict_ptr) {
-        bs_log(BS_ERROR, "Requires object type DICT for %p", obj_ptr);
-        return false;
-    }
-
     for (const bspl_desc_t *iter_desc_ptr = desc_value_ptr->v_dict_desc_ptr;
          iter_desc_ptr->key_ptr != NULL;
          ++iter_desc_ptr) {
@@ -782,6 +777,12 @@ static const bspl_desc_t _bspl_decode_test_desc[] = {
     BSPL_DESC_SENTINEL(),
 };
 
+/** Shortened test descriptor, with just optional values. */
+static const bspl_desc_t _bspl_decode_test_desc_optional[] = {
+    BSPL_DESC_UINT64("u64", false, _test_value_t, v_uint64, has_uint64, 1234),
+    BSPL_DESC_INT64("i64", false, _test_value_t, v_int64, has_int64, -1234),
+    BSPL_DESC_SENTINEL(),
+};
 
 /* ------------------------------------------------------------------------- */
 /** A custom decoding function. Here: just decode a string. */
@@ -996,6 +997,22 @@ void test_decode_dict(bs_test_t *test_ptr)
                                     "}");
     bspl_dict_t *dict_ptr;
 
+    // Required fields, with a NULL parameter: Must fail.
+    BS_TEST_VERIFY_FALSE(
+        test_ptr,
+        bspl_decode_dict(NULL, _bspl_decode_test_desc, &val));
+
+    // Only optional fields, with NULL parameter: Must initialize and pass.
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bspl_decode_dict(NULL, _bspl_decode_test_desc_optional, &val));
+    BS_TEST_VERIFY_EQ(test_ptr, 1234, val.v_uint64);
+    BS_TEST_VERIFY_FALSE(test_ptr, val.has_uint64);
+    BS_TEST_VERIFY_EQ(test_ptr, -1234, val.v_int64);
+    BS_TEST_VERIFY_FALSE(test_ptr, val.has_int64);
+
+    // Full decoding with required values.
+    val = (_test_value_t){};
     dict_ptr = bspl_dict_from_object(
         bspl_create_object_from_plist_string(plist_string_ptr));
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, dict_ptr);
