@@ -29,7 +29,7 @@ jobs:
           iwyu \
           libcairo2-dev \
           libncurses-dev
-    
+
     - name: Checkout code.
       uses: actions/checkout@v3
 
