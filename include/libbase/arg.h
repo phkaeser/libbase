@@ -22,6 +22,7 @@
 #ifndef __LIBBASE_ARG_H__
 #define __LIBBASE_ARG_H__
 
+#include "log.h"
 #include "test.h"
 
 #include <inttypes.h>
@@ -204,6 +205,17 @@ void bs_arg_cleanup(const bs_arg_t *arg_ptr);
  * @param arg_ptr
  */
 int bs_arg_print_usage(FILE *stream_ptr, const bs_arg_t *arg_ptr);
+
+/** Severity level names, for logging. Used for bs_arg_log_level. */
+extern const bs_arg_enum_table_t bs_arg_log_level_names[];
+
+/** Common commandline arg for `--log_level`. Sets @ref bs_log_severity. */
+static const bs_arg_t         bs_arg_log_level = BS_ARG_ENUM(
+    "log_level",
+    "Log level to apply. One of DEBUG, INFO, WARNING, ERROR.",
+    "INFO",
+    &bs_arg_log_level_names[0],
+    (int*)&bs_log_severity);
 
 /** Unit test set. */
 extern const bs_test_set_t    bs_arg_test_set;

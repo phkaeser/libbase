@@ -90,6 +90,14 @@ static bool lookup_enum(const bs_arg_enum_table_t *lookup_table,
 static const char             *bs_arg_bool_value_true = "true";
 static const char             *bs_arg_bool_value_false = "false";
 
+const bs_arg_enum_table_t     bs_arg_log_level_names[] = {
+    { .name_ptr = "DEBUG", BS_DEBUG },
+    { .name_ptr = "INFO", BS_INFO },
+    { .name_ptr = "WARNING", BS_WARNING },
+    { .name_ptr = "ERROR", BS_ERROR },
+    { .name_ptr = NULL },
+};
+
 /* == Exported methods ===================================================== */
 
 /* ------------------------------------------------------------------------- */
@@ -673,6 +681,7 @@ static void bs_arg_test_parse_arg_for_enum(bs_test_t *test_ptr);
 static void bs_arg_test_set_defaults(bs_test_t *test_ptr);
 static void bs_arg_test_parse(bs_test_t *test_ptr);
 static void bs_arg_test_check_arg(bs_test_t *test_ptr);
+static void bs_arg_test_log_level(bs_test_t *test_ptr);
 
 /** Unit test cases. */
 static const bs_test_case_t   bs_arg_test_cases[] = {
@@ -687,6 +696,7 @@ static const bs_test_case_t   bs_arg_test_cases[] = {
     { true, "set_defaults", bs_arg_test_set_defaults },
     { true, "parse", bs_arg_test_parse },
     { true, "check_arg", bs_arg_test_check_arg },
+    { true, "log_level", bs_arg_test_log_level },
     { false, NULL, NULL }
 };
 
@@ -1028,6 +1038,26 @@ static void bs_arg_test_check_arg(bs_test_t *test_ptr)
         BS_ARG_SENTINEL(),
     };
     BS_TEST_VERIFY_TRUE(test_ptr, check_arg(valid_args));
+}
+
+/* ------------------------------------------------------------------------- */
+void bs_arg_test_log_level(bs_test_t *test_ptr)
+{
+    static const bs_arg_t args[] = {
+        bs_arg_log_level,
+        BS_ARG_SENTINEL()
+    };
+
+    const char *argv[] = { "program", "--log_level", "DEBUG" };
+    int argc = sizeof(argv) / sizeof(const char*);
+
+    bs_log_severity_t log_level = bs_log_severity;
+    bs_log_severity = BS_INFO;
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_arg_parse(args, BS_ARG_MODE_NO_EXTRA, &argc, argv));
+    BS_TEST_VERIFY_EQ(test_ptr, BS_DEBUG, bs_log_severity);
+    bs_log_severity = log_level;
 }
 
 /* == End of arg.c ========================================================= */
