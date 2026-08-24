@@ -51,8 +51,6 @@ static size_t bs_avltree_node_height(bs_avltree_t *tree_ptr,
 static void bs_avltree_node_exchange(bs_avltree_t *tree_ptr,
                                      bs_avltree_node_t *old_node_ptr,
                                      bs_avltree_node_t *new_node_ptr);
-static void bs_avltree_node_delete(bs_avltree_t *tree_ptr,
-                                   bs_avltree_node_t *node_ptr);
 
 static bool bs_avltree_rot_right(bs_avltree_t *tree_ptr,
                                  bs_avltree_node_t *node_ptr);
@@ -295,6 +293,15 @@ bs_avltree_node_t *bs_avltree_node_prev(__UNUSED__ bs_avltree_t *tree_ptr,
 }
 
 /* ------------------------------------------------------------------------- */
+bool bs_avltree_contains_node(bs_avltree_t *tree_ptr,
+                              bs_avltree_node_t *node_ptr)
+{
+    if (NULL == node_ptr) return false;
+    while (NULL != node_ptr->parent_ptr) node_ptr = node_ptr->parent_ptr;
+    return tree_ptr->root_ptr == node_ptr;
+}
+
+/* ------------------------------------------------------------------------- */
 int bs_avltree_cmp_ptr(const void *node_key_ptr,
                        const void *key_ptr)
 {
@@ -511,6 +518,8 @@ void bs_avltree_node_exchange(bs_avltree_t *tree_ptr,
 void bs_avltree_node_delete(bs_avltree_t *tree_ptr,
                             bs_avltree_node_t *node_ptr)
 {
+    BS_ASSERT(bs_avltree_contains_node(tree_ptr, node_ptr));
+
     bs_avltree_node_t *next_larger_node_ptr = NULL;
 
     if ((NULL != node_ptr->left_ptr) && (NULL != node_ptr->right_ptr)) {
@@ -925,7 +934,14 @@ void bs_avltree_test_random(bs_test_t *test_ptr)
 
         BS_TEST_VERIFY_NEQ(test_ptr, node_ptr, NULL);
         if (NULL != node_ptr) {
+            BS_TEST_VERIFY_TRUE(
+                test_ptr,
+                bs_avltree_contains_node(tree_ptr, &node_ptr->node));
             BS_TEST_VERIFY_EQ(test_ptr, node_ptr->value, value);
+        } else {
+            BS_TEST_VERIFY_FALSE(
+                test_ptr,
+                bs_avltree_contains_node(tree_ptr, &node_ptr->node));
         }
     }
 
@@ -960,8 +976,16 @@ void bs_avltree_test_random(bs_test_t *test_ptr)
     for (value_idx = 0; value_idx < BS_AVLTREE_TEST_VALUES; value_idx++) {
         value = random_values[value_idx];
 
-        node_ptr = (bs_avltree_test_node_t*)
-            bs_avltree_delete(tree_ptr, &value);
+        if (value & 0x1) {
+            node_ptr = (bs_avltree_test_node_t*)
+                bs_avltree_delete(tree_ptr, &value);
+        } else {
+            node_ptr = (bs_avltree_test_node_t*)
+                bs_avltree_lookup(tree_ptr, &value);
+            if (NULL != node_ptr) {
+                bs_avltree_node_delete(tree_ptr, &node_ptr->node);
+            }
+        }
         if (node_ptr != NULL) {
             BS_TEST_VERIFY_EQ(test_ptr, node_ptr->value, value);
             bs_avltree_test_node_destroy(&node_ptr->node);

@@ -138,6 +138,14 @@ bs_avltree_node_t *bs_avltree_node_next(bs_avltree_t *tree_ptr,
 bs_avltree_node_t *bs_avltree_node_prev(bs_avltree_t *tree_ptr,
                                         bs_avltree_node_t *node_ptr);
 
+/** Deletes the node. Must be part of tree_ptr. */
+void bs_avltree_node_delete(bs_avltree_t *tree_ptr,
+                            bs_avltree_node_t *node_ptr);
+
+/** @return whether |tree_ptr| contains |node_ptr. */
+bool bs_avltree_contains_node(bs_avltree_t *tree_ptr,
+                              bs_avltree_node_t *node_ptr);
+
 /**
  * Helper: Comparator to compare two pointers.
  *
