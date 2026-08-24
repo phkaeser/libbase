@@ -20,6 +20,7 @@
  */
 
 #include <libbase/libbase.h>
+#include <libbase/signal.h>
 #include <limits.h>
 #include <poll.h>
 #include <signal.h>
@@ -269,6 +270,7 @@ int main(int argc, const char **argv)
         &bs_ptr_stack_test_set,
         &bs_ptr_vector_test_set,
         &bs_ref_test_set,
+        &bs_signal_test_set,
         &bs_strutil_test_set,
         &bs_subprocess_extra_test_set,
         &bs_subprocess_test_set,

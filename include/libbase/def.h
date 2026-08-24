@@ -58,11 +58,20 @@
     })
 #endif  // !defined(BS_MAX)
 
-/** Helper to retrieve the base container, given a pointer to an element. */
+/**
+ * Helper to retrieve the base container, given a pointer to an element.
+ *
+ * NULL-safe, ie. returns NULL if elem_ptr is NULL.
+ */
 #define BS_CONTAINER_OF(elem_ptr, container_type, elem_field)   \
-    (container_type*)(                                          \
-        (uint8_t*)(elem_ptr) -                                  \
-        offsetof(container_type, elem_field))
+    ({                                                          \
+        __typeof__(elem_ptr) __elem_ptr = (elem_ptr);           \
+        (NULL == __elem_ptr ?                                   \
+        (container_type*)__elem_ptr :                           \
+        (container_type*)(                                      \
+            (uint8_t*)(elem_ptr) -                              \
+            offsetof(container_type, elem_field)));             \
+    })
 
 #endif /* __LIBBASE_DEF_H__ */
 /* == End of def.h ========================================================= */

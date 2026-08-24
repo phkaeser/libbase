@@ -31,6 +31,7 @@ set(public_header_files
   ptr_stack.h
   ptr_vector.h
   ref.h
+  signal.h
   sock.h
   strutil.h
   subprocess.h
@@ -54,6 +55,7 @@ set(sources
   ptr_stack.c
   ptr_vector.c
   ref.c
+  signal.c
   sock.c
   strutil.c
   subprocess.c
