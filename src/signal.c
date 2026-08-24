@@ -144,6 +144,16 @@ void _bs_signal_test_simple(bs_test_t *test_ptr)
 
     bs_test_listener_connect(&s, &tl1);
 
+    BS_TEST_VERIFY_EQ(
+        test_ptr,
+        &tl1,
+        BS_CONTAINER_OF(&tl1.calls, struct bs_test_listener, calls));
+    void *p = NULL;
+    BS_TEST_VERIFY_EQ(
+        test_ptr,
+        NULL,
+        BS_CONTAINER_OF(p, struct bs_test_listener, calls));
+
     BS_TEST_VERIFY_EQ(test_ptr, 0, tl1.calls);
     BS_TEST_VERIFY_EQ(test_ptr, 0, tl2.calls);
 
