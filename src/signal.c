@@ -47,10 +47,10 @@ void bs_signal_emit(
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_signal_connect(
-    struct bs_signal *signal_ptr,
+void bs_listener_connect(
     struct bs_listener *listener_ptr,
-    bs_signal_notify_t notify)
+    bs_signal_notify_t notify,
+    struct bs_signal *signal_ptr)
 {
     listener_ptr->notify = notify;
     bs_dllist_push_back(
@@ -59,9 +59,9 @@ void bs_signal_connect(
 }
 
 /* ------------------------------------------------------------------------- */
-void bs_signal_disconnect(
-    struct bs_signal *signal_ptr,
-    struct bs_listener *listener_ptr)
+void bs_listener_disconnect(
+    struct bs_listener *listener_ptr,
+    struct bs_signal *signal_ptr)
 {
     bs_dllist_remove(
         &signal_ptr->listeners,
@@ -81,10 +81,10 @@ void bs_test_listener_connect(
     struct bs_signal *signal_ptr,
     struct bs_test_listener *test_listener_ptr)
 {
-    bs_signal_connect(
-        signal_ptr,
+    bs_listener_connect(
         &test_listener_ptr->listener,
-        _bs_test_listener_notify);
+        _bs_test_listener_notify,
+        signal_ptr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -92,9 +92,9 @@ void bs_test_listener_disconnect(
     struct bs_signal *signal_ptr,
     struct bs_test_listener *test_listener_ptr)
 {
-    bs_signal_disconnect(
-        signal_ptr,
-        &test_listener_ptr->listener);
+    bs_listener_disconnect(
+        &test_listener_ptr->listener,
+        signal_ptr);
 }
 
 /* == Local (static) methods =============================================== */
