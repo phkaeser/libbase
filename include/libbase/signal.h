@@ -69,24 +69,24 @@ void bs_signal_emit(
 /**
  * Connects the listener with the provided notification function to the signal.
  *
- * @param signal_ptr
  * @param listener_ptr
  * @param notify
+ * @param signal_ptr
  */
-void bs_signal_connect(
-    struct bs_signal *signal_ptr,
+void bs_listener_connect(
     struct bs_listener *listener_ptr,
-    bs_signal_notify_t notify);
+    bs_signal_notify_t notify,
+    struct bs_signal *signal_ptr);
 
 /**
  * Disconnects the listener from the signal.
  *
- * @param signal_ptr
  * @param listener_ptr
+ * @param signal_ptr
  */
-void bs_signal_disconnect(
-    struct bs_signal *signal_ptr,
-    struct bs_listener *listener_ptr);
+void bs_listener_disconnect(
+    struct bs_listener *listener_ptr,
+    struct bs_signal *signal_ptr);
 
 /** A listener that can be used in unit tests. */
 struct bs_test_listener {
