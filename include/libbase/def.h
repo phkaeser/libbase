@@ -67,10 +67,10 @@
     ({                                                          \
         __typeof__(elem_ptr) __elem_ptr = (elem_ptr);           \
         (NULL == __elem_ptr ?                                   \
-        (container_type*)__elem_ptr :                           \
-        (container_type*)(                                      \
-            (uint8_t*)(elem_ptr) -                              \
-            offsetof(container_type, elem_field)));             \
+         (container_type*)__elem_ptr :                          \
+         (container_type*)(                                     \
+             (uint8_t*)(__elem_ptr) -                           \
+             offsetof(container_type, elem_field)));            \
     })
 
 #endif /* __LIBBASE_DEF_H__ */
