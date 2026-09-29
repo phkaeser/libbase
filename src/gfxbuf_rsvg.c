@@ -58,13 +58,61 @@ bool bs_gfxbuf_render_rsvg(
     return rv;
 }
 
+/* ------------------------------------------------------------------------- */
+bool bs_gfxbuf_render_rsvg_data(
+    bs_gfxbuf_t *gfxbuf_ptr,
+    const void *data_ptr,
+    size_t data_size)
+{
+    GError *error_ptr = NULL;
+    RsvgHandle *svg_handle_ptr = rsvg_handle_new_from_data(
+        data_ptr, data_size, &error_ptr);
+    if (NULL == svg_handle_ptr) {
+        bs_log(BS_ERROR, "Failed rsvg_handle_new_from_data(%p, %zu, %p)%s%s",
+               data_ptr, data_size, &error_ptr,
+               error_ptr ? ": " : "",
+               error_ptr ? error_ptr->message : "");
+        if (NULL != error_ptr) free(error_ptr);
+        return false;
+    }
+
+    bool rv = bs_gfxbuf_render_rsvg(gfxbuf_ptr, svg_handle_ptr);
+    g_object_unref(svg_handle_ptr);
+    return rv;
+}
+
+/* ------------------------------------------------------------------------- */
+bool bs_gfxbuf_render_rsvg_file(
+    bs_gfxbuf_t *gfxbuf_ptr,
+    const char *fname_ptr)
+{
+    GError *error_ptr = NULL;
+    RsvgHandle *svg_handle_ptr = rsvg_handle_new_from_file(
+        fname_ptr, &error_ptr);
+    if (NULL == svg_handle_ptr) {
+        bs_log(BS_ERROR, "Failed rsvg_handle_new_from_data(\"%s\", %p)%s%s",
+               fname_ptr,
+               &error_ptr,
+               error_ptr ? ": " : "",
+               error_ptr ? error_ptr->message : "");
+        if (NULL != error_ptr) free(error_ptr);
+        return false;
+    }
+
+    bool rv = bs_gfxbuf_render_rsvg(gfxbuf_ptr, svg_handle_ptr);
+    g_object_unref(svg_handle_ptr);
+    return rv;
+}
+
 /* == Unit tests =========================================================== */
 /** @cond TEST */
 
 static void _bs_gfxbuf_rsvg_test_embedded(bs_test_t *test_ptr);
+static void _bs_gfxbuf_rsvg_test_file(bs_test_t *test_ptr);
 
 static const bs_test_case_t _bs_gfxbuf_rsvg_test_cases[] = {
     { true, "embedded", _bs_gfxbuf_rsvg_test_embedded },
+    { true, "file", _bs_gfxbuf_rsvg_test_file },
     { false, NULL, NULL },
 };
 
@@ -74,21 +122,31 @@ const bs_test_set_t bs_gfxbuf_rsvg_test_set = BS_TEST_SET(
 /* ------------------------------------------------------------------------- */
 void _bs_gfxbuf_rsvg_test_embedded(bs_test_t *test_ptr)
 {
-    static const char *svg_ptr = (
+    static const char *s = (
         "<svg width=\"1\" height=\"1\" viewBox=\"0 0 1 1\">"
         "<rect width=\"1\" height=\"1\" fill=\"#4080c0\"/>"
         "</svg>");
 
     bs_gfxbuf_t *g = bs_gfxbuf_create(1, 1);
     BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, g);
-
-    GError *e = NULL;
-    RsvgHandle *h = rsvg_handle_new_from_data((const void*)svg_ptr, strlen(svg_ptr), &e);
-    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, h);
-    BS_TEST_VERIFY_TRUE(test_ptr, bs_gfxbuf_render_rsvg(g, h));
-    g_object_unref(h);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_gfxbuf_render_rsvg_data(g, s, strlen(s)));
 
     BS_TEST_VERIFY_EQ(test_ptr, 0xff4080c0, *bs_gfxbuf_pixel_at(g, 0, 0));
+    bs_gfxbuf_destroy(g);
+}
+
+/* ------------------------------------------------------------------------- */
+void _bs_gfxbuf_rsvg_test_file(bs_test_t *test_ptr)
+{
+    bs_gfxbuf_t *g = bs_gfxbuf_create(1, 1);
+    BS_TEST_VERIFY_NEQ_OR_RETURN(test_ptr, NULL, g);
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_gfxbuf_render_rsvg_file(
+            g,
+            bs_test_data_path(test_ptr, "data/example.svg")));
+
+    BS_TEST_VERIFY_EQ(test_ptr, 0xffc0b0a0, *bs_gfxbuf_pixel_at(g, 0, 0));
     bs_gfxbuf_destroy(g);
 }
 
