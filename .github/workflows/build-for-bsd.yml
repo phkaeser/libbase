@@ -26,7 +26,8 @@ jobs:
             devel/bison \
             devel/cmake-core \
             devel/pkgconf \
-            graphics/cairo
+            graphics/cairo \
+            graphics/librsvg2-rust
 
           cmake -B build/ -Dconfig_WERROR=ON
           cmake --build build/

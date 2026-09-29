@@ -28,7 +28,8 @@ jobs:
           git \
           iwyu \
           libcairo2-dev \
-          libncurses-dev
+          libncurses-dev \
+          librsvg2-dev
 
     - name: Checkout code.
       uses: actions/checkout@v3

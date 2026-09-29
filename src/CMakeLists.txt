@@ -78,9 +78,32 @@ set_target_properties(
   PUBLIC_HEADER "${public_header_files}"
 )
 
+add_library(libbase_rsvg STATIC)
+target_sources(libbase_rsvg PRIVATE gfxbuf_rsvg.c)
+target_include_directories(
+  libbase_rsvg
+  PUBLIC
+  $<INSTALL_INTERFACE:include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+target_compile_definitions(libbase_rsvg PUBLIC HAVE_CAIRO)
+target_link_libraries(
+  libbase_rsvg
+  PRIVATE
+  PkgConfig::PKG_RSVG
+  libbase
+  libbase_compiler_flags)
+set_target_properties(
+  libbase_rsvg PROPERTIES
+  VERSION 1.0
+  PUBLIC_HEADER gfxbuf_rsvg.h
+)
+
 if(iwyu_path_and_options)
   set_target_properties(
     libbase PROPERTIES
+    C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
+  set_target_properties(
+    libbase_rsvg PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
 endif()
 

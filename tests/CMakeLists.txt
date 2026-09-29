@@ -26,10 +26,16 @@ target_compile_definitions(
   PUBLIC
   BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_compile_definitions(
-  libbase_test
-  PUBLIC
-  BS_TEST_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+add_executable(
+  libbase_rsvg_test
+  libbase_rsvg_test.c)
+target_link_libraries(
+  libbase_rsvg_test
+  PRIVATE
+  PkgConfig::PKG_RSVG
+  libbase
+  libbase_compiler_flags
+  libbase_rsvg)
 
 add_executable(
   libbase_benchmark
@@ -93,6 +99,9 @@ add_test(NAME plist_test COMMAND plist_test)
 if(iwyu_path_and_options)
   set_target_properties(
     libbase_test PROPERTIES
+    C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
+  set_target_properties(
+    libbase_rsvg_test PROPERTIES
     C_INCLUDE_WHAT_YOU_USE "${iwyu_path_and_options}")
   set_target_properties(
     libbase_benchmark PROPERTIES

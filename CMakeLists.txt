@@ -106,6 +106,7 @@ set(CMAKE_C_STANDARD 11)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CAIRO REQUIRED IMPORTED_TARGET cairo>=1.16.0)
+pkg_check_modules(PKG_RSVG REQUIRED IMPORTED_TARGET librsvg-2.0)
 
 # Create pkg-config file from the template.
 configure_file(libbase.pc.in ${CMAKE_BINARY_DIR}/libbase.pc @ONLY)
