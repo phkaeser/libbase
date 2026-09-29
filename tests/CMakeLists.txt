@@ -36,6 +36,10 @@ target_link_libraries(
   libbase
   libbase_compiler_flags
   libbase_rsvg)
+target_compile_definitions(
+  libbase_rsvg_test
+  PUBLIC
+  BS_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(
   libbase_benchmark

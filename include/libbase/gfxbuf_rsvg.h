@@ -22,7 +22,9 @@
 #define __GFXBUF_RSVG_H__
 
 #include <libbase/libbase.h>
-#include <librsvg/rsvg.h>
+
+/** Forward declaration, so we don't need to include librsvg. */
+typedef struct _RsvgHandle RsvgHandle;
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +41,17 @@ extern "C" {
 bool bs_gfxbuf_render_rsvg(
     bs_gfxbuf_t *gfxbuf_ptr,
     RsvgHandle *rsvg_handle_ptr);
+
+/** Loads the SVG from an in-memory buffer with given size. */
+bool bs_gfxbuf_render_rsvg_data(
+    bs_gfxbuf_t *gfxbuf_ptr,
+    const void *data_ptr,
+    size_t data_size);
+
+/** Loads the SVG from a file. */
+bool bs_gfxbuf_render_rsvg_file(
+    bs_gfxbuf_t *gfxbuf_ptr,
+    const char *fname_ptr);
 
 /** Unite test set. */
 extern const bs_test_set_t bs_gfxbuf_rsvg_test_set;
