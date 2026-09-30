@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <libbase/assert.h>
+#include <libbase/file.h>
 #include <libbase/log.h>
 #include <libbase/sock.h>
 #include <libbase/strutil.h>
@@ -41,28 +42,54 @@
 
 bs_log_severity_t      bs_log_severity = BS_WARNING;
 
-static const char*     _severity_names[5] = {
+static const char      *_severity_names[5] = {
     "DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
 
 static int             _log_fd = 2;
+
+static const char     *_bs_log_extension_ptr = ".log";
 
 static const char *_strip_prefix(const char *path_ptr);
 
 /* == Functions ============================================================ */
 
 /* ------------------------------------------------------------------------- */
-bool bs_log_init_file(const char *log_filename_ptr,
-                      bs_log_severity_t severity)
+bool bs_log_init_file(
+    const char *dirname_ptr,
+    const char *filebase_ptr,
+    bs_log_severity_t severity)
 {
-    int fd = open(log_filename_ptr, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
+    static bool initialized = false;
+    if (initialized) return false;
+
+    if (NULL == dirname_ptr) dirname_ptr = "./";
+
+    // Attempt to create the directory, unless it exists.
+    if (!bs_file_realpath_is(dirname_ptr, S_IFDIR) &&
+        !bs_file_mkdir_p(dirname_ptr, 0700)) return false;
+
+    // Construct the log file's name.
+    char path[PATH_MAX + 1];
+    int len = snprintf(path, PATH_MAX + 1, "%s/%s%s",
+                       dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
+    if (PATH_MAX <= len) {
+        bs_log(BS_ERROR, "Failed snprintf(%p, %d, \"%s/%s%s\"): %d",
+               path, PATH_MAX + 1, dirname_ptr, filebase_ptr,
+               _bs_log_extension_ptr, len);
+        return false;
+    }
+
+    // Now, actually create it.
+    int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
     if (0 > fd) {
         bs_log(BS_ERROR | BS_ERRNO,
                "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
-               log_filename_ptr);
+               path);
         return false;
     }
     _log_fd = fd;
     bs_log_severity = severity;
+    initialized = true;
     return true;
 }
 
@@ -160,6 +187,21 @@ const char *_strip_prefix(const char *path_ptr)
 
 /* == Test functions ======================================================= */
 
+static void test_file(bs_test_t *test_ptr);
+static void test_strip_prefix(bs_test_t *test_ptr);
+static void test_log(bs_test_t *test_ptr);
+
+/** Unit test cases. */
+static const bs_test_case_t   bs_log_test_cases[] = {
+    { true, "file", test_file },
+    { true, "basename", test_strip_prefix },
+    { true, "log", test_log },
+    BS_TEST_CASE_SENTINEL(),
+};
+
+const bs_test_set_t bs_log_test_set = BS_TEST_SET(
+    true, "log", bs_log_test_cases);
+
 /* ------------------------------------------------------------------------- */
 /**
  * Helper method: Test that |expected_str| can be read from the descriptor
@@ -222,18 +264,26 @@ void verify_log_output_equals_at(
     }
 }
 
-static void test_strip_prefix(bs_test_t *test_ptr);
-static void test_log(bs_test_t *test_ptr);
+/* ------------------------------------------------------------------------- */
+/** Verifies that a log file is created in the given directory. */
+void test_file(bs_test_t *test_ptr)
+{
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_log_init_file(bs_test_temp_path(test_ptr, "sub"), "base", BS_INFO));
 
-/** Unit test cases. */
-static const bs_test_case_t   bs_log_test_cases[] = {
-    { true, "basename", test_strip_prefix },
-    { true, "log", test_log },
-    BS_TEST_CASE_SENTINEL(),
-};
+    const char *log_name_ptr = bs_test_temp_path(test_ptr, "sub/base.log");
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(log_name_ptr, S_IFREG));
 
-const bs_test_set_t bs_log_test_set = BS_TEST_SET(
-    true, "log", bs_log_test_cases);
+    BS_TEST_VERIFY_EQ(test_ptr, 0, unlink(log_name_ptr));
+    BS_TEST_VERIFY_EQ(
+        test_ptr, 0, rmdir(bs_test_temp_path(test_ptr, "sub")));
+
+    // Must fail on further initialization attempt(s).
+    BS_TEST_VERIFY_FALSE(
+        test_ptr,
+        bs_log_init_file(bs_test_temp_path(test_ptr, "sub"), "other", BS_INFO));
+}
 
 /* ------------------------------------------------------------------------- */
 void test_strip_prefix(bs_test_t *test_ptr)
@@ -254,6 +304,7 @@ void test_log(bs_test_t *test_ptr)
     bs_log_severity_t         backup_severity;
 
     backup_severity = bs_log_severity;
+    bs_log_severity = BS_WARNING;
 
     int fds[2];
     if (0 != pipe(fds)) {
