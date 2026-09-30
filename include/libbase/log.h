@@ -64,9 +64,19 @@ void bs_log_vwrite(bs_log_severity_t severity,
                    const char *fmt_ptr, va_list ap)
     __ARG_PRINTF__(4, 0);
 
-/** Initialize logging system to write to |log_filename_ptr| at |severity|. */
-bool bs_log_init_file(const char *log_filename_ptr,
-                      bs_log_severity_t severity);
+/**
+ * Initialize logging system to write into a file pattern and directory.
+ *
+ * @param dirname_ptr         Directory to log into. Uses "./" if NULL.
+ * @param filebase_ptr
+ * @param severity
+ *
+ * @return true on success. This function will fail if called more than once.
+ */
+bool bs_log_init_file(
+    const char *dirname_ptr,
+    const char *filebase_ptr,
+    bs_log_severity_t severity);
 
 /** Returns whether log outut will happen for `severity`. */
 static inline bool bs_will_log(bs_log_severity_t severity)
