@@ -115,6 +115,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
     char buf[BS_LOG_MAX_BUF_SIZE + 1];
     size_t pos = 0;
 
+    if ((severity & 0x7f) > BS_FATAL) severity = BS_FATAL | (severity & 0x80);
     const char *color_attr_ptr = "";
     switch (severity & 0x7f) {
     case BS_DEBUG: color_attr_ptr = "\e[90m"; break;  // Dark gray foreground.
