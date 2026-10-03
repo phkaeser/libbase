@@ -80,10 +80,10 @@ bool bs_log_init_file(
     }
 
     // Now, actually create it.
-    int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
+    int fd = open(path, O_CREAT|O_WRONLY|O_TRUNC, S_IWUSR|S_IRUSR);
     if (0 > fd) {
         bs_log(BS_ERROR | BS_ERRNO,
-               "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
+               "Failed open(%s, O_CREATE|O_WRONLY|O_TRUNC, S_IWUSR|S_IRUSR)",
                path);
         return false;
     }
