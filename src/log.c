@@ -40,7 +40,11 @@
 
 /* == Data ================================================================= */
 
-bs_log_severity_t      bs_log_severity = BS_WARNING;
+bs_log_severity_t             bs_log_severity = BS_WARNING;
+
+struct bs_log_options         bs_log_options = {
+    .log_to_stderr            = false
+};
 
 static const char      *_severity_names[5] = {
     "DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
@@ -62,32 +66,37 @@ bool bs_log_init_file(
     static bool initialized = false;
     if (initialized) return false;
 
-    if (NULL == dirname_ptr) dirname_ptr = "./";
+    if (bs_log_options.log_to_stderr) {
+        _log_fd = 2;
+    } else {
+        if (NULL == dirname_ptr) dirname_ptr = "./";
 
-    // Attempt to create the directory, unless it exists.
-    if (!bs_file_realpath_is(dirname_ptr, S_IFDIR) &&
-        !bs_file_mkdir_p(dirname_ptr, 0700)) return false;
+        // Attempt to create the directory, unless it exists.
+        if (!bs_file_realpath_is(dirname_ptr, S_IFDIR) &&
+            !bs_file_mkdir_p(dirname_ptr, 0700)) return false;
 
-    // Construct the log file's name.
-    char path[PATH_MAX + 1];
-    int len = snprintf(path, PATH_MAX + 1, "%s/%s%s",
-                       dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
-    if (PATH_MAX <= len) {
-        bs_log(BS_ERROR, "Failed snprintf(%p, %d, \"%s/%s%s\"): %d",
-               path, PATH_MAX + 1, dirname_ptr, filebase_ptr,
-               _bs_log_extension_ptr, len);
-        return false;
+        // Construct the log file's name.
+        char path[PATH_MAX + 1];
+        int len = snprintf(path, PATH_MAX + 1, "%s/%s%s",
+                           dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
+        if (PATH_MAX <= len) {
+            bs_log(BS_ERROR, "Failed snprintf(%p, %d, \"%s/%s%s\"): %d",
+                   path, PATH_MAX + 1, dirname_ptr, filebase_ptr,
+                   _bs_log_extension_ptr, len);
+            return false;
+        }
+
+        // Now, actually create it.
+        int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
+        if (0 > fd) {
+            bs_log(BS_ERROR | BS_ERRNO,
+                   "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
+                   path);
+            return false;
+        }
+        _log_fd = fd;
     }
 
-    // Now, actually create it.
-    int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
-    if (0 > fd) {
-        bs_log(BS_ERROR | BS_ERRNO,
-               "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
-               path);
-        return false;
-    }
-    _log_fd = fd;
     bs_log_severity = severity;
     initialized = true;
     return true;
