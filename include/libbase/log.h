@@ -50,6 +50,15 @@ typedef enum {
 /** Current severity for logging. Only equal-or-higher severity is logged. */
 extern bs_log_severity_t      bs_log_severity;
 
+/** Defines the options available for the logger. */
+struct bs_log_options {
+    /** Override: Log to stderr, even after bs_log_init_file(). */
+    bool                      log_to_stderr;
+};
+
+/** Options for the logger. */
+extern struct bs_log_options  bs_log_options;
+
 /** Actually write a log message. Helper to bs_log. */
 void bs_log_write(bs_log_severity_t severity,
                   const char *file_name_ptr,
