@@ -7,7 +7,7 @@
 
 ## bs_arg
 
-* Support "extra" arguments of no type, eg. for `--help` or `--version`.
+* Support "extra" arguments of no type, eg. for `--help` or `--version` ("switch").
 
 ## bs_file
 

@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <libbase/arg.h>
 #include <libbase/assert.h>
 #include <libbase/file.h>
@@ -38,7 +39,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-
 
 /* == Data ================================================================= */
 
@@ -59,6 +59,7 @@ static int                    _log_fd = 2;
 
 static const char             *_bs_log_extension_ptr = ".log";
 
+static int _bs_log_prepare_file(const char *fmt_ptr, ...);
 static const char *_strip_prefix(const char *path_ptr);
 
 /* == Functions ============================================================ */
@@ -80,25 +81,17 @@ bool bs_log_init(
     if (!bs_file_realpath_is(dirname_ptr, S_IFDIR) &&
         !bs_file_mkdir_p(dirname_ptr, 0700)) return false;
 
-    // Construct the log file's name.
-    char path[PATH_MAX + 1];
-    int len = snprintf(path, PATH_MAX + 1, "%s/%s%s",
-                       dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
-    if (PATH_MAX <= len) {
-        bs_log(BS_ERROR, "Failed snprintf(%p, %d, \"%s/%s%s\"): %d",
-               path, PATH_MAX + 1, dirname_ptr, filebase_ptr,
-               _bs_log_extension_ptr, len);
-        return false;
+    // Prepare the log file. Include the PID, if the file with the primary
+    // name cannot be prepared.
+    int fd = _bs_log_prepare_file(
+        "%s/%s%s", dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
+    if (0 > fd) {
+        fd = _bs_log_prepare_file(
+            "%s/%s.%"PRIdMAX"%s-FIXME", dirname_ptr, filebase_ptr,
+            (intmax_t)getpid(), _bs_log_extension_ptr);
+        if (0 > fd) return false;
     }
 
-    // Now, actually create it.
-    int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
-    if (0 > fd) {
-        bs_log(BS_ERROR | BS_ERRNO,
-                   "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
-               path);
-        return false;
-    }
     _log_fd = fd;
     initialized = true;
     return true;
@@ -187,8 +180,48 @@ void bs_log_vwrite(bs_log_severity_t severity,
     if (severity == BS_FATAL) BS_ABORT();
 }
 
-
 /* == Local (static) methods =============================================== */
+
+/* ------------------------------------------------------------------------- */
+/** Prepares a log file: Opens it, obtains a write lock, and truncates it. */
+int _bs_log_prepare_file(const char *fmt_ptr, ...)
+{
+    // Construct the file name.
+    char path[PATH_MAX + 1];
+    va_list ap;
+    va_start(ap, fmt_ptr);
+    int len = vsnprintf(path, PATH_MAX + 1, fmt_ptr, ap);
+    va_end(ap);
+    if (PATH_MAX <= len) {
+        bs_log(BS_ERROR, "Failed vsnprintf(%p, %d, \"%s\", ...): %d",
+               path, PATH_MAX + 1, fmt_ptr, len);
+        return -1;
+    }
+
+    // Now, actually create it.
+    int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
+    if (0 > fd) {
+        bs_log(BS_ERROR | BS_ERRNO,
+                   "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
+               path);
+        return -1;
+    }
+
+    // File may already exist and be in use. Attempt to lock entire file.
+    struct flock file_lock = { .l_type = F_WRLCK, .l_whence = SEEK_SET };
+    if (0 > fcntl(fd, F_SETLK, &file_lock)) {
+        bs_log(BS_INFO | BS_ERRNO, "fcntl(%d, F_SETLK, %p) for \"%s\" failed",
+               fd, &file_lock, path);
+        close(fd);
+        return -1;
+    }
+
+    if (0 > ftruncate(fd, 0)) {
+        bs_log(BS_WARNING | BS_ERRNO,
+               "Failed truncate(%d, 0) for \"%s\"", fd, path);
+    }
+    return fd;
+}
 
 /** Strips leading relative (or absolute) path prefix. */
 const char *_strip_prefix(const char *path_ptr)

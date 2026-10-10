@@ -54,7 +54,6 @@ struct bs_log_settings {
     bs_log_severity_t         severity;
     /** Override: Log to stderr, even after bs_log_init_file(). */
     bool                      log_to_stderr;
-    /** File descriptor to use */
 };
 
 /** The logger's settings. */
