@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <libbase/arg.h>
 #include <libbase/assert.h>
 #include <libbase/file.h>
 #include <libbase/log.h>
@@ -38,66 +39,67 @@
 #include <time.h>
 #include <unistd.h>
 
+
 /* == Data ================================================================= */
 
-bs_log_severity_t             bs_log_severity = BS_WARNING;
-
-struct bs_log_options         bs_log_options = {
+struct bs_log_settings        bs_log_settings = {
+    .severity  = BS_WARNING,
     .log_to_stderr            = false
 };
 
-static const char      *_severity_names[5] = {
-    "DEBUG", "INFO", "WARNING", "ERROR", "FATAL"};
+const bs_arg_enum_table_t     bs_log_level_names[] = {
+    { .name_ptr = "DEBUG", BS_DEBUG },
+    { .name_ptr = "INFO", BS_INFO },
+    { .name_ptr = "WARNING", BS_WARNING },
+    { .name_ptr = "ERROR", BS_ERROR },
+    { .name_ptr = NULL },
+};
 
-static int             _log_fd = 2;
+static int                    _log_fd = 2;
 
-static const char     *_bs_log_extension_ptr = ".log";
+static const char             *_bs_log_extension_ptr = ".log";
 
 static const char *_strip_prefix(const char *path_ptr);
 
 /* == Functions ============================================================ */
 
 /* ------------------------------------------------------------------------- */
-bool bs_log_init_file(
+bool bs_log_init(
     const char *dirname_ptr,
-    const char *filebase_ptr,
-    bs_log_severity_t severity)
+    const char *filebase_ptr)
 {
     static bool initialized = false;
     if (initialized) return false;
 
-    if (bs_log_options.log_to_stderr) {
-        _log_fd = 2;
-    } else {
-        if (NULL == dirname_ptr) dirname_ptr = "./";
+    _log_fd = 2;
+    if (bs_log_settings.log_to_stderr) return true;
 
-        // Attempt to create the directory, unless it exists.
-        if (!bs_file_realpath_is(dirname_ptr, S_IFDIR) &&
-            !bs_file_mkdir_p(dirname_ptr, 0700)) return false;
+    if (NULL == dirname_ptr) dirname_ptr = "./";
 
-        // Construct the log file's name.
-        char path[PATH_MAX + 1];
-        int len = snprintf(path, PATH_MAX + 1, "%s/%s%s",
-                           dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
-        if (PATH_MAX <= len) {
-            bs_log(BS_ERROR, "Failed snprintf(%p, %d, \"%s/%s%s\"): %d",
-                   path, PATH_MAX + 1, dirname_ptr, filebase_ptr,
-                   _bs_log_extension_ptr, len);
-            return false;
-        }
+    // Attempt to create the directory, unless it exists.
+    if (!bs_file_realpath_is(dirname_ptr, S_IFDIR) &&
+        !bs_file_mkdir_p(dirname_ptr, 0700)) return false;
 
-        // Now, actually create it.
-        int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
-        if (0 > fd) {
-            bs_log(BS_ERROR | BS_ERRNO,
-                   "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
-                   path);
-            return false;
-        }
-        _log_fd = fd;
+    // Construct the log file's name.
+    char path[PATH_MAX + 1];
+    int len = snprintf(path, PATH_MAX + 1, "%s/%s%s",
+                       dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
+    if (PATH_MAX <= len) {
+        bs_log(BS_ERROR, "Failed snprintf(%p, %d, \"%s/%s%s\"): %d",
+               path, PATH_MAX + 1, dirname_ptr, filebase_ptr,
+               _bs_log_extension_ptr, len);
+        return false;
     }
 
-    bs_log_severity = severity;
+    // Now, actually create it.
+    int fd = open(path, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR);
+    if (0 > fd) {
+        bs_log(BS_ERROR | BS_ERRNO,
+                   "Failed open(%s, O_CREATE | O_WRONLY, S_IWUSR | S_IRUSR)",
+               path);
+        return false;
+    }
+    _log_fd = fd;
     initialized = true;
     return true;
 }
@@ -148,7 +150,7 @@ void bs_log_vwrite(bs_log_severity_t severity,
         tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec,
         (int)(tv.tv_usec / 1000),
         color_attr_ptr,
-        _severity_names[severity & 0x7f],
+        bs_log_level_names[severity & 0x7f].name_ptr,
         reset_ptr,
         _strip_prefix(file_name_ptr), line_num);
 
@@ -170,8 +172,9 @@ void bs_log_vwrite(bs_log_severity_t severity,
 
     size_t written_bytes = 0;
     while (written_bytes < pos) {
-        ssize_t more_bytes = write(_log_fd, &buf[written_bytes],
-                                   pos - written_bytes);
+        int fd = bs_log_settings.log_to_stderr ? 2 : _log_fd;
+        ssize_t more_bytes = write(
+            fd, &buf[written_bytes], pos - written_bytes);
         if (0 > more_bytes) {
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
                 continue;
@@ -200,12 +203,14 @@ const char *_strip_prefix(const char *path_ptr)
 static void test_file(bs_test_t *test_ptr);
 static void test_strip_prefix(bs_test_t *test_ptr);
 static void test_log(bs_test_t *test_ptr);
+static void _bs_log_test_parse_args(bs_test_t *test_ptr);
 
 /** Unit test cases. */
 static const bs_test_case_t   bs_log_test_cases[] = {
     { true, "file", test_file },
     { true, "basename", test_strip_prefix },
     { true, "log", test_log },
+    { true, "parse_args", _bs_log_test_parse_args },
     BS_TEST_CASE_SENTINEL(),
 };
 
@@ -280,7 +285,7 @@ void test_file(bs_test_t *test_ptr)
 {
     BS_TEST_VERIFY_TRUE(
         test_ptr,
-        bs_log_init_file(bs_test_temp_path(test_ptr, "sub"), "base", BS_INFO));
+        bs_log_init(bs_test_temp_path(test_ptr, "sub"), "base"));
 
     const char *log_name_ptr = bs_test_temp_path(test_ptr, "sub/base.log");
     BS_TEST_VERIFY_TRUE(test_ptr, bs_file_realpath_is(log_name_ptr, S_IFREG));
@@ -292,7 +297,7 @@ void test_file(bs_test_t *test_ptr)
     // Must fail on further initialization attempt(s).
     BS_TEST_VERIFY_FALSE(
         test_ptr,
-        bs_log_init_file(bs_test_temp_path(test_ptr, "sub"), "other", BS_INFO));
+        bs_log_init(bs_test_temp_path(test_ptr, "sub"), "other"));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -313,8 +318,8 @@ void test_log(bs_test_t *test_ptr)
     char                      expected_output[BS_LOG_MAX_BUF_SIZE + 1];
     bs_log_severity_t         backup_severity;
 
-    backup_severity = bs_log_severity;
-    bs_log_severity = BS_WARNING;
+    backup_severity = bs_log_settings.severity;
+    bs_log_settings.severity = BS_WARNING;
 
     int fds[2];
     if (0 != pipe(fds)) {
@@ -351,7 +356,7 @@ void test_log(bs_test_t *test_ptr)
     verify_log_output_equals_at(
         test_ptr, __FILE__, __LINE__, fds[0], NULL);
 
-    bs_log_severity = BS_INFO;
+    bs_log_settings.severity = BS_INFO;
     snprintf(expected_output, sizeof(expected_output),
              "(\e[37mINFO\e[0m) \e[90mlog.c:%d\e[0m \e[37mtest 45\e[0m\n",
              __LINE__ + 1);
@@ -363,7 +368,34 @@ void test_log(bs_test_t *test_ptr)
 
     close(fds[0]);
     close(fds[1]);
-    bs_log_severity = backup_severity;
+    bs_log_settings.severity = backup_severity;
+}
+
+/* ------------------------------------------------------------------------- */
+/** Verifies that the common commandline args are parsed correctly. */
+void _bs_log_test_parse_args(bs_test_t *test_ptr)
+{
+    static const bs_arg_t args[] = {
+        bs_arg_log_level,
+        bs_arg_log_to_stderr,
+        BS_ARG_SENTINEL(),
+    };
+
+    const char *a1[] = { "", "--log_level", "ERROR", "--log_to_stderr", 0 };
+    int l = sizeof(a1) / sizeof(const char*) - 1;
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_arg_parse(args, BS_ARG_MODE_NO_EXTRA, &l, a1));
+    BS_TEST_VERIFY_EQ(test_ptr, BS_ERROR, bs_log_settings.severity);
+    BS_TEST_VERIFY_TRUE(test_ptr, bs_log_settings.log_to_stderr);
+
+    const char *a2[] = { "", "--log_level", "DEBUG", "--nolog_to_stderr", 0 };
+    l = sizeof(a1) / sizeof(const char*) - 1;
+    BS_TEST_VERIFY_TRUE(
+        test_ptr,
+        bs_arg_parse(args, BS_ARG_MODE_NO_EXTRA, &l, a2));
+    BS_TEST_VERIFY_EQ(test_ptr, BS_DEBUG, bs_log_settings.severity);
+    BS_TEST_VERIFY_FALSE(test_ptr, bs_log_settings.log_to_stderr);
 }
 
 /* == End of log.c ========================================================= */

@@ -21,11 +21,12 @@
 #ifndef __LIBBASE_LOG_H__
 #define __LIBBASE_LOG_H__
 
-#include "def.h"
-#include "test.h"
-
 #include <stdarg.h>
 #include <stdbool.h>
+
+#include "arg.h"
+#include "def.h"
+#include "test.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,17 +48,17 @@ typedef enum {
     BS_ERRNO = 0x80
 } bs_log_severity_t;
 
-/** Current severity for logging. Only equal-or-higher severity is logged. */
-extern bs_log_severity_t      bs_log_severity;
-
-/** Defines the options available for the logger. */
-struct bs_log_options {
+/** Defines the settings used for the logger. */
+struct bs_log_settings {
+    /** Configured log severity. */
+    bs_log_severity_t         severity;
     /** Override: Log to stderr, even after bs_log_init_file(). */
     bool                      log_to_stderr;
+    /** File descriptor to use */
 };
 
-/** Options for the logger. */
-extern struct bs_log_options  bs_log_options;
+/** The logger's settings. */
+extern struct bs_log_settings  bs_log_settings;
 
 /** Actually write a log message. Helper to bs_log. */
 void bs_log_write(bs_log_severity_t severity,
@@ -78,19 +79,17 @@ void bs_log_vwrite(bs_log_severity_t severity,
  *
  * @param dirname_ptr         Directory to log into. Uses "./" if NULL.
  * @param filebase_ptr
- * @param severity
  *
  * @return true on success. This function will fail if called more than once.
  */
-bool bs_log_init_file(
+bool bs_log_init(
     const char *dirname_ptr,
-    const char *filebase_ptr,
-    bs_log_severity_t severity);
+    const char *filebase_ptr);
 
 /** Returns whether log outut will happen for `severity`. */
 static inline bool bs_will_log(bs_log_severity_t severity)
 {
-    return  ((severity & 0x7f) >= bs_log_severity ||
+    return  ((severity & 0x7f) >= bs_log_settings.severity ||
              (severity & 0x7f) == BS_FATAL);
 }
 
@@ -102,6 +101,30 @@ static inline bool bs_will_log(bs_log_severity_t severity)
             bs_log_write(_tmp_sev, __FILE__, __LINE__, __VA_ARGS__);    \
         }                                                               \
     }
+
+/** Severity level names, for logging. Used for bs_arg_log_level. */
+extern const bs_arg_enum_table_t bs_log_level_names[];
+
+/**
+ * Common definition for commandline argument `--log_level`. Sets
+ * @ref bs_log_settings.severity.
+ */
+static const bs_arg_t         bs_arg_log_level = BS_ARG_ENUM(
+    "log_level",
+    "Log level to apply. One of DEBUG, INFO, WARNING, ERROR.",
+    "INFO",
+    &bs_log_level_names[0],
+    (int*)&bs_log_settings.severity);
+
+/**
+ * Common definition for commandline argument `--log_to_stderr`. Sets
+ * @ref bs_log_settings.log_to_stderr.
+ */
+static const bs_arg_t         bs_arg_log_to_stderr = BS_ARG_BOOL(
+    "log_to_stderr",
+    "Overrules log output to be written to STDERR.",
+    false,
+    &bs_log_settings.log_to_stderr);
 
 /** Unit testset. */
 extern const bs_test_set_t    bs_log_test_set;
