@@ -34,7 +34,7 @@ static inline void *_logged_calloc(
     const char *filename_ptr, int line_no, size_t nmemb, size_t size)
 {
     void *ptr = calloc(nmemb, size);
-    if ((NULL == ptr) && (BS_ERROR >= bs_log_severity)) {
+    if ((NULL == ptr) && bs_will_log(BS_ERROR)) {
         bs_log_write((bs_log_severity_t)(BS_ERROR | BS_ERRNO), filename_ptr,
                      line_no, "Failed calloc(%zu, %zu)", nmemb, size);
     }
@@ -50,7 +50,7 @@ static inline void *_logged_malloc(
     const char *filename_ptr, int line_no, size_t size)
 {
     void *ptr = malloc(size);
-    if ((NULL == ptr) && (BS_ERROR >= bs_log_severity)) {
+    if ((NULL == ptr) && bs_will_log(BS_ERROR)) {
         bs_log_write((bs_log_severity_t)(BS_ERROR | BS_ERRNO), filename_ptr,
                      line_no, "Failed malloc(%zu)", size);
     }
@@ -69,7 +69,7 @@ static inline char *_logged_strdup(
     char *new_str = malloc(len);
     if (NULL != new_str) {
         memcpy(new_str, str, len);
-    } else if (BS_ERROR >= bs_log_severity) {
+    } else if (bs_will_log(BS_ERROR)) {
         bs_log_write((bs_log_severity_t)(BS_ERROR | BS_ERRNO), filename_ptr,
                      line_no, "Failed strdup(%s)", str);
     }
