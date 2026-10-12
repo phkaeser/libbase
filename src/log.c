@@ -87,7 +87,7 @@ bool bs_log_init(
         "%s/%s%s", dirname_ptr, filebase_ptr, _bs_log_extension_ptr);
     if (0 > fd) {
         fd = _bs_log_prepare_file(
-            "%s/%s.%"PRIdMAX"%s-FIXME", dirname_ptr, filebase_ptr,
+            "%s/%s.%"PRIdMAX"%s", dirname_ptr, filebase_ptr,
             (intmax_t)getpid(), _bs_log_extension_ptr);
         if (0 > fd) return false;
     }
