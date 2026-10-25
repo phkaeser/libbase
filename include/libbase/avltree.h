@@ -122,6 +122,16 @@ bool bs_avltree_insert(bs_avltree_t *tree_ptr,
 bs_avltree_node_t *bs_avltree_delete(bs_avltree_t *tree_ptr,
                                      const void *key_ptr);
 
+/**
+ * Removes and destroys each node of the tree.
+ *
+ * This will step through each node, and calls the node's registered destructor,
+ * if provided.
+ *
+ * @param tree_ptr
+ */
+void bs_avltree_flush(bs_avltree_t *tree_ptr);
+
 /** Returns the minimum node of the tree. */
 bs_avltree_node_t *bs_avltree_min(bs_avltree_t *tree_ptr);
 
