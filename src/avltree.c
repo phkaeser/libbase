@@ -40,7 +40,6 @@ struct _bs_avltree_t {
     bs_avltree_node_destroy_t destroy;
 };
 
-static void bs_avltree_flush(bs_avltree_t *tree_ptr);
 static void bs_avltree_node_replace(bs_avltree_t *tree_ptr,
                                     bs_avltree_node_t *old_node_ptr,
                                     bs_avltree_node_t *new_node_ptr);
@@ -221,6 +220,51 @@ bs_avltree_node_t *bs_avltree_delete(bs_avltree_t *tree_ptr,
 }
 
 /* ------------------------------------------------------------------------- */
+void bs_avltree_flush(bs_avltree_t *tree_ptr)
+{
+    bs_avltree_node_t         *node_ptr;
+    bs_avltree_node_t         *parent_ptr;
+
+    node_ptr = tree_ptr->root_ptr;
+    // Already mark the tree as inaccessible.
+    tree_ptr->root_ptr = NULL;
+    while (NULL != node_ptr) {
+
+        /* walk tree downwards as far as possible */
+        if (NULL != node_ptr->left_ptr) {
+            node_ptr = node_ptr->left_ptr;
+            continue;
+        }
+        if (NULL != node_ptr->right_ptr) {
+            node_ptr = node_ptr->right_ptr;
+            continue;
+        }
+
+        /* store parent node, then clear bottom-most node */
+        parent_ptr = node_ptr->parent_ptr;
+        *node_ptr = (bs_avltree_node_t){};
+        if (NULL != tree_ptr->destroy) {
+            tree_ptr->destroy(node_ptr);
+        }
+        tree_ptr->nodes--;
+
+        /* if the parent is NULL, we just flushed the root node. all done. */
+        if (NULL == parent_ptr) break;
+
+        /* in parent: mark the just-deleted node as gone */
+        if (parent_ptr->left_ptr == node_ptr) {
+            parent_ptr->left_ptr = NULL;
+        } else {
+            parent_ptr->right_ptr = NULL;
+        }
+
+        node_ptr = parent_ptr;
+    }
+
+    BS_ASSERT(0 == tree_ptr->nodes);
+}
+
+/* ------------------------------------------------------------------------- */
 size_t bs_avltree_size(const bs_avltree_t *tree_ptr)
 {
     return tree_ptr->nodes;
@@ -315,52 +359,6 @@ int bs_avltree_cmp_ptr(const void *node_key_ptr,
 }
 
 /* == Local methods ======================================================== */
-
-/* ------------------------------------------------------------------------- */
-/** Will destroy (if given) each of the nodes. */
-void bs_avltree_flush(bs_avltree_t *tree_ptr)
-{
-    bs_avltree_node_t         *node_ptr;
-    bs_avltree_node_t         *parent_ptr;
-
-    node_ptr = tree_ptr->root_ptr;
-    // Already mark the tree as inaccessible.
-    tree_ptr->root_ptr = NULL;
-    while (NULL != node_ptr) {
-
-        /* walk tree downwards as far as possible */
-        if (NULL != node_ptr->left_ptr) {
-            node_ptr = node_ptr->left_ptr;
-            continue;
-        }
-        if (NULL != node_ptr->right_ptr) {
-            node_ptr = node_ptr->right_ptr;
-            continue;
-        }
-
-        /* store parent node, then clear bottom-most node */
-        parent_ptr = node_ptr->parent_ptr;
-        *node_ptr = (bs_avltree_node_t){};
-        if (NULL != tree_ptr->destroy) {
-            tree_ptr->destroy(node_ptr);
-        }
-        tree_ptr->nodes--;
-
-        /* if the parent is NULL, we just flushed the root node. all done. */
-        if (NULL == parent_ptr) break;
-
-        /* in parent: mark the just-deleted node as gone */
-        if (parent_ptr->left_ptr == node_ptr) {
-            parent_ptr->left_ptr = NULL;
-        } else {
-            parent_ptr->right_ptr = NULL;
-        }
-
-        node_ptr = parent_ptr;
-    }
-
-    BS_ASSERT(0 == tree_ptr->nodes);
-}
 
 /* ------------------------------------------------------------------------- */
 /**
