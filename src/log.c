@@ -52,9 +52,11 @@ const bs_arg_enum_table_t     bs_log_level_names[] = {
     { .name_ptr = "INFO", BS_INFO },
     { .name_ptr = "WARNING", BS_WARNING },
     { .name_ptr = "ERROR", BS_ERROR },
+    { .name_ptr = "FATAL", BS_FATAL },
     { .name_ptr = NULL },
 };
 
+/** Destination where to write log messages to. */
 static int                    _log_fd = 2;
 
 static const char             *_bs_log_extension_ptr = ".log";
@@ -233,6 +235,9 @@ const char *_strip_prefix(const char *path_ptr)
 
 /* == Test functions ======================================================= */
 
+static void *_bs_log_test_setup(void);
+static void _bs_log_test_teardown(void *ctx_ptr);
+
 static void test_file(bs_test_t *test_ptr);
 static void test_strip_prefix(bs_test_t *test_ptr);
 static void test_log(bs_test_t *test_ptr);
@@ -247,8 +252,34 @@ static const bs_test_case_t   bs_log_test_cases[] = {
     BS_TEST_CASE_SENTINEL(),
 };
 
-const bs_test_set_t bs_log_test_set = BS_TEST_SET(
-    true, "log", bs_log_test_cases);
+const bs_test_set_t bs_log_test_set = BS_TEST_SET_CONTEXT(
+    true, "log", bs_log_test_cases, _bs_log_test_setup, _bs_log_test_teardown);
+
+/** Context for bs_log tests. */
+struct _bs_log_test_context {
+    /** Backup of _log_fd, to restore after test run. */
+    int                       backup_log_fd;
+};
+
+/* ------------------------------------------------------------------------- */
+/** Setup test environment. Mainly: Backup global state. */
+static void *_bs_log_test_setup(void)
+{
+    struct _bs_log_test_context *ctx_ptr = calloc(1, sizeof(*ctx_ptr));
+    if (NULL == ctx_ptr) return NULL;
+    ctx_ptr->backup_log_fd = _log_fd;
+
+    return ctx_ptr;
+}
+
+/* ------------------------------------------------------------------------- */
+/** Teardown test environment: Restore the state. */
+static void _bs_log_test_teardown(void *_ctx_ptr)
+{
+    struct _bs_log_test_context *ctx_ptr = _ctx_ptr;
+    _log_fd = ctx_ptr->backup_log_fd;
+    free(ctx_ptr);
+}
 
 /* ------------------------------------------------------------------------- */
 /**
@@ -396,8 +427,6 @@ void test_log(bs_test_t *test_ptr)
     bs_log(BS_INFO, "test %d", 45);
     verify_log_output_equals_at(
         test_ptr, __FILE__, __LINE__, fds[0], expected_output);
-
-    _log_fd = 2;
 
     close(fds[0]);
     close(fds[1]);
